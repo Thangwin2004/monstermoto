@@ -26,7 +26,7 @@ export class EnemySystem {
   // Encounter state
   private activeWaves: ActiveWave[] = [];
   private encounterTimer: number = 0;
-  private encounterCooldown: number = 2; // seconds between encounters
+  private ambientSpawnTimer: number = 0;
   private currentDifficulty: number = 1;
   private hpScale: number = 1;
   private speedScale: number = 1;
@@ -43,7 +43,7 @@ export class EnemySystem {
       const e = new Enemy();
       this.container.addChild(e);
       return e;
-    }, 150);
+    }, 180);
   }
 
   /** Set dynamic scaling based on distance travelled */
@@ -64,10 +64,28 @@ export class EnemySystem {
   update(dt: number) {
     const dtSec = dt * (1 / 60);
 
-    // Manage encounters
+    // Continuous Encounter Management: Keep monsters constantly attacking the convoy
     this.encounterTimer -= dtSec;
-    if (this.encounterTimer <= 0 && this.activeWaves.length === 0) {
+    if (
+      this.activeWaves.length === 0 &&
+      (this.encounterTimer <= 0 || this.enemies.length <= 3)
+    ) {
       this.startEncounter();
+    }
+
+    // Ambient Streamer: If screen has too few monsters, stream in scouts immediately
+    if (this.enemies.length < 6) {
+      this.ambientSpawnTimer -= dtSec;
+      if (this.ambientSpawnTimer <= 0) {
+        const scoutType: EnemyArchetype = gameRng.pick([
+          "runner",
+          "swarm",
+          "runner",
+          "spitter",
+        ]);
+        this.spawnEnemy(scoutType);
+        this.ambientSpawnTimer = 0.65;
+      }
     }
 
     // Process active waves
@@ -188,9 +206,7 @@ export class EnemySystem {
       };
     });
 
-    this.encounterCooldown =
-      encounter.duration + Math.max(1, 3 - this.currentDifficulty * 0.2);
-    this.encounterTimer = this.encounterCooldown;
+    this.encounterTimer = Math.max(0.6, 1.8 - this.currentDifficulty * 0.15);
   }
 
   private processWaves(dtSec: number) {

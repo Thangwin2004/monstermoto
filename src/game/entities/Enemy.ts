@@ -39,13 +39,14 @@ export class Enemy extends Container {
   public leapStartX: number = 0;
   public leapStartY: number = 0;
 
-  // Visuals
+  // Visuals & Hit Stun FX
   private shadow: Graphics;
   private spriteContainer: Container;
   private monsterBody: Graphics;
   private statusGlow: Graphics;
   private hpBar: Graphics;
   private flashTimer: number = 0;
+  private hitTwitchTimer: number = 0; // ⚡ Hit-Stun Convulsion / Twitching
   private animTime: number = 0;
 
   constructor() {
@@ -93,9 +94,15 @@ export class Enemy extends Container {
     this.state = "approaching";
     this.active = true;
     this.visible = true;
-    this.alpha = 1;
-    this.scale.set(1);
-    this.animTime = Math.random() * 10;
+
+    // Reset visual transforms & timers
+    this.hitTwitchTimer = 0;
+    this.flashTimer = 0;
+    this.spriteContainer.x = 0;
+    this.spriteContainer.y = 0;
+    this.spriteContainer.rotation = 0;
+    this.spriteContainer.scale.set(1);
+    this.monsterBody.tint = 0xffffff;
 
     // Reset status effects
     this.burnTimer = 0;
@@ -458,6 +465,12 @@ export class Enemy extends Container {
     this.flashDamage();
     this.updateHpBar();
 
+    // ⚡ Trigger Violent Hit-Stun Convulsion / Twitching (Giật giật giật khi trúng đạn)
+    this.hitTwitchTimer = 0.28;
+
+    // Subtle physical knockback / hit push
+    this.y -= Math.min(10, 2 + amount * 0.15);
+
     if (this.hp <= 0) {
       this.hp = 0;
       this.active = false;
@@ -481,6 +494,8 @@ export class Enemy extends Container {
   getEffectiveSpeed(): number {
     let s = this.speed;
     if (this.shockTimer > 0) s *= this.slowMultiplier;
+    // Slow down during violent hit flinch
+    if (this.hitTwitchTimer > 0) s *= 0.45;
     return s;
   }
 
@@ -616,9 +631,8 @@ export class Enemy extends Container {
   }
 
   private flashDamage() {
-    this.flashTimer = 0.12;
+    this.flashTimer = 0.15;
     this.monsterBody.tint = 0xffffff; // Bright white arcade flash on impact
-    this.spriteContainer.scale.set(1.22);
   }
 
   update(dt: number) {
@@ -628,27 +642,43 @@ export class Enemy extends Container {
     // Flash recovery
     if (this.flashTimer > 0) {
       this.flashTimer -= dtSec;
-      if (this.flashTimer <= 0.06 && this.flashTimer > 0) {
-        this.monsterBody.tint = 0xff4444; // Secondary red pulse
+      if (this.flashTimer <= 0.08 && this.flashTimer > 0) {
+        this.monsterBody.tint = 0xff3333; // Secondary intense red flash
       } else if (this.flashTimer <= 0) {
-        this.spriteContainer.scale.set(1);
         this.monsterBody.tint = 0xffffff;
       }
     }
 
-    // Animated squash/bounce while moving
-    if (this.state === "approaching") {
-      const bounce = Math.sin(this.animTime * 8) * 0.08;
-      const wobble = Math.cos(this.animTime * 6) * 0.05;
-      this.spriteContainer.scale.x = 1 + wobble;
-      this.spriteContainer.scale.y = 1 + bounce;
-      this.spriteContainer.rotation = wobble * 0.5;
-    } else if (this.state === "leaping") {
-      // Jump scale up in the air
-      const airScale = 1 + Math.sin(this.leapProgress * Math.PI) * 0.5;
-      this.spriteContainer.scale.set(airScale);
-      this.shadow.scale.set(1 / airScale);
-      this.shadow.alpha = 0.35 / airScale;
+    // ⚡ Hit-Stun Convulsion / Twitching Animation (Giật giật giật khi dính đạn)
+    if (this.hitTwitchTimer > 0) {
+      this.hitTwitchTimer -= dtSec;
+      const intensity = Math.min(1.0, this.hitTwitchTimer / 0.18);
+
+      // High-frequency violent jitter displacement
+      this.spriteContainer.x = (Math.random() - 0.5) * 16 * intensity;
+      this.spriteContainer.y = (Math.random() - 0.5) * 16 * intensity;
+      this.spriteContainer.rotation = (Math.random() - 0.5) * 0.38 * intensity;
+
+      // Convulsive squash/stretch twitch
+      const twitchScale = 1 + Math.sin(this.animTime * 65) * 0.22 * intensity;
+      this.spriteContainer.scale.set(twitchScale, 2 - twitchScale);
+    } else {
+      this.spriteContainer.x = 0;
+      this.spriteContainer.y = 0;
+
+      // Normal locomotion animation
+      if (this.state === "approaching") {
+        const bounce = Math.sin(this.animTime * 8) * 0.08;
+        const wobble = Math.cos(this.animTime * 6) * 0.05;
+        this.spriteContainer.scale.x = 1 + wobble;
+        this.spriteContainer.scale.y = 1 + bounce;
+        this.spriteContainer.rotation = wobble * 0.5;
+      } else if (this.state === "leaping") {
+        const airScale = 1 + Math.sin(this.leapProgress * Math.PI) * 0.5;
+        this.spriteContainer.scale.set(airScale);
+        this.shadow.scale.set(1 / airScale);
+        this.shadow.alpha = 0.35 / airScale;
+      }
     }
 
     this.updateStatusEffects(dtSec);

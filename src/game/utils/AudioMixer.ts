@@ -14,6 +14,9 @@ export class AudioMixer {
   private static lastKillTime = 0;
   private static lastExplosionTime = 0;
   private static shootCycle = 0;
+  private static hitCycle = 0;
+  private static killComboCount = 0;
+  private static lastKillComboTime = 0;
 
   static async init() {
     if (this.ctx) return;
@@ -177,72 +180,152 @@ export class AudioMixer {
     }
   }
 
-  /** 💥 Juicy Monster Impact Sound (Sub thump + crisp mid bite) */
+  /** 💥 Crunchy & Punchy Monster Impact Sound (Sharp attack click + warm physical thud) */
   static playHit(isCrit: boolean = false) {
     if (!this.ctx) return;
     this.resume();
     const now = this.ctx.currentTime;
 
-    if (now - this.lastHitTime < 0.07) return;
+    // Rate limiter: Minimum 50ms spacing between hits to prevent audio mud
+    if (now - this.lastHitTime < 0.05) return;
     this.lastHitTime = now;
 
-    const osc = this.ctx.createOscillator();
-    const gain = this.ctx.createGain();
-    osc.type = "sine";
-    const baseFreq = isCrit ? 280 : 180 + (Math.random() - 0.5) * 50;
-    osc.frequency.setValueAtTime(baseFreq, now);
-    osc.frequency.exponentialRampToValueAtTime(40, now + 0.065);
+    // Musical 5-step pitch cycling for rapid bullet hits (Pentatonic: 0st, +2st, +4st, +7st, +9st)
+    this.hitCycle = (this.hitCycle + 1) % 5;
+    const semitoneMultipliers = [1.0, 1.122, 1.259, 1.498, 1.681];
+    const pitch = semitoneMultipliers[this.hitCycle] * (isCrit ? 1.25 : 1.0);
 
-    gain.gain.setValueAtTime(isCrit ? 0.36 : 0.24, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.065);
+    // 1. High-frequency physical snap / crackle transient
+    const snapOsc = this.ctx.createOscillator();
+    const snapGain = this.ctx.createGain();
+    snapOsc.type = "triangle";
+    snapOsc.frequency.setValueAtTime(1800 * pitch, now);
+    snapOsc.frequency.exponentialRampToValueAtTime(320, now + 0.018);
+    snapGain.gain.setValueAtTime(isCrit ? 0.32 : 0.22, now);
+    snapGain.gain.exponentialRampToValueAtTime(0.001, now + 0.018);
+    snapOsc.connect(snapGain);
+    snapGain.connect(this.sfxGain);
+    snapOsc.start(now);
+    snapOsc.stop(now + 0.02);
 
-    osc.connect(gain);
-    gain.connect(this.sfxGain);
-    osc.start(now);
-    osc.stop(now + 0.07);
+    // 2. Visceral flesh impact sub-thud
+    const thudOsc = this.ctx.createOscillator();
+    const thudGain = this.ctx.createGain();
+    thudOsc.type = "sine";
+    const startFreq = (isCrit ? 320 : 220) * pitch;
+    thudOsc.frequency.setValueAtTime(startFreq, now);
+    thudOsc.frequency.exponentialRampToValueAtTime(55, now + 0.055);
+
+    thudGain.gain.setValueAtTime(isCrit ? 0.4 : 0.26, now);
+    thudGain.gain.exponentialRampToValueAtTime(0.001, now + 0.055);
+
+    thudOsc.connect(thudGain);
+    thudGain.connect(this.sfxGain);
+    thudOsc.start(now);
+    thudOsc.stop(now + 0.06);
   }
 
-  /** 💀 Rewarding Arcade Monster Defeat / Splat Sound */
+  /** 💀 Rewarding Arcade Monster Defeat / Splat Sound with Combo Arpeggiator */
   static playKill(isElite: boolean = false) {
     if (!this.ctx) return;
     this.resume();
     const now = this.ctx.currentTime;
 
-    if (now - this.lastKillTime < 0.06) return;
+    // Simultaneous kill grouping: If kills occur within 35ms (e.g. AoE blast), avoid muddy repetition
+    const isSimultaneous = now - this.lastKillTime < 0.035;
     this.lastKillTime = now;
 
-    // 1. Snappy bubble pop
+    // Maintain kill combo chain if kills occur within 0.85s of each other
+    if (now - this.lastKillComboTime < 0.85) {
+      this.killComboCount = Math.min(8, this.killComboCount + 1);
+    } else {
+      this.killComboCount = 1;
+    }
+    this.lastKillComboTime = now;
+
+    // Melodic Minor Pentatonic scale for rewarding combo streaks:
+    // C4 (261Hz) -> Eb4 (311Hz) -> F4 (349Hz) -> G4 (392Hz) -> Bb4 (466Hz) -> C5 (523Hz) -> Eb5 (622Hz) -> G5 (784Hz)
+    const comboFrequencies = [
+      261.63, 311.13, 349.23, 392.0, 466.16, 523.25, 622.25, 783.99,
+    ];
+    const baseF = isElite
+      ? 180
+      : comboFrequencies[(this.killComboCount - 1) % comboFrequencies.length];
+
+    if (isSimultaneous) {
+      // For simultaneous multi-kills: Play one deep resonant reward boom instead of noisy duplicates
+      const multiOsc = this.ctx.createOscillator();
+      const multiGain = this.ctx.createGain();
+      multiOsc.type = "sine";
+      multiOsc.frequency.setValueAtTime(baseF * 1.5, now);
+      multiOsc.frequency.exponentialRampToValueAtTime(45, now + 0.16);
+      multiGain.gain.setValueAtTime(0.35, now);
+      multiGain.gain.exponentialRampToValueAtTime(0.001, now + 0.16);
+      multiOsc.connect(multiGain);
+      multiGain.connect(this.sfxGain);
+      multiOsc.start(now);
+      multiOsc.stop(now + 0.165);
+      return;
+    }
+
+    // 1. Juicy Arcade "Splat / Coin Pop" Attack
     const popOsc = this.ctx.createOscillator();
     const popGain = this.ctx.createGain();
     popOsc.type = "sine";
-    const startF = isElite ? 450 : 620 + Math.random() * 80;
-    popOsc.frequency.setValueAtTime(startF, now);
+    popOsc.frequency.setValueAtTime(baseF * 1.8, now);
     popOsc.frequency.exponentialRampToValueAtTime(
-      120,
-      now + (isElite ? 0.14 : 0.08),
+      baseF * 0.45,
+      now + (isElite ? 0.14 : 0.085),
     );
+
     popGain.gain.setValueAtTime(isElite ? 0.38 : 0.28, now);
     popGain.gain.exponentialRampToValueAtTime(
       0.001,
-      now + (isElite ? 0.14 : 0.08),
+      now + (isElite ? 0.14 : 0.085),
     );
+
     popOsc.connect(popGain);
     popGain.connect(this.sfxGain);
     popOsc.start(now);
-    popOsc.stop(now + (isElite ? 0.145 : 0.085));
+    popOsc.stop(now + (isElite ? 0.145 : 0.09));
 
-    // 2. Sub bass crunch
+    // 2. Punchy Sub-Bass Crunch Body
     const subOsc = this.ctx.createOscillator();
     const subGain = this.ctx.createGain();
     subOsc.type = "triangle";
-    subOsc.frequency.setValueAtTime(140, now);
-    subOsc.frequency.exponentialRampToValueAtTime(30, now + 0.12);
-    subGain.gain.setValueAtTime(isElite ? 0.3 : 0.18, now);
-    subGain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+    subOsc.frequency.setValueAtTime(isElite ? 110 : 160, now);
+    subOsc.frequency.exponentialRampToValueAtTime(
+      32,
+      now + (isElite ? 0.18 : 0.1),
+    );
+
+    subGain.gain.setValueAtTime(isElite ? 0.34 : 0.2, now);
+    subGain.gain.exponentialRampToValueAtTime(
+      0.001,
+      now + (isElite ? 0.18 : 0.1),
+    );
+
     subOsc.connect(subGain);
     subGain.connect(this.sfxGain);
     subOsc.start(now);
-    subOsc.stop(now + 0.125);
+    subOsc.stop(now + (isElite ? 0.185 : 0.105));
+
+    // 3. Dopamine Sparkling Chime on High Combo Streak (Combo >= 5)
+    if (this.killComboCount >= 5 && !isElite) {
+      const sparkleOsc = this.ctx.createOscillator();
+      const sparkleGain = this.ctx.createGain();
+      sparkleOsc.type = "sine";
+      sparkleOsc.frequency.setValueAtTime(
+        1046.5 + this.killComboCount * 120,
+        now,
+      );
+      sparkleGain.gain.setValueAtTime(0.14, now);
+      sparkleGain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+      sparkleOsc.connect(sparkleGain);
+      sparkleGain.connect(this.sfxGain);
+      sparkleOsc.start(now);
+      sparkleOsc.stop(now + 0.155);
+    }
   }
 
   /** 💣 Deep Satisfying Explosion Rumble */
@@ -377,7 +460,11 @@ export class AudioMixer {
   }
 
   /** Universal SFX Router -> Routes any key to high-fidelity procedural synth */
-  static playSFX(key: string, _playbackRate: number = 1.0, _volume: number = 1.0) {
+  static playSFX(
+    key: string,
+    _playbackRate: number = 1.0,
+    _volume: number = 1.0,
+  ) {
     if (!this.ctx) this.init();
     switch (key) {
       case "sfx_button":

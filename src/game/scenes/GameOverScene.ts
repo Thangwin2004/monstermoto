@@ -302,7 +302,7 @@ export class GameOverScene extends Container implements Scene {
     });
     btn.on("pointerdown", () => {
       content.y = 5;
-      AudioMixer.playSFX("sfx_button");
+      AudioMixer.playButton();
     });
     btn.on("pointerup", () => {
       content.y = 0;

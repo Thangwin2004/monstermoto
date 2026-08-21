@@ -175,7 +175,7 @@ export class MenuScene extends Container implements Scene {
     });
     btn.on("pointerdown", () => {
       content.y = 6;
-      AudioMixer.playSFX("sfx_button");
+      AudioMixer.playButton();
     });
     btn.on("pointerup", () => {
       content.y = 0;

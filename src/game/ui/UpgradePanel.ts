@@ -1,6 +1,7 @@
 import { Container, Graphics, Text } from "pixi.js";
 import { GAME_WIDTH, GAME_HEIGHT } from "../constants";
 import { UpgradeDefinition } from "../data/upgrades";
+import { AudioMixer } from "../utils/AudioMixer";
 
 const RARITY_THEMES: Record<
   string,
@@ -286,6 +287,7 @@ export class UpgradePanel extends Container {
       });
       optBtn.on("pointerdown", () => {
         content.y = 4;
+        AudioMixer.playButton();
       });
       optBtn.on("pointerup", () => {
         content.y = 0;

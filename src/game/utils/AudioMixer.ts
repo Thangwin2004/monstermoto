@@ -95,40 +95,57 @@ export class AudioMixer {
     const pitch = 1.0 + pitchOffset + (Math.random() - 0.5) * 0.05;
 
     if (type === "bullet") {
-      // 1. High-frequency transient mechanical click
-      const clickOsc = this.ctx.createOscillator();
-      const clickGain = this.ctx.createGain();
-      clickOsc.type = "triangle";
-      clickOsc.frequency.setValueAtTime(1400 * pitch, now);
-      clickOsc.frequency.exponentialRampToValueAtTime(300, now + 0.025);
-      clickGain.gain.setValueAtTime(0.22, now);
-      clickGain.gain.exponentialRampToValueAtTime(0.001, now + 0.025);
-      clickOsc.connect(clickGain);
-      clickGain.connect(this.sfxGain);
-      clickOsc.start(now);
-      clickOsc.stop(now + 0.028);
+      // 1. Heavy Muzzle Gunpowder Blast & Steel Breech Crack
+      this.synthesizeFilteredNoise(0.038, 0.36, 3200 * pitch, 600, "bandpass");
 
-      // 2. Punchy warm acoustic laser pop body
-      const bodyOsc = this.ctx.createOscillator();
-      const bodyGain = this.ctx.createGain();
+      const crackOsc = this.ctx.createOscillator();
+      const crackGain = this.ctx.createGain();
+      crackOsc.type = "sawtooth";
+      crackOsc.frequency.setValueAtTime(880 * pitch, now);
+      crackOsc.frequency.exponentialRampToValueAtTime(160, now + 0.022);
+      crackGain.gain.setValueAtTime(0.35, now);
+      crackGain.gain.exponentialRampToValueAtTime(0.001, now + 0.022);
+      crackOsc.connect(crackGain);
+      crackGain.connect(this.sfxGain);
+      crackOsc.start(now);
+      crackOsc.stop(now + 0.025);
+
+      // 2. Heavy Autocannon Mid-Body Punch (Chamber Resonance)
+      const midOsc = this.ctx.createOscillator();
+      const midGain = this.ctx.createGain();
       const filter = this.ctx.createBiquadFilter();
 
-      bodyOsc.type = "sine";
-      bodyOsc.frequency.setValueAtTime(420 * pitch, now);
-      bodyOsc.frequency.exponentialRampToValueAtTime(90, now + 0.075);
+      midOsc.type = "triangle";
+      midOsc.frequency.setValueAtTime(360 * pitch, now);
+      midOsc.frequency.exponentialRampToValueAtTime(80, now + 0.075);
 
       filter.type = "lowpass";
-      filter.frequency.setValueAtTime(2200, now);
+      filter.frequency.setValueAtTime(1600, now);
 
-      bodyGain.gain.setValueAtTime(0.28, now);
-      bodyGain.gain.exponentialRampToValueAtTime(0.001, now + 0.075);
+      midGain.gain.setValueAtTime(0.42, now);
+      midGain.gain.exponentialRampToValueAtTime(0.001, now + 0.075);
 
-      bodyOsc.connect(filter);
-      filter.connect(bodyGain);
-      bodyGain.connect(this.sfxGain);
+      midOsc.connect(filter);
+      filter.connect(midGain);
+      midGain.connect(this.sfxGain);
 
-      bodyOsc.start(now);
-      bodyOsc.stop(now + 0.08);
+      midOsc.start(now);
+      midOsc.stop(now + 0.08);
+
+      // 3. Visceral Sub-Bass Thump / Shockwave (Heavy Bass Kick)
+      const subOsc = this.ctx.createOscillator();
+      const subGain = this.ctx.createGain();
+      subOsc.type = "sine";
+      subOsc.frequency.setValueAtTime(175 * pitch, now);
+      subOsc.frequency.exponentialRampToValueAtTime(36, now + 0.095);
+
+      subGain.gain.setValueAtTime(0.48, now);
+      subGain.gain.exponentialRampToValueAtTime(0.001, now + 0.095);
+
+      subOsc.connect(subGain);
+      subGain.connect(this.sfxGain);
+      subOsc.start(now);
+      subOsc.stop(now + 0.1);
     } else if (type === "flame") {
       // Warm roaring ignition whoosh
       this.synthesizeFilteredNoise(0.12, 0.22, 600, 200, "bandpass");

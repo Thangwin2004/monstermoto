@@ -5,29 +5,64 @@ import { AudioMixer } from "../utils/AudioMixer";
 
 const RARITY_THEMES: Record<
   string,
-  { bg: number; border: number; shadow: number; label: string }
+  {
+    bg: number;
+    cardFace: number;
+    border: number;
+    shadow: number;
+    label: string;
+    textCol: number;
+  }
 > = {
-  common: { bg: 0x1e293b, border: 0x64748b, shadow: 0x0f172a, label: "THƯỜNG" },
-  rare: { bg: 0x0369a1, border: 0x38bdf8, shadow: 0x075985, label: "HIẾM" },
-  epic: { bg: 0x7e22ce, border: 0xc084fc, shadow: 0x581c87, label: "SỬ THI" },
+  common: {
+    bg: 0x0284c7,
+    cardFace: 0xf0f9ff,
+    border: 0x38bdf8,
+    shadow: 0x0369a1,
+    label: "THƯỜNG",
+    textCol: 0x0369a1,
+  },
+  rare: {
+    bg: 0x2563eb,
+    cardFace: 0xeff6ff,
+    border: 0x60a5fa,
+    shadow: 0x1d4ed8,
+    label: "HIẾM",
+    textCol: 0x1d4ed8,
+  },
+  epic: {
+    bg: 0x9333ea,
+    cardFace: 0xfaf5ff,
+    border: 0xc084fc,
+    shadow: 0x7e22ce,
+    label: "SỬ THI",
+    textCol: 0x7e22ce,
+  },
   legendary: {
-    bg: 0xb45309,
-    border: 0xfacc15,
-    shadow: 0x78350f,
+    bg: 0xd97706,
+    cardFace: 0xfffbeb,
+    border: 0xfbbf24,
+    shadow: 0xb45309,
     label: "HUYỀN THOẠI",
+    textCol: 0xb45309,
   },
   corrupted: {
-    bg: 0x991b1b,
+    bg: 0xdc2626,
+    cardFace: 0xfef2f2,
     border: 0xf87171,
-    shadow: 0x450a0a,
+    shadow: 0x991b1b,
     label: "BỊ NGUYỀN",
+    textCol: 0x991b1b,
   },
 };
 
-const ACTION_LABELS: Record<string, { text: string; color: number }> = {
-  upgrade_module: { text: "⭐ LÊN CẤP SAO", color: 0xfacc15 },
-  stat_boost: { text: "✨ NÂNG CHỈ SỐ", color: 0x38bdf8 },
-  new_module: { text: "🆕 THÊM / HỢP NHẤT", color: 0x4ade80 },
+const ACTION_LABELS: Record<
+  string,
+  { text: string; color: number; bg: number }
+> = {
+  upgrade_module: { text: "⭐ LÊN CẤP SAO", color: 0xb45309, bg: 0xfef3c7 },
+  stat_boost: { text: "✨ NÂNG CHỈ SỐ", color: 0x0369a1, bg: 0xe0f2fe },
+  new_module: { text: "🆕 THÊM / GHÉP", color: 0x15803d, bg: 0xdcfce7 },
 };
 
 export class UpgradePanel extends Container {
@@ -41,10 +76,10 @@ export class UpgradePanel extends Container {
     super();
     this.visible = false;
 
-    // Semi-transparent backdrop
+    // Soft translucent dark backdrop
     this.bg = new Graphics();
     this.bg.rect(0, 0, GAME_WIDTH, GAME_HEIGHT);
-    this.bg.fill({ color: 0x000000, alpha: 0.78 });
+    this.bg.fill({ color: 0x0f172a, alpha: 0.65 });
     this.bg.eventMode = "static";
     this.addChild(this.bg);
 
@@ -53,7 +88,7 @@ export class UpgradePanel extends Container {
     this.modalContainer.y = GAME_HEIGHT / 2;
     this.addChild(this.modalContainer);
 
-    // ── Marth3 3D Dialog Card Base ──
+    // ── Bright 3D Dialog Card Base ──
     const cardW = 620;
     const cardH = 820;
 
@@ -61,30 +96,30 @@ export class UpgradePanel extends Container {
     const cardShadow = new Graphics();
     cardShadow
       .roundRect(-cardW / 2 + 6, -cardH / 2 + 16, cardW, cardH, 28)
-      .fill({ color: 0x000000, alpha: 0.45 });
+      .fill({ color: 0x000000, alpha: 0.35 });
     this.modalContainer.addChild(cardShadow);
 
     // 2. Thick 3D Cyan/Blue Border Base
     const borderBg = new Graphics();
     borderBg
       .roundRect(-cardW / 2, -cardH / 2 + 8, cardW, cardH, 28)
-      .fill(0x004466);
+      .fill(0x0284c7);
     borderBg
       .roundRect(-cardW / 2, -cardH / 2, cardW, cardH, 28)
-      .fill(0x0284c7)
+      .fill(0x38bdf8)
       .stroke({ color: 0xffffff, width: 4.5 });
     this.modalContainer.addChild(borderBg);
 
-    // 3. Bright Cream Card Face
+    // 3. Bright Clean White Card Face
     const cardFace = new Graphics();
     cardFace
       .roundRect(-cardW / 2 + 14, -cardH / 2 + 14, cardW - 28, cardH - 28, 20)
-      .fill(0xf8fafc);
+      .fill(0xffffff);
     this.modalContainer.addChild(cardFace);
 
     // 4. Floating 3D Title Ribbon
-    const ribbonW = 360;
-    const ribbonH = 68;
+    const ribbonW = 380;
+    const ribbonH = 70;
     const ribbonY = -cardH / 2;
 
     const ribbon = new Graphics();
@@ -103,14 +138,14 @@ export class UpgradePanel extends Container {
         ribbonH * 0.4,
         12,
       )
-      .fill({ color: 0xffffff, alpha: 0.3 });
+      .fill({ color: 0xffffff, alpha: 0.35 });
     this.modalContainer.addChild(ribbon);
 
     const titleText = new Text({
-      text: "⬆ LÊN CẤP!",
+      text: "✨ LÊN CẤP ĐOÀN XE!",
       style: {
         fontFamily: "Be Vietnam Pro, sans-serif",
-        fontSize: 30,
+        fontSize: 28,
         fontWeight: "900",
         fill: 0xffffff,
         stroke: { color: 0x78350f, width: 4 },
@@ -123,7 +158,7 @@ export class UpgradePanel extends Container {
 
     // Subtitle
     const subText = new Text({
-      text: "Chọn 1 nâng cấp để gia tăng hỏa lực đoàn xe",
+      text: "Chọn 1 nâng cấp để gia tăng hỏa lực chiến xa",
       style: {
         fontFamily: "Be Vietnam Pro, sans-serif",
         fontSize: 18,
@@ -167,24 +202,24 @@ export class UpgradePanel extends Container {
         .fill(theme.shadow);
       optBtn.addChildAt(shadow, 0);
 
-      // 2. Card Body
+      // 2. Bright Card Body (Vibrant Tinted Face)
       const body = new Graphics();
       body
         .roundRect(-cardW / 2, -cardH / 2, cardW, cardH, 20)
-        .fill(theme.bg)
-        .stroke({ color: 0xffffff, width: 3.5 });
+        .fill(theme.cardFace)
+        .stroke({ color: theme.border, width: 3.5 });
 
       // Gloss sheen on top
       body
         .roundRect(-cardW / 2 + 8, -cardH / 2 + 6, cardW - 16, 42, 14)
-        .fill({ color: 0xffffff, alpha: 0.12 });
+        .fill({ color: 0xffffff, alpha: 0.6 });
       content.addChild(body);
 
       // 3. Top Badges Row: Rarity Badge + Action Type Badge
       const rarityBadge = new Graphics();
       rarityBadge
         .roundRect(-cardW / 2 + 16, -cardH / 2 + 14, 90, 24, 12)
-        .fill(theme.border)
+        .fill(theme.bg)
         .stroke({ color: 0xffffff, width: 1.5 });
       content.addChild(rarityBadge);
 
@@ -206,8 +241,8 @@ export class UpgradePanel extends Container {
       const actionBadge = new Graphics();
       actionBadge
         .roundRect(-cardW / 2 + 114, -cardH / 2 + 14, 145, 24, 12)
-        .fill(0x0f172a)
-        .stroke({ color: actionInfo.color, width: 1.5 });
+        .fill(actionInfo.bg)
+        .stroke({ color: theme.border, width: 1.5 });
       content.addChild(actionBadge);
 
       const actionText = new Text({
@@ -231,8 +266,7 @@ export class UpgradePanel extends Container {
           fontFamily: "Be Vietnam Pro, sans-serif",
           fontSize: 13,
           fontWeight: "900",
-          fill: 0xfacc15,
-          stroke: { color: 0x000000, width: 2 },
+          fill: theme.textCol,
         },
       });
       scopeText.anchor.set(1, 0.5);
@@ -240,15 +274,14 @@ export class UpgradePanel extends Container {
       scopeText.y = -cardH / 2 + 26;
       content.addChild(scopeText);
 
-      // 5. Upgrade Name
+      // 5. Upgrade Name (Crisp, High-Contrast Dark Sapphire)
       const nameText = new Text({
         text: upgrade.name,
         style: {
           fontFamily: "Be Vietnam Pro, sans-serif",
           fontSize: 24,
           fontWeight: "900",
-          fill: 0xffffff,
-          stroke: { color: 0x000000, width: 3 },
+          fill: 0x0f172a,
         },
       });
       nameText.anchor.set(0, 0.5);
@@ -256,14 +289,14 @@ export class UpgradePanel extends Container {
       nameText.y = -cardH / 2 + 64;
       content.addChild(nameText);
 
-      // 6. Description Text
+      // 6. Description Text (Clear, High-Contrast Slate)
       const descText = new Text({
         text: upgrade.description,
         style: {
           fontFamily: "Be Vietnam Pro, sans-serif",
           fontSize: 17,
           fontWeight: "600",
-          fill: 0xf1f5f9,
+          fill: 0x334155,
           wordWrap: true,
           wordWrapWidth: cardW - 36,
           lineHeight: 22,

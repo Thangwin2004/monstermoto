@@ -20,10 +20,10 @@ export class RoadSystem {
   constructor() {
     this.container = new Container();
 
-    // ── 1. Outer Desert Canyon Cliff Terrain (Red & Ochre Clay) ──
+    // ── 1. Outer Desert Canyon Cliff Terrain (Bright Sunny Golden Sandstone) ──
     const leftOuter = new Graphics();
     leftOuter.rect(0, 0, ROAD_LEFT - 14, GAME_HEIGHT);
-    leftOuter.fill(0x7c2d12); // Red desert canyon rock
+    leftOuter.fill(0xb45309); // Sunny golden sandstone
     this.container.addChild(leftOuter);
 
     const rightOuter = new Graphics();
@@ -33,7 +33,7 @@ export class RoadSystem {
       GAME_WIDTH - ROAD_RIGHT - 14,
       GAME_HEIGHT,
     );
-    rightOuter.fill(0x7c2d12);
+    rightOuter.fill(0xb45309);
     this.container.addChild(rightOuter);
 
     // Scrolling Desert Cacti & Canyon Boulders
@@ -68,32 +68,32 @@ export class RoadSystem {
       });
     }
 
-    // ── 2. Desert Dirt & Sand Shoulders (Warm Orange Sand) ──
+    // ── 2. Desert Dirt & Sand Shoulders (Vibrant Golden Sand) ──
     const leftShoulder = new Graphics();
     leftShoulder.rect(ROAD_LEFT - 14, 0, 14, GAME_HEIGHT);
-    leftShoulder.fill(0xc2410c);
+    leftShoulder.fill(0xd97706);
     this.container.addChild(leftShoulder);
 
     const rightShoulder = new Graphics();
     rightShoulder.rect(ROAD_RIGHT, 0, 14, GAME_HEIGHT);
-    rightShoulder.fill(0xc2410c);
+    rightShoulder.fill(0xd97706);
     this.container.addChild(rightShoulder);
 
-    // ── 3. Dark Asphalt Canyon Highway ──
+    // ── 3. Clean Highway Asphalt (Bright Slate) ──
     const roadBg = new Graphics();
     roadBg.rect(ROAD_LEFT, 0, ROAD_WIDTH, GAME_HEIGHT);
-    roadBg.fill(0x18181b);
+    roadBg.fill(0x334155);
     this.container.addChild(roadBg);
 
-    // ── 4. Solid Yellow Edge Lines ──
+    // ── 4. Solid Sunshine Yellow Edge Lines ──
     const leftEdge = new Graphics();
     leftEdge.rect(ROAD_LEFT, 0, 4, GAME_HEIGHT);
-    leftEdge.fill(0xf59e0b);
+    leftEdge.fill(0xfbbf24);
     this.container.addChild(leftEdge);
 
     const rightEdge = new Graphics();
     rightEdge.rect(ROAD_RIGHT - 4, 0, 4, GAME_HEIGHT);
-    rightEdge.fill(0xf59e0b);
+    rightEdge.fill(0xfbbf24);
     this.container.addChild(rightEdge);
 
     // ── 5. Center Dashed Line (White, Scrolling) ──
@@ -103,7 +103,7 @@ export class RoadSystem {
     for (let i = 0; i < numDashes; i++) {
       const dash = new Graphics();
       dash.roundRect(-3, 0, 6, dashH, 3);
-      dash.fill({ color: 0xffffff, alpha: 0.65 });
+      dash.fill({ color: 0xffffff, alpha: 0.85 });
       dash.x = GAME_WIDTH / 2;
       const startY = i * dashSpacing - dashSpacing;
 

@@ -74,50 +74,50 @@ export const BOSS_HP_BAR_Y = 40;
 
 // ─── Colors ───
 export const COLORS = {
-    // Module type colors
-    engine: 0x3366cc,
-    weapon: 0xcc3333,
-    defense: 0x888899,
-    support: 0x33aa66,
-    fire: 0xff6600,
-    electric: 0x00ccff,
+  // Module type colors
+  engine: 0x3366cc,
+  weapon: 0xcc3333,
+  defense: 0x888899,
+  support: 0x33aa66,
+  fire: 0xff6600,
+  electric: 0x00ccff,
 
-    // Rarity
-    common: 0xaaaaaa,
-    rare: 0x4488ff,
-    epic: 0xaa44ff,
-    legendary: 0xffaa00,
-    corrupted: 0xff0044,
+  // Rarity
+  common: 0xaaaaaa,
+  rare: 0x4488ff,
+  epic: 0xaa44ff,
+  legendary: 0xffaa00,
+  corrupted: 0xff0044,
 
-    // UI
-    hpGreen: 0x44cc44,
-    hpYellow: 0xcccc00,
-    hpRed: 0xcc2222,
-    xpBar: 0x44aaff,
-    scrap: 0xffffbb,
-    road: 0x333333,
-    roadLine: 0xffffff,
-    roadEdge: 0xaaaaaa,
+  // UI
+  hpGreen: 0x44cc44,
+  hpYellow: 0xcccc00,
+  hpRed: 0xcc2222,
+  xpBar: 0x44aaff,
+  scrap: 0xffffbb,
+  road: 0x333333,
+  roadLine: 0xffffff,
+  roadEdge: 0xaaaaaa,
 
-    // Effects
-    burn: 0xff4400,
-    shock: 0x00eeff,
-    poison: 0x44ff00,
-    shield: 0x88bbff,
+  // Effects
+  burn: 0xff4400,
+  shock: 0x00eeff,
+  poison: 0x44ff00,
+  shield: 0x88bbff,
 } as const;
 
 // ─── Audio Keys ───
 export const AUDIO = {
-    bgmMenu: 'bgm_menu',
-    bgmGame: 'bgm_game',
-    sfxButton: 'sfx_button',
-    sfxHit: 'sfx_hit',
-    sfxKill: 'sfx_kill',
-    sfxLevelUp: 'sfx_levelup',
-    sfxModuleDestroy: 'sfx_module_destroy',
-    sfxBossSpawn: 'sfx_boss_spawn',
-    sfxScrapCollect: 'sfx_scrap',
-    sfxShoot: 'sfx_shoot',
-    sfxExplosion: 'sfx_explosion',
-    sfxShake: 'sfx_shake',
+  bgmMenu: "bgm_menu",
+  bgmGame: "bgm_game",
+  sfxButton: "sfx_button",
+  sfxHit: "sfx_hit",
+  sfxKill: "sfx_kill",
+  sfxLevelUp: "sfx_levelup",
+  sfxModuleDestroy: "sfx_module_destroy",
+  sfxBossSpawn: "sfx_boss_spawn",
+  sfxScrapCollect: "sfx_scrap",
+  sfxShoot: "sfx_shoot",
+  sfxExplosion: "sfx_explosion",
+  sfxShake: "sfx_shake",
 } as const;

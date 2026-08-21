@@ -1,91 +1,88 @@
-import { Application, Container } from 'pixi.js';
-import { EventBus } from '../utils/EventBus';
+import { Application, Container } from "pixi.js";
+import { EventBus } from "../utils/EventBus";
 
 export interface Scene extends Container {
-    init?(): Promise<void> | void;
-    start?(): void;
-    stop?(): void;
-    update?(deltaTime: number): void;
-    resize?(width: number, height: number): void;
+  init?(): Promise<void> | void;
+  start?(): void;
+  stop?(): void;
+  update?(deltaTime: number): void;
+  resize?(width: number, height: number): void;
 }
 
 type SceneFactory = () => Scene;
 
 export class SceneManager {
-    private static app: Application;
-    private static gameContainer: Container;
-    private static currentScene: Scene | null = null;
-    private static currentSceneName: string = '';
-    private static factories: Map<string, SceneFactory> = new Map();
+  private static app: Application;
+  private static gameContainer: Container;
+  private static currentScene: Scene | null = null;
+  private static currentSceneName: string = "";
+  private static factories: Map<string, SceneFactory> = new Map();
 
-    public static initialize(app: Application, gameContainer: Container) {
-        SceneManager.app = app;
-        SceneManager.gameContainer = gameContainer;
+  public static initialize(app: Application, gameContainer: Container) {
+    SceneManager.app = app;
+    SceneManager.gameContainer = gameContainer;
 
-        app.ticker.add((ticker) => {
-            if (this.currentScene?.update) {
-                // Clamp deltaTime to avoid huge jumps after tab resume
-                const dt = Math.min(ticker.deltaTime, 3);
-                this.currentScene.update(dt);
-            }
-        });
+    app.ticker.add((ticker) => {
+      if (this.currentScene?.update) {
+        // Clamp deltaTime to avoid huge jumps after tab resume
+        const dt = Math.min(ticker.deltaTime, 3);
+        this.currentScene.update(dt);
+      }
+    });
+  }
+
+  /** Register a factory function that creates a fresh scene instance */
+  public static registerFactory(name: string, factory: SceneFactory) {
+    this.factories.set(name, factory);
+  }
+
+  public static async switchScene(name: string) {
+    const factory = this.factories.get(name);
+    if (!factory) {
+      console.error(`Scene factory "${name}" not found!`);
+      return;
     }
 
-    /** Register a factory function that creates a fresh scene instance */
-    public static registerFactory(name: string, factory: SceneFactory) {
-        this.factories.set(name, factory);
+    // Tear down current scene
+    if (this.currentScene) {
+      if (this.currentScene.stop) this.currentScene.stop();
+      this.gameContainer.removeChild(this.currentScene);
+      this.currentScene.destroy({ children: true });
     }
 
-    public static async switchScene(name: string) {
-        const factory = this.factories.get(name);
-        if (!factory) {
-            console.error(`Scene factory "${name}" not found!`);
-            return;
-        }
+    // Clear events between scenes to avoid stale handlers
+    EventBus.clear();
 
-        // Tear down current scene
-        if (this.currentScene) {
-            if (this.currentScene.stop) this.currentScene.stop();
-            this.gameContainer.removeChild(this.currentScene);
-            this.currentScene.destroy({ children: true });
-        }
+    // Create fresh scene
+    const nextScene = factory();
+    this.currentScene = nextScene;
+    this.currentSceneName = name;
 
-        // Clear events between scenes to avoid stale handlers
-        EventBus.clear();
+    // Add to stage BEFORE init so scene is visible during loading
+    this.gameContainer.addChild(nextScene);
 
-        // Create fresh scene
-        const nextScene = factory();
-        this.currentScene = nextScene;
-        this.currentSceneName = name;
-
-        // Add to stage BEFORE init so scene is visible during loading
-        this.gameContainer.addChild(nextScene);
-
-        if (nextScene.init) {
-            await nextScene.init();
-        }
-
-        if (nextScene.start) {
-            nextScene.start();
-        }
-
-        this.resize(
-            this.app.screen.width,
-            this.app.screen.height
-        );
+    if (nextScene.init) {
+      await nextScene.init();
     }
 
-    public static resize(width: number, height: number) {
-        if (this.currentScene?.resize) {
-            this.currentScene.resize(width, height);
-        }
+    if (nextScene.start) {
+      nextScene.start();
     }
 
-    public static getApp(): Application {
-        return this.app;
-    }
+    this.resize(this.app.screen.width, this.app.screen.height);
+  }
 
-    public static getCurrentSceneName(): string {
-        return this.currentSceneName;
+  public static resize(width: number, height: number) {
+    if (this.currentScene?.resize) {
+      this.currentScene.resize(width, height);
     }
+  }
+
+  public static getApp(): Application {
+    return this.app;
+  }
+
+  public static getCurrentSceneName(): string {
+    return this.currentSceneName;
+  }
 }

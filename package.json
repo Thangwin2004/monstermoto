@@ -4,10 +4,11 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "start": "npm run dev",
-    "build": "npm run lint && tsc && vite build",
+    "start": "pnpm run dev",
+    "build": "tsc && vite build",
     "postbuild": "node scripts/prune-unused-public-assets.mjs",
     "lint": "eslint .",
+    "format": "prettier --write .",
     "dev": "vite"
   },
   "dependencies": {

@@ -44,7 +44,8 @@ export function installFocusPause({
   };
 
   const resumeFor = (reason: string): void => {
-    if (destroyed || !pauseReasons.delete(reason) || pauseReasons.size > 0) return;
+    if (destroyed || !pauseReasons.delete(reason) || pauseReasons.size > 0)
+      return;
     const resumeNow = shouldResume;
     shouldResume = false;
     safelyCall(resumeAudio);
@@ -53,42 +54,46 @@ export function installFocusPause({
   };
 
   const handleVisibility = (): void => {
-    if (document.visibilityState === 'hidden') pauseFor('visibility');
-    else resumeFor('visibility');
+    if (document.visibilityState === "hidden") pauseFor("visibility");
+    else resumeFor("visibility");
   };
-  const handleBlur = (): void => pauseFor('focus');
-  const handleFocus = (): void => resumeFor('focus');
-  const handlePageHide = (): void => pauseFor('page');
-  const handlePageShow = (): void => resumeFor('page');
-  const viewportObserver = typeof IntersectionObserver === 'undefined'
-    ? null
-    : new IntersectionObserver(([entry]) => {
-        if (entry?.isIntersecting && entry.intersectionRatio >= 0.15) {
-          resumeFor('viewport');
-        } else {
-          pauseFor('viewport');
-        }
-      }, { threshold: [0, 0.15] });
+  const handleBlur = (): void => pauseFor("focus");
+  const handleFocus = (): void => resumeFor("focus");
+  const handlePageHide = (): void => pauseFor("page");
+  const handlePageShow = (): void => resumeFor("page");
+  const viewportObserver =
+    typeof IntersectionObserver === "undefined"
+      ? null
+      : new IntersectionObserver(
+          ([entry]) => {
+            if (entry?.isIntersecting && entry.intersectionRatio >= 0.15) {
+              resumeFor("viewport");
+            } else {
+              pauseFor("viewport");
+            }
+          },
+          { threshold: [0, 0.15] },
+        );
 
-  document.addEventListener('visibilitychange', handleVisibility);
-  window.addEventListener('blur', handleBlur);
-  window.addEventListener('focus', handleFocus);
-  window.addEventListener('pagehide', handlePageHide);
-  window.addEventListener('pageshow', handlePageShow);
+  document.addEventListener("visibilitychange", handleVisibility);
+  window.addEventListener("blur", handleBlur);
+  window.addEventListener("focus", handleFocus);
+  window.addEventListener("pagehide", handlePageHide);
+  window.addEventListener("pageshow", handlePageShow);
   viewportObserver?.observe(document.documentElement);
 
-  if (document.visibilityState === 'hidden') pauseFor('visibility');
+  if (document.visibilityState === "hidden") pauseFor("visibility");
 
   return {
-    pauseFromHost: () => pauseFor('host'),
-    resumeFromHost: () => resumeFor('host'),
+    pauseFromHost: () => pauseFor("host"),
+    resumeFromHost: () => resumeFor("host"),
     destroy: () => {
       destroyed = true;
-      document.removeEventListener('visibilitychange', handleVisibility);
-      window.removeEventListener('blur', handleBlur);
-      window.removeEventListener('focus', handleFocus);
-      window.removeEventListener('pagehide', handlePageHide);
-      window.removeEventListener('pageshow', handlePageShow);
+      document.removeEventListener("visibilitychange", handleVisibility);
+      window.removeEventListener("blur", handleBlur);
+      window.removeEventListener("focus", handleFocus);
+      window.removeEventListener("pagehide", handlePageHide);
+      window.removeEventListener("pageshow", handlePageShow);
       viewportObserver?.disconnect();
       pauseReasons.clear();
     },

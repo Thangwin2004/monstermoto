@@ -88,9 +88,9 @@ export class CombatSystem {
       if (flameLvl > 0) {
         module.flameCooldownTimer -= dtSec;
         if (module.flameCooldownTimer <= 0) {
-          module.flameCooldownTimer = Math.max(0.05, 0.09 - flameLvl * 0.01);
+          module.flameCooldownTimer = Math.max(0.12, 0.2 - flameLvl * 0.015);
           const flameDmg = Math.round(
-            (8 + flameLvl * 6) * module.stats.damageMultiplier,
+            (16 + flameLvl * 10) * module.stats.damageMultiplier,
           );
           const burnChance = Math.min(1.0, 0.35 + flameLvl * 0.15);
           const aoe = 45 + flameLvl * 10;
@@ -134,9 +134,9 @@ export class CombatSystem {
       if (teslaLvl > 0) {
         module.teslaCooldownTimer -= dtSec;
         if (module.teslaCooldownTimer <= 0) {
-          module.teslaCooldownTimer = Math.max(0.2, 0.42 - teslaLvl * 0.05);
+          module.teslaCooldownTimer = Math.max(0.45, 0.85 - teslaLvl * 0.08);
           const teslaDmg = Math.round(
-            (28 + teslaLvl * 16) * module.stats.damageMultiplier,
+            (48 + teslaLvl * 24) * module.stats.damageMultiplier,
           );
           const teslaTarget = this.findTarget(mPos, 520);
 

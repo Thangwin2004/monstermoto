@@ -789,13 +789,11 @@ export class Module extends Container {
       if (shieldLvl > 0) {
         const pulse = 1 + Math.sin(this.animTime * 4) * 0.05;
         const shieldR = (MODULE_SIZE / 2 + 14 + shieldLvl * 2) * pulse;
-        this.fxLayer
-          .circle(0, 0, shieldR)
-          .stroke({
-            color: 0x38bdf8,
-            width: 2 + shieldLvl * 0.5,
-            alpha: 0.6 + Math.sin(this.animTime * 6) * 0.2,
-          });
+        this.fxLayer.circle(0, 0, shieldR).stroke({
+          color: 0x38bdf8,
+          width: 2 + shieldLvl * 0.5,
+          alpha: 0.6 + Math.sin(this.animTime * 6) * 0.2,
+        });
       }
       if (this.getWeaponLevel("tesla") > 0) {
         if (Math.random() < 0.25) {

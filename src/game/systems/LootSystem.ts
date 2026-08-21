@@ -33,26 +33,26 @@ export class LootSystem {
     }, 30);
   }
 
-  /** Roll for powerup crate drops on enemy kill (22% regular, 60% elite) */
+  /** Roll for powerup crate drops on enemy kill (12% regular, 45% elite) */
   onEnemyDefeated(x: number, y: number, isElite: boolean = false) {
     this.totalKills++;
-    this.gainXp(isElite ? 40 : 18);
+    this.gainXp(isElite ? 28 : 10);
 
-    const dropChance = isElite ? 0.65 : 0.22;
+    const dropChance = isElite ? 0.45 : 0.12;
     if (!gameRng.chance(dropChance)) return;
 
     // Roll crate type
     const roll = Math.random();
     let type: PickupType = "buff_rapid";
 
-    if (roll < 0.12) {
-      type = "star_upgrade"; // ⭐ Rare Star Upgrade
-    } else if (roll < 0.38) {
-      type = "buff_rapid"; // ⚡ Rapid Fire 10s
+    if (roll < 0.04) {
+      type = "star_upgrade"; // ⭐ Extremely rare Star Upgrade
+    } else if (roll < 0.35) {
+      type = "buff_rapid"; // ⚡ Rapid Fire 8s
     } else if (roll < 0.6) {
-      type = "buff_shield"; // 🛡️ Invincible Shield 8s
-    } else if (roll < 0.82) {
-      type = "buff_heal"; // 💊 Repair Kit (+100 HP)
+      type = "buff_shield"; // 🛡️ Invincible Shield 6s
+    } else if (roll < 0.85) {
+      type = "buff_heal"; // 💊 Repair Kit (+80 HP)
     } else {
       type = "buff_nuke"; // 💣 Screen Nuke
     }
@@ -66,18 +66,17 @@ export class LootSystem {
   gainXp(amount: number) {
     this.xp += amount;
 
-    const required = this.getXpRequired();
-    if (this.xp >= required) {
+    let required = this.getXpRequired();
+    while (this.xp >= required) {
       this.xp -= required;
       this.level++;
       EventBus.emit("level:up", { level: this.level });
+      required = this.getXpRequired();
     }
   }
 
   getXpRequired(): number {
-    return (
-      XP_PER_LEVEL_BASE * 1.1 + (this.level - 1) * (XP_PER_LEVEL_GROWTH * 1.1)
-    );
+    return XP_PER_LEVEL_BASE + (this.level - 1) * XP_PER_LEVEL_GROWTH;
   }
 
   getXpRatio(): number {

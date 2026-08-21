@@ -27,10 +27,10 @@ export const ModuleDefinitions: Record<string, ModuleData> = {
     color: 0xaa3333,
     emoji: "🔫",
     attack: {
-      damage: 14,
-      cooldown: 0.14,
+      damage: 26,
+      cooldown: 0.28, // Slower, rhythmic firing rate (was 0.14)
       range: 600,
-      projectileSpeed: 1100,
+      projectileSpeed: 1050,
       projectileCount: 1,
     },
   },
@@ -46,8 +46,8 @@ export const ModuleDefinitions: Record<string, ModuleData> = {
     color: 0xff6600,
     emoji: "🔥",
     attack: {
-      damage: 8,
-      cooldown: 0.06,
+      damage: 18,
+      cooldown: 0.15, // Paced flame bursts (was 0.06)
       range: 280,
       projectileSpeed: 450,
       aoeRadius: 75,
@@ -65,8 +65,8 @@ export const ModuleDefinitions: Record<string, ModuleData> = {
     color: 0x00ccff,
     emoji: "⚡",
     attack: {
-      damage: 32,
-      cooldown: 0.45,
+      damage: 58,
+      cooldown: 0.75, // Strategic high-voltage strike (was 0.45)
       range: 450,
       chainTargets: 3,
     },

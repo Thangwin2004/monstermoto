@@ -38,8 +38,8 @@ export const HP_SCALE_PER_MINUTE = 0.15; // +15% enemy HP per minute
 
 // ─── XP / Level ───
 export const XP_PER_KILL = 10;
-export const XP_PER_LEVEL_BASE = 80;
-export const XP_PER_LEVEL_GROWTH = 20; // each level needs +20 more XP
+export const XP_PER_LEVEL_BASE = 240; // Increased base XP for paced roguelite progression
+export const XP_PER_LEVEL_GROWTH = 110; // Steeper scaling per level
 export const UPGRADE_CHOICES = 3;
 
 // ─── Scrap ───

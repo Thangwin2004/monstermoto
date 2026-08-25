@@ -32,56 +32,92 @@ export class UpgradeSystem {
     );
     const engine = convoy.getEngine();
 
-    // Build weighted pool & filter out maxed upgrades
+    const mgLvl = warRig?.getWeaponLevel("machine_gun") ?? 0;
+    const flameLvl = warRig?.getWeaponLevel("flamethrower") ?? 0;
+    const teslaLvl = warRig?.getWeaponLevel("tesla") ?? 0;
+    const shieldLvl = Math.max(
+      engine?.getWeaponLevel("shield") ?? 0,
+      warRig?.getWeaponLevel("shield") ?? 0,
+    );
+
+    const countChosen = (id: string) =>
+      this.chosenUpgrades.filter((u) => u.id === id).length;
+
+    // Build weighted pool & strictly enforce maxPicks limits
     const weighted = available
       .filter((u) => {
+        // 1. Max picks filter: once chosen maxPicks times, NEVER appear again!
+        const maxLimit = u.maxPicks ?? (u.actionType === "stat_boost" ? 3 : 1);
+        if (countChosen(u.id) >= maxLimit) return false;
+
         // Battery is one-time only
         if (u.id === "card_get_battery" && warRig?.attachments.has("battery"))
           return false;
 
-        // Star upgrades max out at level 5
-        if (
-          u.id === "star_machine_gun" &&
-          (warRig?.getWeaponLevel("machine_gun") ?? 0) >= 5
-        )
-          return false;
-        if (
-          u.id === "star_flamethrower" &&
-          (warRig?.getWeaponLevel("flamethrower") ?? 0) >= 5
-        )
-          return false;
-        if (
-          u.id === "star_tesla" &&
-          (warRig?.getWeaponLevel("tesla") ?? 0) >= 5
-        )
-          return false;
-        if (
-          u.id === "star_shield" &&
-          ((engine?.getWeaponLevel("shield") ?? 0) >= 5 ||
-            (warRig?.getWeaponLevel("shield") ?? 0) >= 5)
-        )
-          return false;
+        // 2. Unlock cards ONLY appear when the weapon is NOT owned yet (level === 0)
+        if (u.id === "card_get_flame" && flameLvl > 0) return false;
+        if (u.id === "card_get_tesla" && teslaLvl > 0) return false;
+        if (u.id === "card_get_shield" && shieldLvl > 0) return false;
 
-        // Add module cards max out at level 5
-        if (
-          u.id === "card_get_flame" &&
-          (warRig?.getWeaponLevel("flamethrower") ?? 0) >= 5
-        )
+        // 3. Star upgrades ONLY appear when the weapon IS ALREADY OWNED (level >= 1) and not maxed (< 5)
+        if (u.id === "star_machine_gun" && (mgLvl < 1 || mgLvl >= 5))
           return false;
-        if (
-          u.id === "card_get_tesla" &&
-          (warRig?.getWeaponLevel("tesla") ?? 0) >= 5
-        )
+        if (u.id === "star_flamethrower" && (flameLvl < 1 || flameLvl >= 5))
           return false;
-        if (
-          u.id === "card_get_shield" &&
-          (engine?.getWeaponLevel("shield") ?? 0) >= 5
-        )
+        if (u.id === "star_tesla" && (teslaLvl < 1 || teslaLvl >= 5))
+          return false;
+        if (u.id === "star_shield" && (shieldLvl < 1 || shieldLvl >= 5))
           return false;
 
         return true;
       })
       .map((u) => {
+        // Deep copy and dynamically inject clear level / stack label
+        const customized: UpgradeDefinition = { ...u };
+        const curPicks = countChosen(u.id);
+        const maxLimit = u.maxPicks ?? (u.actionType === "stat_boost" ? 3 : 1);
+
+        // Stack counter for stackable stat boost cards
+        if (u.actionType === "stat_boost" && maxLimit > 1 && maxLimit < 90) {
+          customized.name = `${u.name} (Tầng ${curPicks + 1}/${maxLimit})`;
+        }
+
+        if (u.id === "star_machine_gun") {
+          const nextBullets = mgLvl + 1 + (warRig?.stats.extraProjectiles ?? 0);
+          customized.name = `⭐ Lên Sao Súng Máy (Cấp ${mgLvl + 1})`;
+          customized.targetLabel = `🔫 Súng Máy (Cấp ${mgLvl} ➔ ⭐ Cấp ${mgLvl + 1})`;
+          customized.description = `Nâng cấp Cấp ${mgLvl + 1}: Thêm +1 đường đạn (Tổng: ${nextBullets} tia đạn) & tăng +35% sát thương.`;
+        } else if (u.id === "star_flamethrower") {
+          const nextLvl = flameLvl + 1;
+          const perk =
+            nextLvl === 2
+              ? "Mở rộng tầm phun 340px, tăng +40% sát thương & thêm tàn lửa bốc cháy."
+              : nextLvl === 3
+                ? "Thêm vòi phun trung tâm siêu nạp (Vòm lửa 3 luồng quét sạch 3 làn đường)."
+                : nextLvl === 4
+                  ? "Bổ sung 2 luồng lửa quét chéo hai sườn xe (Tứ Hướng Phun Lửa)."
+                  : "Tiến hóa thành Lam Hỏa Plasma Hellfire: Biển lửa xanh quét sạch nửa màn hình!";
+          customized.name = `⭐ Lên Sao Phun Lửa (Cấp ${nextLvl})`;
+          customized.targetLabel = `🔥 Phun Lửa (Cấp ${flameLvl} ➔ ⭐ Cấp ${nextLvl})`;
+          customized.description = `Nâng cấp Cấp ${nextLvl}: ${perk}`;
+        } else if (u.id === "star_tesla") {
+          const nextLvl = teslaLvl + 1;
+          const perk =
+            nextLvl === 2
+              ? "Phóng đồng thời 2 tia sét độc lập vào 2 mục tiêu cùng lúc (Giật lan 3 quái)."
+              : nextLvl === 3
+                ? "Bắn 3 luồng sét cùng lúc + Phát sóng xung kích EMP bảo vệ xe."
+                : nextLvl === 4
+                  ? "Bắn 4 luồng sét giật chuỗi 5 quái mỗi tia (Giật 20+ quái đồng thời)."
+                  : "Tiến hóa Thiên Lôi Diệt Thế: Sét Vàng Kim 5 tia liên hoàn + Sấm Sét Nổ Tung!";
+          customized.name = `⭐ Lên Sao Tesla (Cấp ${nextLvl})`;
+          customized.targetLabel = `⚡ Tesla (Cấp ${teslaLvl} ➔ ⭐ Cấp ${nextLvl})`;
+          customized.description = `Nâng cấp Cấp ${nextLvl}: ${perk}`;
+        } else if (u.id === "star_shield") {
+          customized.name = `⭐ Lên Sao Khiên (Cấp ${shieldLvl + 1})`;
+          customized.targetLabel = `🛡️ Khiên (Cấp ${shieldLvl} ➔ ⭐ Cấp ${shieldLvl + 1})`;
+        }
+
         let weight = 1;
 
         // Rarity weight
@@ -90,26 +126,26 @@ export class UpgradeSystem {
             weight = 10;
             break;
           case "rare":
-            weight = 5;
+            weight = 6;
             break;
           case "epic":
-            weight = 2;
+            weight = 3;
             break;
           case "legendary":
-            weight = 0.5;
+            weight = 0.8;
             break;
           case "corrupted":
-            weight = 1;
+            weight = 1.2;
             break;
         }
 
-        // Tag synergy bonus: if convoy has matching tags, increase weight
+        // Tag synergy bonus
         if (u.requireTags) {
           const matchCount = u.requireTags.filter((t) => tags.has(t)).length;
-          weight *= 1 + matchCount * 0.5;
+          weight *= 1 + matchCount * 0.6;
         }
 
-        return { item: u, weight };
+        return { item: customized, weight };
       });
 
     if (weighted.length === 0) return [];

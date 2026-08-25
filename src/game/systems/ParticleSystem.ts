@@ -253,6 +253,68 @@ export class ParticleSystem {
     });
   }
 
+  /** Supercharged Blue/Purple Plasma Hellfire for Level 5 Flamethrower */
+  plasmaFlamePuff(x: number, y: number, vx: number, vy: number) {
+    const colors = [0x00f0ff, 0x38bdf8, 0xa855f7, 0xc084fc, 0xffffff];
+    const color = colors[Math.floor(Math.random() * colors.length)];
+    const life = 0.25 + Math.random() * 0.22;
+    this.particles.push({
+      x: x + (Math.random() - 0.5) * 12,
+      y: y + (Math.random() - 0.5) * 12,
+      vx: vx + (Math.random() - 0.5) * 50,
+      vy: vy + (Math.random() - 0.5) * 50,
+      life,
+      maxLife: life,
+      size: 12 + Math.random() * 12,
+      color,
+      alpha: 0.95,
+      decay: 1 / life,
+      shrink: true,
+    });
+  }
+
+  /** Expanding EMP Shockwave Ring for High-Tier Tesla Strikes */
+  empShockwave(x: number, y: number, radius: number = 80, color: number = 0x00f0ff) {
+    this.particles.push({
+      x,
+      y,
+      vx: 0,
+      vy: 0,
+      life: 0.28,
+      maxLife: 0.28,
+      size: radius,
+      color,
+      alpha: 1,
+      decay: 1 / 0.28,
+      shape: "ring",
+    });
+  }
+
+  /** Divine Thunder Strike Spark Burst on Target */
+  thunderStrike(x: number, y: number, color: number = 0xfacc15) {
+    // Vertical flash bolt indicator
+    this.lightningBolt(x, y - 220, x, y, color);
+    this.empShockwave(x, y, 45, color);
+    for (let i = 0; i < 10; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const spd = 140 + Math.random() * 120;
+      const life = 0.2 + Math.random() * 0.15;
+      this.particles.push({
+        x,
+        y,
+        vx: Math.cos(angle) * spd,
+        vy: Math.sin(angle) * spd,
+        life,
+        maxLife: life,
+        size: 4 + Math.random() * 3,
+        color: Math.random() < 0.5 ? 0xffffff : color,
+        alpha: 1,
+        decay: 1 / life,
+        shape: "spark",
+      });
+    }
+  }
+
   exhaustPuff(x: number, y: number, vx: number, vy: number) {
     const life = 0.35 + Math.random() * 0.25;
     this.particles.push({

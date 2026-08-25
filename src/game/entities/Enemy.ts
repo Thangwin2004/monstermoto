@@ -1,8 +1,23 @@
-import { Container, Graphics } from "pixi.js";
+import { Container, Graphics, GraphicsContext } from "pixi.js";
 import { EnemyDefinition, EnemyArchetype } from "../data/enemies";
 import { EventBus } from "../utils/EventBus";
 
 export type EnemyState = "approaching" | "attacking" | "leaping" | "dead";
+
+// Performance Cache: Share static GraphicsContext across all spawned enemies to eliminate GPU/CPU rebuilds
+const enemyContextCache = new Map<string, GraphicsContext>();
+const shadowContextCache = new Map<number, GraphicsContext>();
+
+function getShadowContext(radius: number): GraphicsContext {
+  const rounded = Math.round(radius);
+  if (!shadowContextCache.has(rounded)) {
+    const ctx = new GraphicsContext();
+    ctx.ellipse(0, rounded * 0.7, rounded * 0.9, rounded * 0.4)
+       .fill({ color: 0x000000, alpha: 0.45 });
+    shadowContextCache.set(rounded, ctx);
+  }
+  return shadowContextCache.get(rounded)!;
+}
 
 export class Enemy extends Container {
   public hp: number = 0;
@@ -111,22 +126,26 @@ export class Enemy extends Container {
     this.slowMultiplier = 1;
     this.leapProgress = 0;
 
-    // Setup drop shadow
-    this.shadow.clear();
-    this.shadow
-      .ellipse(0, def.radius * 0.7, def.radius * 0.9, def.radius * 0.4)
-      .fill({ color: 0x000000, alpha: 0.45 });
+    // Setup drop shadow via cached context (Instant 0ms)
+    this.shadow.context = getShadowContext(def.radius);
 
-    // Render comic monster artwork
-    this.renderMonsterGraphic(def);
+    // Render / bind cached comic monster artwork (Instant 0ms)
+    this.bindMonsterGraphic(def);
     this.updateHpBar();
   }
 
-  /** 🎨 Draw Comic / Mad Max Shadow Wasteland Monsters */
-  private renderMonsterGraphic(def: EnemyDefinition) {
-    this.monsterBody.clear();
+  /** 🎨 Bind Cached Comic Monster GraphicsContext */
+  private bindMonsterGraphic(def: EnemyDefinition) {
+    if (!enemyContextCache.has(def.id)) {
+      const g = new GraphicsContext();
+      this.drawMonsterGraphicToContext(g, def);
+      enemyContextCache.set(def.id, g);
+    }
+    this.monsterBody.context = enemyContextCache.get(def.id)!;
+  }
+
+  private drawMonsterGraphicToContext(g: GraphicsContext, def: EnemyDefinition) {
     const r = def.radius;
-    const g = this.monsterBody;
 
     switch (def.id) {
       case "runner": {

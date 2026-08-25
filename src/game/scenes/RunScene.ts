@@ -17,17 +17,21 @@ import { EventBus } from "../utils/EventBus";
 import { AudioMixer } from "../utils/AudioMixer";
 import { RunState } from "../utils/RunState";
 import { resetRng } from "../utils/RNG";
+import { winkGame, type WinkRound } from "../../integrations/wink/client";
+import { PICKUP_CONFIGS, type PickupType } from "../entities/Pickup";
 import {
   ROAD_SPEED,
   HP_SCALE_PER_MINUTE,
   RUN_BOSS_TIME,
   GAME_WIDTH,
   GAME_HEIGHT,
+  BOSS_HP_BAR_Y,
 } from "../constants";
 
 export class RunScene extends Container implements Scene {
   // Layers
   private gameLayer: Container;
+  private currentWinkRound: WinkRound | null = null;
   private uiLayer: Container;
 
   // Systems
@@ -178,22 +182,34 @@ export class RunScene extends Container implements Scene {
 
     // Run ended
     EventBus.on("run:ended", (data) => {
-      if (this.isGameOver) return;
-      this.isGameOver = true;
+       if (this.isGameOver) return;
+       this.isGameOver = true;
 
-      RunState.current.victory = data.victory;
-      RunState.current.distance = this.distanceMeters;
-      RunState.current.kills = this.lootSystem.totalKills;
-      RunState.current.level = this.lootSystem.level;
-      RunState.current.scrap = this.lootSystem.totalKills * 5;
-      RunState.current.runTime = this.runTime;
+       RunState.current.victory = data.victory;
+       RunState.current.distance = this.distanceMeters;
+       RunState.current.kills = this.lootSystem.totalKills;
+       RunState.current.level = this.lootSystem.level;
+       RunState.current.scrap = this.lootSystem.totalKills * 5;
+       RunState.current.runTime = this.runTime;
 
-      RunState.saveBestScore(RunState.current.getScore());
+       RunState.saveBestScore(RunState.current.getScore());
 
-      setTimeout(() => {
-        SceneManager.switchScene("GameOverScene");
-      }, 800);
-    });
+       if (this.currentWinkRound) {
+         winkGame.completeRound(this.currentWinkRound, {
+           playDurationMs: Math.floor(this.runTime * 1000),
+           metadata: {
+             victory: data.victory,
+             kills: this.lootSystem.totalKills,
+             level: this.lootSystem.level,
+             distance: Math.floor(this.distanceMeters),
+           },
+         });
+       }
+
+       setTimeout(() => {
+         SceneManager.switchScene("GameOverScene");
+       }, 800);
+     });
 
     // Enemy killed — light shake
     EventBus.on("enemy:killed", () => {
@@ -202,6 +218,7 @@ export class RunScene extends Container implements Scene {
   }
 
   start() {
+    this.currentWinkRound = winkGame.startRound();
     AudioMixer.playBGM("bgm_game");
   }
 
@@ -212,21 +229,25 @@ export class RunScene extends Container implements Scene {
     this.runTime += dtSec;
     this.distanceMeters += ROAD_SPEED * dtSec * 0.05;
 
-    // Dynamic Distance-based Scaling (Điều chỉnh độ khó mượt mà, công bằng và hấp dẫn)
-    const difficultyLevel = Math.min(
-      8,
-      Math.floor(this.distanceMeters / 350) + 1,
+    // Dynamic Distance & Time Scaling (Độ khó tăng liên tục, nghẹt thở và kịch tính ở cự ly xa)
+    const distKm = this.distanceMeters / 1000;
+    const difficultyLevel = Math.max(
+      1,
+      Math.floor(this.distanceMeters / 250) + 1,
     );
     const hpScale =
-      1 + (this.distanceMeters / 600) * 0.25 + (this.runTime / 180) * 0.15;
-    const speedScale = 1 + Math.min(0.3, (this.distanceMeters / 1200) * 0.15);
+      1 +
+      distKm * 2.2 +
+      Math.pow(distKm, 1.45) * 0.85 +
+      (this.runTime / 120) * 0.4;
+    const speedScale = 1 + Math.min(0.65, distKm * 0.12);
     const densityMultiplier = Math.min(
-      2.2,
-      1 + (this.distanceMeters / 600) * 0.3,
+      4.2,
+      1 + distKm * 0.65,
     );
     const eliteChance = Math.min(
-      0.25,
-      0.03 + (this.distanceMeters / 1000) * 0.08,
+      0.70,
+      0.04 + distKm * 0.13,
     );
 
     this.enemySystem.setDifficulty(
@@ -265,10 +286,19 @@ export class RunScene extends Container implements Scene {
 
     // Update all systems
     this.roadSystem.update(dt);
+
+    const modulePositions = this.convoySystem.convoy.modules
+      .filter((m) => !m.isDead)
+      .map((m) => ({
+        x: this.convoySystem.convoy.x + m.x,
+        y: this.convoySystem.convoy.y + m.y,
+      }));
+
     this.lootSystem.update(
       dt,
       this.convoySystem.convoy.x,
       this.convoySystem.convoy.y,
+      modulePositions,
       (type) => {
         this.handlePickupCollected(type);
       },
@@ -289,6 +319,10 @@ export class RunScene extends Container implements Scene {
     this.hud.updateKills(this.lootSystem.totalKills);
     this.hud.updateScrap(0);
     this.hud.updateXp(this.lootSystem.getXpRatio(), this.lootSystem.level);
+    this.hud.updateBuffs(
+      this.lootSystem.rapidFireTimer,
+      this.lootSystem.invincibleTimer,
+    );
 
     const warRig = this.convoySystem.convoy.modules.find(
       (m) => !m.isDead && m.data.type === "weapon",
@@ -321,10 +355,53 @@ export class RunScene extends Container implements Scene {
     const warRig = this.convoySystem.convoy.modules.find(
       (m) => !m.isDead && m.data.type === "weapon",
     );
+    const cfg = PICKUP_CONFIGS[type as PickupType] || PICKUP_CONFIGS.buff_rapid;
 
-    if (type === "buff_rapid") {
-      AudioMixer.playSFX("sfx_levelup");
+    // Trigger floating notification toast on HUD
+    EventBus.emit("pickup:toast", {
+      text: cfg.label,
+      color: cfg.color,
+      icon: cfg.icon,
+    });
+
+    if (type === "buff_nuke") {
+      // Massive Screen-Wiping Bomb Explosion SFX & Shockwave
+      AudioMixer.playNukeExplosion();
+      this.triggerShake(32, 0.75);
+
+      // Central explosive shockwaves & particles
+      this.particleSystem.explode(
+        GAME_WIDTH / 2,
+        GAME_HEIGHT / 2,
+        240,
+        0xef4444,
+      );
+      this.particleSystem.critBurst(GAME_WIDTH / 2, GAME_HEIGHT / 2);
+
+      // Annihilate all enemies on screen with explosion bursts
+      for (const e of this.enemySystem.enemies) {
+        if (e.active) {
+          e.takeDamage(99999);
+          this.particleSystem.explode(e.x, e.y, 45, 0xffaa00);
+        }
+      }
+
+      // Deal heavy tactical burst damage to boss if active
+      if (this.bossSystem.active) {
+        this.bossSystem.takeDamage(600);
+        this.particleSystem.explode(
+          GAME_WIDTH / 2,
+          BOSS_HP_BAR_Y + 120,
+          80,
+          0xff0055,
+        );
+        this.particleSystem.critBurst(GAME_WIDTH / 2, BOSS_HP_BAR_Y + 120);
+      }
+    } else if (type === "buff_rapid") {
+      AudioMixer.playRapidBuff();
       this.particleSystem.sparkle(cx, cy, 0xf59e0b);
+      this.particleSystem.electricSpark(cx, cy);
+      this.triggerShake(8, 0.25);
       EventBus.emit("damage:number", {
         x: cx,
         y: cy - 60,
@@ -332,46 +409,116 @@ export class RunScene extends Container implements Scene {
         status: "crit",
       });
     } else if (type === "buff_shield") {
-      AudioMixer.playSFX("sfx_shield");
+      AudioMixer.playShieldBuff();
       this.particleSystem.sparkle(cx, cy, 0x0284c7);
+      this.triggerShake(8, 0.25);
     } else if (type === "buff_heal") {
-      AudioMixer.playSFX("sfx_heal");
+      AudioMixer.playHealBuff();
       for (const m of this.convoySystem.convoy.modules) {
-        if (!m.isDead) m.heal(100);
+        if (!m.isDead) m.heal(120);
       }
       this.particleSystem.sparkle(cx, cy, 0x22c55e);
       EventBus.emit("damage:number", {
         x: cx,
         y: cy - 60,
-        amount: 100,
+        amount: 120,
         heal: true,
       });
-    } else if (type === "buff_nuke") {
-      AudioMixer.playSFX("sfx_explosion");
-      this.triggerShake(22, 0.6);
-      this.particleSystem.explode(
-        GAME_WIDTH / 2,
-        GAME_HEIGHT / 2,
-        200,
-        0xef4444,
-      );
-      for (const e of this.enemySystem.enemies) {
-        if (e.active) {
-          e.takeDamage(9999);
-          this.particleSystem.explode(e.x, e.y, 40, 0xffaa00);
-        }
-      }
     } else if (type === "star_upgrade") {
-      AudioMixer.playSFX("sfx_levelup");
-      this.triggerShake(12, 0.4);
+      AudioMixer.playStarUpgrade();
+      this.triggerShake(16, 0.45);
       this.particleSystem.sparkle(cx, cy, 0xfacc15);
 
+      const engine = this.convoySystem.convoy.getEngine();
+      const upgradableWeapons: {
+        id: string;
+        name: string;
+        targetModule: any;
+        curLvl: number;
+      }[] = [];
+
       if (warRig) {
-        const candidates = ["machine_gun", "flamethrower", "tesla", "shield"];
+        const mgLvl = warRig.getWeaponLevel("machine_gun");
+        if (mgLvl >= 1 && mgLvl < 5) {
+          upgradableWeapons.push({
+            id: "machine_gun",
+            name: "SÚNG MÁY",
+            targetModule: warRig,
+            curLvl: mgLvl,
+          });
+        }
+
+        const flameLvl = warRig.getWeaponLevel("flamethrower");
+        if (flameLvl >= 1 && flameLvl < 5) {
+          upgradableWeapons.push({
+            id: "flamethrower",
+            name: "PHUN LỬA",
+            targetModule: warRig,
+            curLvl: flameLvl,
+          });
+        }
+
+        const teslaLvl = warRig.getWeaponLevel("tesla");
+        if (teslaLvl >= 1 && teslaLvl < 5) {
+          upgradableWeapons.push({
+            id: "tesla",
+            name: "TESLA",
+            targetModule: warRig,
+            curLvl: teslaLvl,
+          });
+        }
+
+        const shieldLvl = warRig.getWeaponLevel("shield");
+        if (shieldLvl >= 1 && shieldLvl < 5) {
+          upgradableWeapons.push({
+            id: "shield",
+            name: "KHIÊN",
+            targetModule: warRig,
+            curLvl: shieldLvl,
+          });
+        }
+      }
+
+      if (engine) {
+        const shieldLvl = engine.getWeaponLevel("shield");
+        if (
+          shieldLvl >= 1 &&
+          shieldLvl < 5 &&
+          !upgradableWeapons.some((w) => w.id === "shield")
+        ) {
+          upgradableWeapons.push({
+            id: "shield",
+            name: "KHIÊN",
+            targetModule: engine,
+            curLvl: shieldLvl,
+          });
+        }
+      }
+
+      if (upgradableWeapons.length > 0) {
+        // Pick one among already-owned upgradable weapons
         const picked =
-          candidates[Math.floor(Math.random() * candidates.length)];
-        warRig.upgradeWeapon(picked);
+          upgradableWeapons[
+            Math.floor(Math.random() * upgradableWeapons.length)
+          ];
+        picked.targetModule.upgradeWeapon(picked.id);
         this.recalculateFormationAndUpgrades();
+
+        EventBus.emit("pickup:toast", {
+          text: `⭐ ${picked.name} LÊN CẤP ${picked.curLvl + 1}!`,
+          color: 0xfacc15,
+          icon: "⭐",
+        });
+      } else {
+        // All owned weapons are already max level (or none upgradable) -> grant repair bonus
+        for (const m of this.convoySystem.convoy.modules) {
+          if (!m.isDead) m.heal(150);
+        }
+        EventBus.emit("pickup:toast", {
+          text: "⭐ VŨ KHÍ ĐÃ TỐI ĐA (+150 HP!)",
+          color: 0xfacc15,
+          icon: "⭐",
+        });
       }
     }
   }

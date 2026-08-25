@@ -371,6 +371,196 @@ export class AudioMixer {
     osc.stop(now + 0.26);
   }
 
+  /** 💣 Massive Devastating Screen-Wiping Bomb / Tactical Nuke Detonation */
+  static playNukeExplosion() {
+    if (!this.ctx) return;
+    this.resume();
+    const now = this.ctx.currentTime;
+
+    // 1. Arming / Detonator High-Frequency Transient Click
+    const armOsc = this.ctx.createOscillator();
+    const armGain = this.ctx.createGain();
+    armOsc.type = "sawtooth";
+    armOsc.frequency.setValueAtTime(2400, now);
+    armOsc.frequency.exponentialRampToValueAtTime(300, now + 0.04);
+    armGain.gain.setValueAtTime(0.4, now);
+    armGain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
+    armOsc.connect(armGain);
+    armGain.connect(this.sfxGain);
+    armOsc.start(now);
+    armOsc.stop(now + 0.045);
+
+    // 2. High-Energy Superheated Plasma Blast Crack (Filtered Noise Shockwave)
+    this.synthesizeFilteredNoise(0.55, 0.65, 3400, 60, "bandpass");
+
+    // 3. Heavy Mid-Body Ordnance Pressure Wave
+    const midOsc = this.ctx.createOscillator();
+    const midGain = this.ctx.createGain();
+    const midFilter = this.ctx.createBiquadFilter();
+    midOsc.type = "triangle";
+    midOsc.frequency.setValueAtTime(420, now);
+    midOsc.frequency.exponentialRampToValueAtTime(45, now + 0.35);
+    midFilter.type = "lowpass";
+    midFilter.frequency.setValueAtTime(1400, now);
+
+    midGain.gain.setValueAtTime(0.7, now);
+    midGain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+
+    midOsc.connect(midFilter);
+    midFilter.connect(midGain);
+    midGain.connect(this.sfxGain);
+    midOsc.start(now);
+    midOsc.stop(now + 0.36);
+
+    // 4. Low-End Earth-Shattering Seismic Sub-Drop (Devastating Sub-Bass)
+    const subOsc = this.ctx.createOscillator();
+    const subGain = this.ctx.createGain();
+    subOsc.type = "sine";
+    subOsc.frequency.setValueAtTime(165, now);
+    subOsc.frequency.exponentialRampToValueAtTime(20, now + 0.7);
+
+    subGain.gain.setValueAtTime(0.85, now);
+    subGain.gain.exponentialRampToValueAtTime(0.001, now + 0.7);
+
+    subOsc.connect(subGain);
+    subGain.connect(this.sfxGain);
+    subOsc.start(now);
+    subOsc.stop(now + 0.72);
+  }
+
+  /** ⚡ High-Voltage Rapid Fire Energy Surge Pickup SFX */
+  static playRapidBuff() {
+    if (!this.ctx) return;
+    this.resume();
+    const now = this.ctx.currentTime;
+
+    // Fast rising electric arpeggio: C5 (523Hz), E5 (659Hz), G5 (784Hz), C6 (1046Hz)
+    const notes = [523.25, 659.25, 783.99, 1046.5];
+    notes.forEach((freq, idx) => {
+      const osc = this.ctx!.createOscillator();
+      const gain = this.ctx!.createGain();
+      osc.type = "sawtooth";
+      const t = now + idx * 0.035;
+      osc.frequency.setValueAtTime(freq, t);
+      osc.frequency.exponentialRampToValueAtTime(freq * 1.2, t + 0.08);
+
+      const filter = this.ctx!.createBiquadFilter();
+      filter.type = "lowpass";
+      filter.frequency.setValueAtTime(2800, t);
+
+      gain.gain.setValueAtTime(0.24, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.09);
+
+      osc.connect(filter);
+      filter.connect(gain);
+      gain.connect(this.sfxGain);
+      osc.start(t);
+      osc.stop(t + 0.095);
+    });
+  }
+
+  /** 🛡️ Shimmering Crystalline Force-Field Barrier Pickup SFX */
+  static playShieldBuff() {
+    if (!this.ctx) return;
+    this.resume();
+    const now = this.ctx.currentTime;
+
+    // Dual harmonic resonance (G4 + D5 + G5) with soothing vibrato
+    const freqs = [392.0, 587.33, 783.99];
+    freqs.forEach((freq, idx) => {
+      const osc = this.ctx!.createOscillator();
+      const gain = this.ctx!.createGain();
+      osc.type = "sine";
+      const t = now + idx * 0.04;
+      osc.frequency.setValueAtTime(freq, t);
+      osc.frequency.exponentialRampToValueAtTime(freq * 1.5, t + 0.28);
+
+      gain.gain.setValueAtTime(0.25, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+
+      osc.connect(gain);
+      gain.connect(this.sfxGain);
+      osc.start(t);
+      osc.stop(t + 0.31);
+    });
+  }
+
+  /** 💚 Restorative Medical Repair / Healing Chime SFX */
+  static playHealBuff() {
+    if (!this.ctx) return;
+    this.resume();
+    const now = this.ctx.currentTime;
+
+    // Soothing major chord chime: E4 (329.63Hz), G#4 (415.30Hz), B4 (493.88Hz), E5 (659.25Hz)
+    const notes = [329.63, 415.3, 493.88, 659.25];
+    notes.forEach((freq, idx) => {
+      const osc = this.ctx!.createOscillator();
+      const gain = this.ctx!.createGain();
+      osc.type = "sine";
+      const t = now + idx * 0.055;
+      osc.frequency.setValueAtTime(freq, t);
+      gain.gain.setValueAtTime(0.0, t);
+      gain.gain.linearRampToValueAtTime(0.28, t + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.32);
+
+      osc.connect(gain);
+      gain.connect(this.sfxGain);
+      osc.start(t);
+      osc.stop(t + 0.33);
+    });
+  }
+
+  /** ⭐ Majestic Weapon Star Upgrade Fanfare */
+  static playStarUpgrade() {
+    if (!this.ctx) return;
+    this.resume();
+    const now = this.ctx.currentTime;
+
+    // Rich victorious ascending fanfare
+    const notes = [440.0, 554.37, 659.25, 880.0, 1108.73];
+    notes.forEach((freq, idx) => {
+      const osc = this.ctx!.createOscillator();
+      const gain = this.ctx!.createGain();
+      osc.type = idx % 2 === 0 ? "triangle" : "sine";
+      const t = now + idx * 0.05;
+      osc.frequency.setValueAtTime(freq, t);
+      gain.gain.setValueAtTime(0.3, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
+
+      osc.connect(gain);
+      gain.connect(this.sfxGain);
+      osc.start(t);
+      osc.stop(t + 0.36);
+    });
+  }
+
+  /** 🎁 Universal Item Pickup Sound Dispatcher */
+  static playPickupBuff(
+    type: "buff_rapid" | "buff_shield" | "buff_heal" | "buff_nuke" | "star_upgrade" | string,
+  ) {
+    if (!this.ctx) this.init();
+    switch (type) {
+      case "buff_rapid":
+        this.playRapidBuff();
+        break;
+      case "buff_shield":
+        this.playShieldBuff();
+        break;
+      case "buff_heal":
+        this.playHealBuff();
+        break;
+      case "buff_nuke":
+        this.playNukeExplosion();
+        break;
+      case "star_upgrade":
+        this.playStarUpgrade();
+        break;
+      default:
+        this.playScrap();
+        break;
+    }
+  }
+
   /** 🌟 Celebratory Level Up Arpeggio Chime */
   static playLevelUp() {
     if (!this.ctx) return;
@@ -507,6 +697,26 @@ export class AudioMixer {
       case "sfx_boss_spawn":
       case "sfx_shake":
         this.playExplosion();
+        break;
+      case "sfx_nuke":
+      case "sfx_bomb":
+        this.playNukeExplosion();
+        break;
+      case "sfx_shield":
+      case "sfx_buff_shield":
+        this.playShieldBuff();
+        break;
+      case "sfx_heal":
+      case "sfx_buff_heal":
+        this.playHealBuff();
+        break;
+      case "sfx_rapid":
+      case "sfx_buff_rapid":
+        this.playRapidBuff();
+        break;
+      case "sfx_upgrade":
+      case "sfx_star_upgrade":
+        this.playStarUpgrade();
         break;
       default:
         this.playButton();

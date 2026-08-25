@@ -3,6 +3,7 @@ import { Scene, SceneManager } from "./SceneManager";
 import { GAME_WIDTH, GAME_HEIGHT } from "../constants";
 import { AudioMixer } from "../utils/AudioMixer";
 import { RunState } from "../utils/RunState";
+import { winkGame } from "../../integrations/wink/client";
 
 export class GameOverScene extends Container implements Scene {
   private modalContainer: Container;
@@ -225,20 +226,57 @@ export class GameOverScene extends Container implements Scene {
     scoreNum.y = scoreBoxY + 12;
     this.modalContainer.addChild(scoreNum);
 
-    if (bestScore > 0) {
-      const bestText = new Text({
-        text: `Kỷ lục cao nhất: ${bestScore}`,
-        style: {
-          fontFamily: "Be Vietnam Pro, sans-serif",
-          fontSize: 16,
-          fontWeight: "700",
-          fill: 0x94a3b8,
+    const effDisplayName =
+      winkGame.personalBest?.displayName ||
+      (winkGame.isAuthenticated ? "Thành viên" : "Bạn");
+    const effPbScore =
+      winkGame.personalBest?.score !== undefined
+        ? winkGame.personalBest.score
+        : bestScore;
+    const effRank = winkGame.personalBest?.rank
+      ? `#${winkGame.personalBest.rank}`
+      : "";
+
+    const bestText = new Text({
+      text:
+        effPbScore > 0
+          ? `Kỷ lục: ${effPbScore} (${effDisplayName} ${effRank})`
+          : `Kỷ lục cao nhất: ${bestScore}`,
+      style: {
+        fontFamily: "Be Vietnam Pro, sans-serif",
+        fontSize: 16,
+        fontWeight: "700",
+        fill: 0x94a3b8,
+      },
+    });
+    bestText.anchor.set(0.5);
+    bestText.y = scoreBoxY + 70;
+    this.modalContainer.addChild(bestText);
+
+    // Submit score and refresh personal best
+    winkGame
+      .submitFinalScore({
+        score: rs.getScore(),
+        playTime: Math.floor(rs.runTime),
+        metadata: {
+          distance: Math.floor(rs.distance),
+          kills: rs.kills,
+          level: rs.level,
+          victory: rs.victory,
         },
-      });
-      bestText.anchor.set(0.5);
-      bestText.y = scoreBoxY + 70;
-      this.modalContainer.addChild(bestText);
-    }
+      })
+      .then((res) => {
+        const activeMe = res?.entry || winkGame.personalBest;
+        if (activeMe) {
+          const pScore = activeMe.score;
+          const pName =
+            activeMe.displayName ||
+            (winkGame.isAuthenticated ? "Thành viên" : "Bạn");
+          const pRank = activeMe.rank ? `#${activeMe.rank}` : "";
+          bestText.text = `Kỷ lục: ${pScore} (${pName} ${pRank})`;
+        }
+      })
+      .catch(() => {});
   }
 
   private createMarth3Button(

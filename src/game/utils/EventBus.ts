@@ -49,6 +49,11 @@ export type GameEventMap = {
   "heat:overheat": {};
   "convoy:rearranged": {};
   "camera:shake": { intensity: number; duration: number };
+  "pickup:toast": {
+    text: string;
+    color: number;
+    icon: string;
+  };
   "damage:number": {
     x: number;
     y: number;

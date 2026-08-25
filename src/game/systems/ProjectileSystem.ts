@@ -49,8 +49,7 @@ export class ProjectileSystem {
         continue;
       }
 
-      p.x += p.vx * dtSec;
-      p.y += p.vy * dtSec;
+      p.update(dtSec);
 
       // Off screen check
       if (

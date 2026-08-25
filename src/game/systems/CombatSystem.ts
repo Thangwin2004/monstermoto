@@ -83,129 +83,145 @@ export class CombatSystem {
         module.cooldownTimer = module.getEffectiveCooldown() * speedBuff;
       }
 
-      // ── Integrated Side Mount: Dual Flamethrowers (Phun thẳng phía trước) ──
+      // ── Integrated Side Mount: Multi-Stream Progressive Flamethrowers (Phun Bão Lửa) ──
       const flameLvl = module.getWeaponLevel("flamethrower");
       if (flameLvl > 0) {
         module.flameCooldownTimer -= dtSec;
         if (module.flameCooldownTimer <= 0) {
-          module.flameCooldownTimer = Math.max(0.12, 0.2 - flameLvl * 0.015);
+          module.flameCooldownTimer = Math.max(0.09, 0.18 - flameLvl * 0.018);
           const flameDmg = Math.round(
-            (16 + flameLvl * 10) * module.stats.damageMultiplier,
+            (24 + flameLvl * 18) * module.stats.damageMultiplier,
           );
-          const burnChance = Math.min(1.0, 0.35 + flameLvl * 0.15);
-          const aoe = 45 + flameLvl * 10;
+          const burnChance = Math.min(1.0, 0.4 + flameLvl * 0.15);
+          const aoe = 50 + flameLvl * 14;
+          const isPlasma = flameLvl >= 5;
 
           AudioMixer.playShoot("flame");
 
-          // Left nozzle (fires straight forward with slight outward spread)
-          this.projectileSystem.spawn(
-            mPos.x - 34,
-            mPos.y - 10,
-            -50 + (Math.random() - 0.5) * 40,
-            -520,
-            flameDmg,
-            "flame",
-            {
-              aoeRadius: aoe,
-              burnChance: burnChance,
-            },
-          );
-          this.particleSystem.flamePuff(mPos.x - 34, mPos.y - 10, -30, -260);
+          // Progressive Multi-Stream Cone based on Star Level:
+          // Level 1: 2 front streams
+          // Level 2: 2 wider front streams + higher velocity
+          // Level 3: 3 streams (Left, Center heavy jet, Right) -> 3-lane cone!
+          // Level 4: 4 streams (2 forward + 2 diagonal flank sweeps)
+          // Level 5: 5 streams of Blue/Purple Plasma Hellfire covering entire forward road!
+          const streams: { x: number; y: number; vx: number; vy: number }[] = [];
 
-          // Right nozzle (fires straight forward with slight outward spread)
-          this.projectileSystem.spawn(
-            mPos.x + 34,
-            mPos.y - 10,
-            50 + (Math.random() - 0.5) * 40,
-            -520,
-            flameDmg,
-            "flame",
-            {
-              aoeRadius: aoe,
-              burnChance: burnChance,
-            },
-          );
-          this.particleSystem.flamePuff(mPos.x + 34, mPos.y - 10, 30, -260);
+          if (flameLvl === 1) {
+            streams.push({ x: mPos.x - 34, y: mPos.y - 10, vx: -30, vy: -540 });
+            streams.push({ x: mPos.x + 34, y: mPos.y - 10, vx: 30, vy: -540 });
+          } else if (flameLvl === 2) {
+            streams.push({ x: mPos.x - 36, y: mPos.y - 10, vx: -55, vy: -580 });
+            streams.push({ x: mPos.x + 36, y: mPos.y - 10, vx: 55, vy: -580 });
+          } else if (flameLvl === 3) {
+            streams.push({ x: mPos.x - 38, y: mPos.y - 10, vx: -85, vy: -580 });
+            streams.push({ x: mPos.x, y: mPos.y - 28, vx: 0, vy: -650 }); // Center heavy flame
+            streams.push({ x: mPos.x + 38, y: mPos.y - 10, vx: 85, vy: -580 });
+          } else if (flameLvl === 4) {
+            streams.push({ x: mPos.x - 42, y: mPos.y - 4, vx: -160, vy: -480 });
+            streams.push({ x: mPos.x - 20, y: mPos.y - 24, vx: -45, vy: -620 });
+            streams.push({ x: mPos.x + 20, y: mPos.y - 24, vx: 45, vy: -620 });
+            streams.push({ x: mPos.x + 42, y: mPos.y - 4, vx: 160, vy: -480 });
+          } else {
+            // Level 5: 5 Plasma Hellfire Streams
+            streams.push({ x: mPos.x - 44, y: mPos.y - 4, vx: -220, vy: -500 });
+            streams.push({ x: mPos.x - 24, y: mPos.y - 22, vx: -85, vy: -660 });
+            streams.push({ x: mPos.x, y: mPos.y - 32, vx: 0, vy: -720 });
+            streams.push({ x: mPos.x + 24, y: mPos.y - 22, vx: 85, vy: -660 });
+            streams.push({ x: mPos.x + 44, y: mPos.y - 4, vx: 220, vy: -500 });
+          }
+
+          for (const s of streams) {
+            this.projectileSystem.spawn(
+              s.x,
+              s.y,
+              s.vx + (Math.random() - 0.5) * 30,
+              s.vy + (Math.random() - 0.5) * 30,
+              flameDmg,
+              "flame",
+              {
+                aoeRadius: aoe,
+                burnChance: burnChance,
+              },
+            );
+            if (isPlasma) {
+              this.particleSystem.plasmaFlamePuff(s.x, s.y, s.vx * 0.45, s.vy * 0.45);
+            } else {
+              this.particleSystem.flamePuff(s.x, s.y, s.vx * 0.45, s.vy * 0.45);
+            }
+          }
         }
       }
 
-      // ── Integrated Side Mount: Dual Tesla Lightning Coils (Phóng Sấm Sét Trực Tiếp) ──
+      // ── Integrated Side Mount: Multi-Target Tesla Lightning Storm (Phóng Sấm Sét Đa Mục Tiêu) ──
       const teslaLvl = module.getWeaponLevel("tesla");
       if (teslaLvl > 0) {
         module.teslaCooldownTimer -= dtSec;
         if (module.teslaCooldownTimer <= 0) {
-          module.teslaCooldownTimer = Math.max(0.45, 0.85 - teslaLvl * 0.08);
+          module.teslaCooldownTimer = Math.max(0.35, 0.75 - teslaLvl * 0.08);
           const teslaDmg = Math.round(
-            (48 + teslaLvl * 24) * module.stats.damageMultiplier,
+            (60 + teslaLvl * 35) * module.stats.damageMultiplier,
           );
-          const teslaTarget = this.findTarget(mPos, 520);
+
+          // Star level determines simultaneous primary target count & chain depth
+          // ⭐ Level 1: 1 target, chain 2
+          // ⭐ Level 2: 2 targets, chain 3
+          // ⭐ Level 3: 3 targets, chain 4 + EMP shockwave
+          // ⭐ Level 4: 4 targets, chain 5 + EMP shockwave
+          // ⭐ Level 5: 5 targets, chain 6 + Golden Titan Lightning + Thunderclaps!
+          const targetCount = Math.min(5, teslaLvl);
+          const chainPerTarget = Math.min(6, 1 + teslaLvl);
+          const boltColor = teslaLvl >= 5 ? 0xfacc15 : teslaLvl >= 3 ? 0xa855f7 : 0x00f0ff;
 
           const leftCoilX = mPos.x - 34;
           const rightCoilX = mPos.x + 34;
           const coilY = mPos.y + 14;
 
-          if (teslaTarget) {
+          const targets = this.findMultipleTargets(mPos, 580, targetCount);
+
+          if (targets.length > 0) {
             AudioMixer.playShoot("tesla");
 
-            // Shoot direct high-voltage lightning bolts from both coils into target
-            this.particleSystem.lightningBolt(
-              leftCoilX,
-              coilY,
-              teslaTarget.x,
-              teslaTarget.y,
-              0x00f0ff,
-            );
-            this.particleSystem.lightningBolt(
-              rightCoilX,
-              coilY,
-              teslaTarget.x,
-              teslaTarget.y,
-              0x38bdf8,
-            );
+            // EMP shockwave for Level 3+
+            if (teslaLvl >= 3) {
+              this.particleSystem.empShockwave(mPos.x, mPos.y, 80 + teslaLvl * 20, boltColor);
+            }
 
-            // Find primary enemy target
-            const primaryEnemy = this.enemySystem.enemies.find(
-              (e) =>
-                e.active &&
-                distance(e.x, e.y, teslaTarget.x, teslaTarget.y) < 25,
-            );
-            if (primaryEnemy) {
-              const killed = primaryEnemy.takeDamage(teslaDmg);
-              primaryEnemy.applyShock(2.5);
-              this.particleSystem.hitSpark(
-                primaryEnemy.x,
-                primaryEnemy.y,
-                0x00ffff,
-                8,
-              );
+            for (let tIdx = 0; tIdx < targets.length; tIdx++) {
+              const target = targets[tIdx];
+              const originX = tIdx % 2 === 0 ? leftCoilX : rightCoilX;
+
+              // Primary bolt
+              this.particleSystem.lightningBolt(originX, coilY, target.x, target.y, boltColor);
+
+              // Thunderclap for Level 5
+              if (teslaLvl >= 5) {
+                this.particleSystem.thunderStrike(target.x, target.y, 0xfacc15);
+              }
+
+              const killed = target.takeDamage(teslaDmg);
+              target.applyShock(3.0);
+              this.particleSystem.hitSpark(target.x, target.y, boltColor, 10);
               EventBus.emit("damage:number", {
-                x: primaryEnemy.x,
-                y: primaryEnemy.y - 20,
+                x: target.x,
+                y: target.y - 20,
                 amount: teslaDmg,
                 status: "shock",
               });
-              if (killed) this.onEnemyKilled(primaryEnemy);
+              if (killed) this.onEnemyKilled(target);
 
               // Chain to secondary nearby enemies
-              const chainCount = Math.min(4, 1 + teslaLvl);
-              let lastX = primaryEnemy.x;
-              let lastY = primaryEnemy.y;
-
+              let lastX = target.x;
+              let lastY = target.y;
               let chained = 0;
+
               for (const other of this.enemySystem.enemies) {
-                if (!other.active || other === primaryEnemy) continue;
-                if (distance(lastX, lastY, other.x, other.y) < 240) {
-                  this.particleSystem.lightningBolt(
-                    lastX,
-                    lastY,
-                    other.x,
-                    other.y,
-                    0x67e8f9,
-                  );
-                  const chainDmg = Math.round(teslaDmg * 0.8);
+                if (!other.active || other === target || targets.includes(other)) continue;
+                if (distance(lastX, lastY, other.x, other.y) < 260) {
+                  this.particleSystem.lightningBolt(lastX, lastY, other.x, other.y, boltColor);
+                  const chainDmg = Math.round(teslaDmg * (0.75 + teslaLvl * 0.05));
                   const k2 = other.takeDamage(chainDmg);
-                  other.applyShock(2.5);
-                  this.particleSystem.hitSpark(other.x, other.y, 0x00ffff, 6);
+                  other.applyShock(3.0);
+                  this.particleSystem.hitSpark(other.x, other.y, boltColor, 6);
                   EventBus.emit("damage:number", {
                     x: other.x,
                     y: other.y - 20,
@@ -216,7 +232,7 @@ export class CombatSystem {
                   lastX = other.x;
                   lastY = other.y;
                   chained++;
-                  if (chained >= chainCount) break;
+                  if (chained >= chainPerTarget) break;
                 }
               }
             }
@@ -227,14 +243,14 @@ export class CombatSystem {
               coilY,
               mPos.x - 20 + (Math.random() - 0.5) * 40,
               mPos.y - 220,
-              0x00f0ff,
+              boltColor,
             );
             this.particleSystem.lightningBolt(
               rightCoilX,
               coilY,
               mPos.x + 20 + (Math.random() - 0.5) * 40,
               mPos.y - 220,
-              0x38bdf8,
+              boltColor,
             );
           }
         }
@@ -275,11 +291,20 @@ export class CombatSystem {
       module.data.color,
     );
 
+    // Calculate distinct barrel origins and trajectory angles so bullets never overlap
+    const barrelSpacing = projCount > 1 ? Math.min(11, 46 / (projCount - 1)) : 0;
+    const totalBarrelWidth = barrelSpacing * (projCount - 1);
+    const totalSpreadAngle =
+      projCount > 1 ? Math.min(0.38, 0.08 * (projCount - 1)) : 0;
+
     for (let i = 0; i < projCount; i++) {
+      let spawnX = from.x;
       let spreadAngle = 0;
+
       if (projCount > 1) {
-        const totalSpread = 0.28;
-        spreadAngle = -totalSpread / 2 + (totalSpread / (projCount - 1)) * i;
+        spawnX = from.x - totalBarrelWidth / 2 + barrelSpacing * i;
+        spreadAngle =
+          -totalSpreadAngle / 2 + (totalSpreadAngle / (projCount - 1)) * i;
       }
 
       const angle = mainAngle + spreadAngle;
@@ -297,7 +322,7 @@ export class CombatSystem {
       }
 
       const spawnedP = this.projectileSystem.spawn(
-        from.x,
+        spawnX,
         from.y - 24,
         vx,
         vy,
@@ -313,7 +338,7 @@ export class CombatSystem {
       if (spawnedP) (spawnedP as any).isCrit = isCrit;
 
       if (projType === "flame") {
-        this.particleSystem.flamePuff(from.x, from.y - 24, vx * 0.5, vy * 0.5);
+        this.particleSystem.flamePuff(spawnX, from.y - 24, vx * 0.5, vy * 0.5);
       }
     }
 
@@ -348,6 +373,23 @@ export class CombatSystem {
     return closest;
   }
 
+  /** Find multiple distinct enemy targets within range */
+  private findMultipleTargets(
+    fromPos: { x: number; y: number },
+    range: number,
+    maxCount: number = 1,
+  ): Enemy[] {
+    const valid = this.enemySystem.enemies
+      .filter((e) => e.active && distance(fromPos.x, fromPos.y, e.x, e.y) < range)
+      .sort(
+        (a, b) =>
+          distance(fromPos.x, fromPos.y, a.x, a.y) -
+          distance(fromPos.x, fromPos.y, b.x, b.y),
+      );
+
+    return valid.slice(0, maxCount);
+  }
+
   // ─── Projectile vs Enemy Collision ───
 
   private handleProjectileVsEnemy() {
@@ -357,7 +399,14 @@ export class CombatSystem {
       for (const e of this.enemySystem.enemies) {
         if (!e.active) continue;
 
-        if (circlesOverlap(p.x, p.y, p.radius, e.x, e.y, e.radius)) {
+        // Fast Bounding-Box Broadphase Filter (Skips ~95% unnecessary distance checks)
+        const maxDist = p.radius + e.radius;
+        const dx = p.x - e.x;
+        if (dx > maxDist || dx < -maxDist) continue;
+        const dy = p.y - e.y;
+        if (dy > maxDist || dy < -maxDist) continue;
+
+        if (dx * dx + dy * dy <= maxDist * maxDist) {
           const isCrit = (p as any).isCrit === true;
           const killed = e.takeDamage(p.damage);
 
@@ -442,7 +491,13 @@ export class CombatSystem {
 
     for (const e of this.enemySystem.enemies) {
       if (!e.active) continue;
-      if (circlesOverlap(x, y, radius, e.x, e.y, e.radius)) {
+      const maxDist = radius + e.radius;
+      const dx = x - e.x;
+      if (dx > maxDist || dx < -maxDist) continue;
+      const dy = y - e.y;
+      if (dy > maxDist || dy < -maxDist) continue;
+
+      if (dx * dx + dy * dy <= maxDist * maxDist) {
         const killed = e.takeDamage(damage);
         this.particleSystem.hitSpark(e.x, e.y, 0xff7700, 6);
         if (killed) this.onEnemyKilled(e);
@@ -484,7 +539,13 @@ export class CombatSystem {
     for (const p of this.projectileSystem.projectiles) {
       if (!p.active || p.isEnemyProjectile) continue;
 
-      if (circlesOverlap(p.x, p.y, p.radius, bx, by, bossRadius)) {
+      const maxDist = p.radius + bossRadius;
+      const dx = p.x - bx;
+      if (dx > maxDist || dx < -maxDist) continue;
+      const dy = p.y - by;
+      if (dy > maxDist || dy < -maxDist) continue;
+
+      if (dx * dx + dy * dy <= maxDist * maxDist) {
         this.bossSystem.takeDamage(p.damage);
         this.particleSystem.hitSpark(
           p.x,
@@ -519,16 +580,13 @@ export class CombatSystem {
         if (m.isDead) continue;
 
         const mPos = getModulePos(convoy.x, convoy.y, m);
-        if (
-          circlesOverlap(
-            mPos.x,
-            mPos.y,
-            MODULE_COLLISION_RADIUS,
-            e.x,
-            e.y,
-            e.radius,
-          )
-        ) {
+        const maxDist = MODULE_COLLISION_RADIUS + e.radius;
+        const dx = mPos.x - e.x;
+        if (dx > maxDist || dx < -maxDist) continue;
+        const dy = mPos.y - e.y;
+        if (dy > maxDist || dy < -maxDist) continue;
+
+        if (dx * dx + dy * dy <= maxDist * maxDist) {
           const dmg = m.takeDamage(e.damage);
           this.particleSystem.explode(mPos.x, mPos.y, 40, 0xff3b30);
           AudioMixer.playExplosion();

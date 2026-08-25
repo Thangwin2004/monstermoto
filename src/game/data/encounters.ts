@@ -162,14 +162,76 @@ export const EncounterTemplates: EncounterTemplate[] = [
       { type: "swarm", count: 70, interval: 0.08, delay: 4 },
     ],
   },
+
+  // ── Tier 5: 2500m - 4000m (Bão Cự Thú & Binh Đoàn Hủy Diệt) ──
+  {
+    id: "titan_onslaught",
+    name: "Binh Đoàn Titan Càn Quét",
+    difficulty: 10,
+    duration: 16,
+    waves: [
+      { type: "colossus", count: 10, interval: 0.9 },
+      { type: "acid_queen", count: 12, interval: 0.8, delay: 1.0 },
+      { type: "tank", count: 15, interval: 0.6, delay: 1.5 },
+      { type: "bomber", count: 25, interval: 0.25, delay: 2.0 },
+      { type: "swarm", count: 90, interval: 0.06, delay: 3.0 },
+    ],
+  },
+  {
+    id: "acid_apocalypse",
+    name: "Đại Dịch Axit Ăn Mòn",
+    difficulty: 12,
+    duration: 16,
+    waves: [
+      { type: "acid_queen", count: 16, interval: 0.7 },
+      { type: "spitter", count: 20, interval: 0.4, delay: 1.0 },
+      { type: "colossus", count: 8, interval: 1.0, delay: 1.5 },
+      { type: "stalker", count: 22, interval: 0.3, delay: 2.0 },
+      { type: "swarm", count: 100, interval: 0.05, delay: 3.0 },
+    ],
+  },
+
+  // ── Tier 6: 4000m - 6000m+ (Địa Ngục Sa Mạc Tận Thế) ──
+  {
+    id: "hell_highway_armageddon",
+    name: "Hỏa Ngục Sa Mạc Tận Thế",
+    difficulty: 15,
+    duration: 18,
+    waves: [
+      { type: "colossus", count: 15, interval: 0.7 },
+      { type: "acid_queen", count: 18, interval: 0.6, delay: 1.0 },
+      { type: "stalker", count: 30, interval: 0.25, delay: 1.5 },
+      { type: "bomber", count: 35, interval: 0.2, delay: 2.0 },
+      { type: "tank", count: 20, interval: 0.5, delay: 2.5 },
+      { type: "swarm", count: 140, interval: 0.04, delay: 3.0 },
+    ],
+  },
+  {
+    id: "endless_extinction",
+    name: "Cơn Thịnh Nộ Diệt Tuyệt Vĩnh Hằng",
+    difficulty: 20,
+    duration: 20,
+    waves: [
+      { type: "colossus", count: 22, interval: 0.5 },
+      { type: "acid_queen", count: 24, interval: 0.5, delay: 0.8 },
+      { type: "stalker", count: 40, interval: 0.2, delay: 1.2 },
+      { type: "bomber", count: 45, interval: 0.15, delay: 1.8 },
+      { type: "tank", count: 28, interval: 0.4, delay: 2.2 },
+      { type: "swarm", count: 180, interval: 0.03, delay: 2.5 },
+    ],
+  },
 ];
 
 export function getEncountersForDifficulty(diff: number): EncounterTemplate[] {
-  const minDiff = Math.max(1, diff - 2);
-  const maxDiff = diff + 1;
+  // Find matching or closest highest difficulty templates for endless scaling
+  const minDiff = Math.max(1, diff - 3);
+  const maxDiff = diff + 2;
   const matches = EncounterTemplates.filter(
     (e) => e.difficulty >= minDiff && e.difficulty <= maxDiff,
   );
   if (matches.length > 0) return matches;
-  return EncounterTemplates;
+
+  // If player reaches ultra-high difficulty (> 20), return the hardest tier encounters
+  const maxAvailable = Math.max(...EncounterTemplates.map((e) => e.difficulty));
+  return EncounterTemplates.filter((e) => e.difficulty >= maxAvailable - 3);
 }

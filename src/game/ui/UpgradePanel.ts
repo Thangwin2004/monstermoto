@@ -62,7 +62,7 @@ const ACTION_LABELS: Record<
 > = {
   upgrade_module: { text: "⭐ LÊN CẤP SAO", color: 0xb45309, bg: 0xfef3c7 },
   stat_boost: { text: "✨ NÂNG CHỈ SỐ", color: 0x0369a1, bg: 0xe0f2fe },
-  new_module: { text: "🆕 THÊM / GHÉP", color: 0x15803d, bg: 0xdcfce7 },
+  new_module: { text: "🆕 MỞ KHÓA VŨ KHÍ", color: 0x15803d, bg: 0xdcfce7 },
 };
 
 export class UpgradePanel extends Container {

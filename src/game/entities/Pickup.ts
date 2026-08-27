@@ -1,5 +1,7 @@
 import { Container, Graphics, Text } from "pixi.js";
 import { ROAD_SPEED } from "../constants";
+import { SaveManager } from "../utils/SaveManager";
+import { VectorIcons } from "../ui/VectorIcons";
 
 export type PickupType =
   | "buff_rapid"
@@ -11,76 +13,68 @@ export type PickupType =
 export interface PickupConfig {
   type: PickupType;
   label: string;
-  badge: string;
-  icon: string;
   color: number;
   shadowColor: number;
   glowColor: number;
-  duration?: number;
+  icon: string;
+  vectorIcon?: "lightning" | "speaker" | "check";
 }
 
 export const PICKUP_CONFIGS: Record<PickupType, PickupConfig> = {
   buff_rapid: {
     type: "buff_rapid",
-    label: "⚡ HỎA LỰC CUỒNG NỘ (10S)!",
-    badge: "⚡ CUỒNG NỘ",
-    icon: "⚡",
+    label: "HỎA LỰC CUỒNG NỘ (10S)!",
     color: 0xf59e0b,
-    shadowColor: 0x78350f,
+    shadowColor: 0xb45309,
     glowColor: 0xfbbf24,
-    duration: 10,
+    icon: "⚡",
   },
   buff_shield: {
     type: "buff_shield",
-    label: "🛡️ KHIÊN BẤT TỬ (8S)!",
-    badge: "🛡️ BẤT TỬ",
-    icon: "🛡️",
-    color: 0x0284c7,
-    shadowColor: 0x075985,
+    label: "KHIÊN VÔ ĐỊCH (8S)!",
+    color: 0x0ea5e9,
+    shadowColor: 0x0369a1,
     glowColor: 0x38bdf8,
-    duration: 8,
+    icon: "🛡️",
   },
   buff_heal: {
     type: "buff_heal",
-    label: "💚 HỒI PHỤC 100 HP!",
-    badge: "💊 HỒI MÁU",
-    icon: "💊",
-    color: 0x16a34a,
-    shadowColor: 0x14532d,
+    label: "HỒI PHỤC CHIẾN XA (+100 HP)!",
+    color: 0x22c55e,
+    shadowColor: 0x15803d,
     glowColor: 0x4ade80,
+    icon: "💊",
   },
   buff_nuke: {
     type: "buff_nuke",
-    label: "💣 BOM NỔ QUÉT SẠCH QUÁI!",
-    badge: "💣 BOM NỔ",
-    icon: "💣",
-    color: 0xdc2626,
-    shadowColor: 0x7f1d1d,
+    label: "BOM TẬN DIỆT QUÁI VẬT!",
+    color: 0xef4444,
+    shadowColor: 0x991b1b,
     glowColor: 0xf87171,
+    icon: "💣",
   },
   star_upgrade: {
     type: "star_upgrade",
-    label: "⭐ LÊN SAO VŨ KHÍ!",
-    badge: "⭐ NÂNG CẤP",
+    label: "LÊN SAO VŨ KHÍ TỰ ĐỘNG (+1★)!",
+    color: 0xa855f7,
+    shadowColor: 0x7e22ce,
+    glowColor: 0xc084fc,
     icon: "⭐",
-    color: 0xfacc15,
-    shadowColor: 0x854d0e,
-    glowColor: 0xfef08a,
   },
 };
 
 export class Pickup extends Container {
   public active: boolean = false;
   public pickupType: PickupType = "buff_rapid";
-  public radius: number = 28;
+  public radius: number = 22;
 
-  public vx: number = 0;
-  public vy: number = 0;
+  // Velocity (magnet / road)
+  private vx: number = 0;
+  private vy: number = 0;
 
+  // Visuals: 3D Glowing Candy Crate
   private crateGfx: Graphics;
   private iconText: Text;
-  private badgeGfx: Graphics;
-  private badgeText: Text;
   private auraGfx: Graphics;
   private animTime: number = 0;
 
@@ -100,30 +94,14 @@ export class Pickup extends Container {
       text: "⚡",
       style: {
         fontFamily: "Be Vietnam Pro, sans-serif",
-        fontSize: 24,
+        fontSize: 22,
         fill: 0xffffff,
         fontWeight: "900",
       },
     });
     this.iconText.anchor.set(0.5);
+    this.iconText.y = -1;
     this.addChild(this.iconText);
-
-    // 4. Floating Mini Badge Pill above crate
-    this.badgeGfx = new Graphics();
-    this.addChild(this.badgeGfx);
-
-    this.badgeText = new Text({
-      text: "⚡ CUỒNG NỘ",
-      style: {
-        fontFamily: "Be Vietnam Pro, sans-serif",
-        fontSize: 11,
-        fill: 0xffffff,
-        fontWeight: "900",
-        stroke: { color: 0x000000, width: 3 },
-      },
-    });
-    this.badgeText.anchor.set(0.5);
-    this.addChild(this.badgeText);
   }
 
   spawn(x: number, y: number, type: PickupType = "buff_rapid") {
@@ -138,7 +116,6 @@ export class Pickup extends Container {
 
     const cfg = PICKUP_CONFIGS[type] || PICKUP_CONFIGS.buff_rapid;
     this.iconText.text = cfg.icon;
-    this.badgeText.text = cfg.badge;
 
     this.renderCrate(cfg);
   }
@@ -146,14 +123,14 @@ export class Pickup extends Container {
   private renderCrate(cfg: PickupConfig) {
     this.crateGfx.clear();
 
-    const w = 42;
-    const h = 42;
-    const r = 12;
+    const w = 44;
+    const h = 44;
+    const r = 14;
 
     // 1. Soft Ambient Shadow
     this.crateGfx
-      .roundRect(-w / 2, -h / 2 + 6, w, h, r)
-      .fill({ color: 0x000000, alpha: 0.35 });
+      .roundRect(-w / 2, -h / 2 + 5, w, h, r)
+      .fill({ color: 0x000000, alpha: 0.4 });
 
     // 2. 3D Bevel Shadow Base
     this.crateGfx
@@ -169,18 +146,7 @@ export class Pickup extends Container {
     // 4. Glossy Highlight Sheen
     this.crateGfx
       .roundRect(-w / 2 + 4, -h / 2 + 3, w - 8, h * 0.36, 6)
-      .fill({ color: 0xffffff, alpha: 0.35 });
-
-    // Badge Pill Background (compact above crate)
-    this.badgeGfx.clear();
-    const bw = 70;
-    const bh = 16;
-    this.badgeGfx
-      .roundRect(-bw / 2, -32, bw, bh, 8)
-      .fill(0x0f172a)
-      .stroke({ color: cfg.glowColor, width: 1.5 });
-    this.badgeText.y = -24;
-    this.badgeText.style.fontSize = 10;
+      .fill({ color: 0xffffff, alpha: 0.38 });
   }
 
   deactivate() {
@@ -220,7 +186,7 @@ export class Pickup extends Container {
     const dist = Math.sqrt(minDistSq);
 
     // 2. Magnetic Attraction Physics (Smooth homing when in range)
-    const magnetRadius = 220; // 220px magnet range
+    const magnetRadius = 120 + SaveManager.getStatBonus("magnet");
     if (dist < magnetRadius && dist > 1) {
       const pullForce = 850 * (1 - dist / magnetRadius) + 250;
       const dirX = (closestX - this.x) / dist;
@@ -249,32 +215,30 @@ export class Pickup extends Container {
     this.auraGfx.clear();
     // Inner soft glow
     this.auraGfx
-      .circle(0, 0, 32 * pulse)
+      .circle(0, 0, 30 * pulse)
       .fill({ color: cfg.glowColor, alpha: 0.28 });
     // Outer ripple ring
     this.auraGfx
-      .circle(0, 0, 38 * ringPulse)
+      .circle(0, 0, 36 * ringPulse)
       .stroke({ color: 0xffffff, width: 2, alpha: 0.75 });
 
     // Floating bobbing
-    const bob = Math.sin(this.animTime * 4.5) * 5;
-    this.crateGfx.y = bob;
-    this.iconText.y = bob;
-    this.badgeGfx.y = bob * 0.5;
-    this.badgeText.y = -29 + bob * 0.5;
+    this.crateGfx.y = Math.sin(this.animTime * 6) * 3;
+    this.iconText.y = -1 + Math.sin(this.animTime * 6) * 3;
 
-    // 4. Collision check with convoy
-    const collectDistance = 68;
-    if (dist < collectDistance) {
-      return true;
+    // Out of screen bottom
+    if (this.y > 1320) {
+      this.deactivate();
+      return false;
     }
 
-    // Off screen cleanup
-    if (this.y > 1350) {
+    // 4. Pickup Trigger Hitbox check
+    const collectRadius = 40;
+    if (dist < collectRadius) {
       this.deactivate();
+      return true; // Picked up!
     }
 
     return false;
   }
 }
-

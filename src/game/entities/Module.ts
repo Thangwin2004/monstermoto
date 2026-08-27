@@ -1,5 +1,6 @@
 import { Container, Graphics, Text } from "pixi.js";
 import { COLORS, MODULE_SIZE, HP_BAR_WIDTH, HP_BAR_HEIGHT } from "../constants";
+import { SaveManager } from "../utils/SaveManager";
 
 // ─── Data types ───
 
@@ -59,6 +60,7 @@ export interface ModuleStats {
 }
 
 function defaultStats(): ModuleStats {
+  const critBonus = SaveManager.getStatBonus("crit");
   return {
     damageMultiplier: 1,
     attackSpeedMultiplier: 1,
@@ -67,8 +69,8 @@ function defaultStats(): ModuleStats {
     damageTakenMultiplier: 1,
     burnChance: 0,
     shockChance: 0,
-    critChance: 0,
-    critMultiplier: 2,
+    critChance: critBonus,
+    critMultiplier: 2 + critBonus * 5,
     explosionOnKill: false,
     bulletBounce: 0,
   };
@@ -89,8 +91,8 @@ export class Module extends Container {
   public data: ModuleData;
   public hp: number;
   public cooldownTimer: number = 0;
-  public flameCooldownTimer: number = 0;
-  public teslaCooldownTimer: number = 0;
+  public rocketCooldownTimer: number = 0;
+  public laserCooldownTimer: number = 0;
   public stats: ModuleStats;
   public slotIndex: number = 0;
   public isDead: boolean = false;
@@ -123,7 +125,7 @@ export class Module extends Container {
   constructor(data: ModuleData) {
     super();
     this.data = data;
-    this.hp = data.maxHp;
+    this.hp = this.getMaxHp();
     this.stats = defaultStats();
 
     // Initialize primary weapon level
@@ -213,8 +215,9 @@ export class Module extends Container {
   public getMaxHp(): number {
     let shieldBonus = (this.getWeaponLevel("shield") - 1) * 60;
     if (shieldBonus < 0) shieldBonus = 0;
+    const hullBonus = SaveManager.getStatBonus("hull");
     return (
-      Math.round(this.data.maxHp * (1 + (this.level - 1) * 0.4)) + shieldBonus
+      Math.round(this.data.maxHp * (1 + (this.level - 1) * 0.4)) + shieldBonus + hullBonus
     );
   }
 
@@ -283,9 +286,9 @@ export class Module extends Container {
       ? 0xd97706
       : this.data.id === "machine_gun"
         ? 0xb91c1c
-        : this.data.id === "flamethrower"
+        : this.data.id === "rocket"
           ? 0xc2410c
-          : this.data.id === "tesla"
+          : this.data.id === "laser"
             ? 0x0369a1
             : 0x7c3aed;
     const darkTrim = 0x18181b;
@@ -425,122 +428,135 @@ export class Module extends Container {
     this.attachmentsLayer.clear();
     const halfW = MODULE_SIZE / 2;
     const halfH = MODULE_SIZE / 2;
-    const flameLvl = this.getWeaponLevel("flamethrower");
-    const teslaLvl = this.getWeaponLevel("tesla");
+    const rocketLvl = this.getWeaponLevel("rocket");
+    const laserLvl = this.getWeaponLevel("laser");
     const shieldLvl = this.getWeaponLevel("shield");
 
-    // 1. Dual / Triple Heavy Flamethrowers with Dynamic Plasma Color at High Star Level
-    if (flameLvl > 0) {
-      const isPlasma = flameLvl >= 5;
-      const nozW = 10 + flameLvl * 2;
-      const nozH = 24 + flameLvl * 2;
-      const offset = halfW + 16;
+    // 1. Dual Heavy Armored Rocket Launch Pods (Bệ Phóng Tên Lửa 2 Bên)
+    if (rocketLvl > 0) {
+      const isTitan = rocketLvl >= 5;
+      const podW = 14 + rocketLvl * 2;
+      const podH = 34 + rocketLvl * 2;
+      const offset = halfW + 18;
 
-      const bodyCol = isPlasma ? 0x4c1d95 : 0x7c2d12;
-      const tipCol = isPlasma ? 0x00f0ff : 0xf97316;
-      const flameCol = isPlasma ? 0x38bdf8 : 0xfacc15;
+      const podBodyCol = isTitan ? 0x451a03 : 0x27272a;
+      const trimCol = isTitan ? 0xfacc15 : 0xea580c;
 
-      // Left Flamethrower
+      // Left Rocket Pod Box
       this.attachmentsLayer
-        .roundRect(-offset - nozW, -12, nozW, nozH, 4)
-        .fill(bodyCol)
-        .stroke({ color: 0x000000, width: 2 });
-      // Chrome Nozzle Tip
+        .roundRect(-offset - podW, -podH / 2, podW, podH, 4)
+        .fill(podBodyCol)
+        .stroke({ color: 0x000000, width: 2.5 });
+      // Hazard / Armor Trim
       this.attachmentsLayer
-        .rect(-offset - nozW, -16, nozW, 5)
-        .fill(tipCol)
-        .stroke({ color: 0x000000, width: 1.5 });
-      // Pilot Flame
-      this.attachmentsLayer
-        .poly([
-          -offset - nozW + 2,
-          -16,
-          -offset - 2,
-          -16,
-          -offset - nozW / 2,
-          -24 - flameLvl * 2,
-        ])
-        .fill(flameCol);
+        .rect(-offset - podW + 2, -podH / 2 + 4, podW - 4, 4)
+        .fill(trimCol);
 
-      // Right Flamethrower
-      this.attachmentsLayer
-        .roundRect(offset, -12, nozW, nozH, 4)
-        .fill(bodyCol)
-        .stroke({ color: 0x000000, width: 2 });
-      this.attachmentsLayer
-        .rect(offset, -16, nozW, 5)
-        .fill(tipCol)
-        .stroke({ color: 0x000000, width: 1.5 });
-      this.attachmentsLayer
-        .poly([
-          offset + 2,
-          -16,
-          offset + nozW - 2,
-          -16,
-          offset + nozW / 2,
-          -24 - flameLvl * 2,
-        ])
-        .fill(flameCol);
-
-      // Center Supercharged Flame Nozzle for Level 3+
-      if (flameLvl >= 3) {
+      // Left Rocket Launch Tubes (Front-facing missile warheads)
+      const tubeCount = Math.min(4, 1 + rocketLvl);
+      const tubeSpacing = (podH - 12) / Math.max(1, tubeCount);
+      for (let t = 0; t < tubeCount; t++) {
+        const ty = -podH / 2 + 8 + t * tubeSpacing;
         this.attachmentsLayer
-          .roundRect(-8, -halfH - 8, 16, 12, 3)
-          .fill(bodyCol)
-          .stroke({ color: 0x000000, width: 2 });
+          .circle(-offset - podW / 2, ty, 3.5)
+          .fill(0x18181b)
+          .stroke({ color: 0x000000, width: 1 });
+        // Red / Orange missile nosecone
         this.attachmentsLayer
-          .rect(-6, -halfH - 12, 12, 4)
-          .fill(tipCol);
+          .circle(-offset - podW / 2, ty, 2)
+          .fill(isTitan ? 0xfacc15 : 0xef4444);
+      }
+
+      // Right Rocket Pod Box
+      this.attachmentsLayer
+        .roundRect(offset, -podH / 2, podW, podH, 4)
+        .fill(podBodyCol)
+        .stroke({ color: 0x000000, width: 2.5 });
+      this.attachmentsLayer
+        .rect(offset + 2, -podH / 2 + 4, podW - 4, 4)
+        .fill(trimCol);
+
+      // Right Rocket Launch Tubes
+      for (let t = 0; t < tubeCount; t++) {
+        const ty = -podH / 2 + 8 + t * tubeSpacing;
         this.attachmentsLayer
-          .poly([-4, -halfH - 12, 4, -halfH - 12, 0, -halfH - 20])
-          .fill(flameCol);
+          .circle(offset + podW / 2, ty, 3.5)
+          .fill(0x18181b)
+          .stroke({ color: 0x000000, width: 1 });
+        this.attachmentsLayer
+          .circle(offset + podW / 2, ty, 2)
+          .fill(isTitan ? 0xfacc15 : 0xef4444);
+      }
+
+      // Top Radar / Missile Guidance Targeter for Level 3+
+      if (rocketLvl >= 3) {
+        this.attachmentsLayer
+          .rect(-8, -halfH - 8, 16, 6)
+          .fill(0x3f3f46)
+          .stroke({ color: 0x000000, width: 1.5 });
+        this.attachmentsLayer
+          .circle(0, -halfH - 10, 4)
+          .fill(0x22c55e)
+          .stroke({ color: 0x15803d, width: 1 });
       }
     }
 
-    // 2. Dual Tesla Coils with Electric Energy Orbs & Star Prongs
-    if (teslaLvl > 0) {
-      const isTitan = teslaLvl >= 5;
-      const isPlasma = teslaLvl >= 3;
-      const coilR = 9 + teslaLvl * 2;
+    // 2. Twin High-Tech Heavy Plasma Laser Cannons (Pháo Laser / Railgun Năng Lượng)
+    if (laserLvl > 0) {
+      const isHyper = laserLvl >= 5;
+      const barrelLen = 28 + laserLvl * 4;
+      const barrelW = 7 + Math.floor(laserLvl * 0.8);
       const offset = halfW + 16;
 
-      const pylonCol = isTitan ? 0x713f12 : isPlasma ? 0x3b0764 : 0x1e293b;
-      const orbCol = isTitan ? 0xfacc15 : isPlasma ? 0xa855f7 : 0x0284c7;
-      const strokeCol = isTitan ? 0xfef08a : isPlasma ? 0xe879f9 : 0x00f0ff;
+      const bodyCol = isHyper ? 0x713f12 : 0x0f172a;
+      const glowCol = isHyper ? 0xfde047 : 0x00f0ff;
+      const ringCol = isHyper ? 0xfacc15 : 0x0284c7;
 
-      // Left Tesla Pylon
+      // Left Laser Rail Barrel
       this.attachmentsLayer
-        .rect(-offset - 4, 0, 8, 22)
-        .fill(pylonCol)
+        .roundRect(-offset - barrelW, -barrelLen + 10, barrelW, barrelLen, 2)
+        .fill(bodyCol)
+        .stroke({ color: 0x000000, width: 2 });
+      // Glowing Energy Core Strip
+      this.attachmentsLayer
+        .rect(-offset - barrelW + 2, -barrelLen + 12, barrelW - 4, barrelLen - 6)
+        .fill(glowCol);
+      // Accelerator Magnetic Rings
+      for (let ry = -barrelLen + 16; ry < 0; ry += 8) {
+        this.attachmentsLayer
+          .rect(-offset - barrelW - 1, ry, barrelW + 2, 2.5)
+          .fill(ringCol);
+      }
+      // Emitter Tip Lens
+      this.attachmentsLayer
+        .circle(-offset - barrelW / 2, -barrelLen + 10, 3)
+        .fill(0xffffff);
+
+      // Right Laser Rail Barrel
+      this.attachmentsLayer
+        .roundRect(offset, -barrelLen + 10, barrelW, barrelLen, 2)
+        .fill(bodyCol)
         .stroke({ color: 0x000000, width: 2 });
       this.attachmentsLayer
-        .circle(-offset, 0, coilR)
-        .fill(orbCol)
-        .stroke({ color: strokeCol, width: 2.5 });
-      this.attachmentsLayer.circle(-offset, 0, 4).fill(0xffffff);
-
-      // Right Tesla Pylon
+        .rect(offset + 2, -barrelLen + 12, barrelW - 4, barrelLen - 6)
+        .fill(glowCol);
+      for (let ry = -barrelLen + 16; ry < 0; ry += 8) {
+        this.attachmentsLayer
+          .rect(offset - 1, ry, barrelW + 2, 2.5)
+          .fill(ringCol);
+      }
       this.attachmentsLayer
-        .rect(offset - 4, 0, 8, 22)
-        .fill(pylonCol)
-        .stroke({ color: 0x000000, width: 2 });
-      this.attachmentsLayer
-        .circle(offset, 0, coilR)
-        .fill(orbCol)
-        .stroke({ color: strokeCol, width: 2.5 });
-      this.attachmentsLayer.circle(offset, 0, 4).fill(0xffffff);
+        .circle(offset + barrelW / 2, -barrelLen + 10, 3)
+        .fill(0xffffff);
 
-      // Radiating Lightning Prongs for Level 4+
-      if (teslaLvl >= 4) {
-        for (const side of [-1, 1]) {
-          const cx = side * offset;
-          this.attachmentsLayer
-            .poly([cx - 4, -coilR - 4, cx + 4, -coilR - 4, cx, -coilR - 10])
-            .fill(strokeCol);
-          this.attachmentsLayer
-            .poly([cx + side * (coilR + 4), -4, cx + side * (coilR + 4), 4, cx + side * (coilR + 10), 0])
-            .fill(strokeCol);
-        }
+      // Supercharged Central Capacitor for Level 3+
+      if (laserLvl >= 3) {
+        this.attachmentsLayer
+          .circle(0, 0, 10)
+          .fill(0x1e1b4b)
+          .stroke({ color: glowCol, width: 2 });
+        this.attachmentsLayer.circle(0, 0, 5).fill(glowCol);
+        this.attachmentsLayer.circle(0, 0, 2).fill(0xffffff);
       }
     }
 
@@ -650,8 +666,8 @@ export class Module extends Container {
           .circle(-14, 0, 5)
           .fill(0xfacc15)
           .stroke({ color: 0x000000, width: 1.5 });
-      } else {
-        // Triple / Quad Heavy Gatling Guns
+      } else if (mgLvl < 5) {
+        // Triple / Quad Heavy Gatling Guns (Cấp 3-4)
         this.turretGfx
           .roundRect(-14, -30, 6, 26, 2)
           .fill(0x27272a)
@@ -687,6 +703,35 @@ export class Module extends Container {
           .circle(15, 0, 6)
           .fill(0xfacc15)
           .stroke({ color: 0x000000, width: 1.5 });
+      } else {
+        // ── 6-BARREL HEAVY ROTARY GATLING CANNON (SÚNG 6 NÒNG TỐI THƯỢNG CẤP 5) ──
+        const barrelX = [-15, -9, -3, 3, 9, 15];
+        for (let b = 0; b < barrelX.length; b++) {
+          const bx = barrelX[b];
+          const isCenter = b === 2 || b === 3;
+          const bLen = isCenter ? 36 : 30;
+          this.turretGfx
+            .roundRect(bx - 2.5, -bLen, 5, bLen, 2)
+            .fill(0x18181b)
+            .stroke({ color: 0x000000, width: 1.5 });
+          this.turretGfx
+            .rect(bx - 3, -bLen - 2, 6, 3)
+            .fill(isCenter ? 0xef4444 : 0xf59e0b);
+        }
+        // Rotary Center Rotor Disc
+        this.turretGfx
+          .ellipse(0, -10, 18, 5)
+          .fill(0x3f3f46)
+          .stroke({ color: 0xfacc15, width: 2 });
+        // Heavy Ammo Feeder Drums
+        this.turretGfx
+          .circle(-16, 2, 7)
+          .fill(0xfacc15)
+          .stroke({ color: 0x000000, width: 2 });
+        this.turretGfx
+          .circle(16, 2, 7)
+          .fill(0xfacc15)
+          .stroke({ color: 0x000000, width: 2 });
       }
     }
   }
@@ -721,6 +766,8 @@ export class Module extends Container {
     return finalDamage;
   }
 
+
+
   heal(amount: number) {
     if (this.isDead) return;
     this.hp = Math.min(this.hp + amount, this.getMaxHp());
@@ -732,31 +779,34 @@ export class Module extends Container {
   }
 
   getEffectiveCooldown(): number {
-    if (!this.data.attack) return 999;
+    if (!this.data.attack) return 1;
     const mgLvl = this.getWeaponLevel("machine_gun");
-    const levelBonus = 1 + (mgLvl - 1) * 0.25;
-    let batteryBonus = this.attachments.has("battery") ? 1.35 : 1.0;
-    return (
+    const levelBonus = 1 + (mgLvl - 1) * 0.05;
+    let batteryBonus = this.attachments.has("battery") ? 1.15 : 1.0;
+    const garageSpeedBonus = 1 + SaveManager.getStatBonus("attackSpeed");
+    const rawCooldown =
       this.data.attack.cooldown /
-      (levelBonus * batteryBonus * this.stats.attackSpeedMultiplier)
-    );
+      (levelBonus * batteryBonus * this.stats.attackSpeedMultiplier * garageSpeedBonus);
+    // Measured rhythm: ensure clear space between bullet rows (never becomes a solid wall)
+    return Math.max(0.18, rawCooldown);
   }
 
   getEffectiveDamage(): number {
     if (!this.data.attack) return 0;
     const mgLvl = this.getWeaponLevel("machine_gun");
-    const levelMultiplier = 1 + (mgLvl - 1) * 0.35;
+    const levelMultiplier = 1 + (mgLvl - 1) * 0.15;
+    const garageDmgBonus = 1 + SaveManager.getStatBonus("damage");
     return Math.round(
-      this.data.attack.damage * levelMultiplier * this.stats.damageMultiplier,
+      this.data.attack.damage * levelMultiplier * this.stats.damageMultiplier * garageDmgBonus,
     );
   }
 
   getProjectileCount(): number {
     const mgLvl = this.getWeaponLevel("machine_gun");
-    // Mỗi cấp sao tăng thêm +1 đường đạn (Cấp 1 = 1 đạn, Cấp 2 = 2 đạn, Cấp 3 = 3 đạn, Cấp 4 = 4 đạn, Cấp 5 = 5 đạn)
+    // 5 cấp độ sao tương ứng 1..5 tia đạn
     const starProjectiles = Math.max(1, mgLvl);
-    // Cộng dồn với thẻ nâng cấp chỉ số (+1 hoặc +2 đạn)
-    return starProjectiles + this.stats.extraProjectiles;
+    // Tối đa full nâng cấp chuẩn xác là 6 đường đạn (Súng 6 nòng)
+    return Math.min(6, starProjectiles + this.stats.extraProjectiles);
   }
 
   getChainTargets(): number {

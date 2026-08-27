@@ -26,14 +26,14 @@ export interface BossDefinition {
 export const BossDefinitions: Record<string, BossDefinition> = {
   collector: {
     id: "collector",
-    name: "The Collector",
-    maxHp: 2000,
+    name: "The Collector — Chúa Tể Hẻm Núi",
+    maxHp: 2800,
     radius: 80,
     color: 0x880000,
     approachSpeed: 100,
     phases: [
       {
-        name: "Phase 1",
+        name: "Giai đoạn 1",
         hpThreshold: 1.0,
         hookInterval: 7,
         hookDuration: 4,
@@ -41,7 +41,7 @@ export const BossDefinitions: Record<string, BossDefinition> = {
         spawnSwarm: false,
       },
       {
-        name: "Phase 2 — Aggressive",
+        name: "Giai đoạn 2 — Cuồng Nộ",
         hpThreshold: 0.6,
         hookInterval: 5,
         hookDuration: 3.5,
@@ -50,7 +50,7 @@ export const BossDefinitions: Record<string, BossDefinition> = {
         swarmInterval: 8,
       },
       {
-        name: "Phase 3 — Desperate",
+        name: "Giai đoạn 3 — Diệt Vong",
         hpThreshold: 0.3,
         hookInterval: 3.5,
         hookDuration: 3,
@@ -61,3 +61,6 @@ export const BossDefinitions: Record<string, BossDefinition> = {
     ],
   },
 };
+
+// Aliases to avoid undefined errors
+BossDefinitions.the_collector = BossDefinitions.collector;

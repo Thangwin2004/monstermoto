@@ -32,14 +32,43 @@ export class AudioMixer {
       // Lower BGM volume so it creates pleasant ambience without overpowering SFX
       this.bgmGain = this.ctx.createGain();
       this.bgmGain.connect(this.masterGain);
-      this.bgmGain.gain.value = 0.18; // Soft, gentle background music
+      this.bgmGain.gain.value = 0.22; // Soft background music
 
       // Punchy, clear SFX channel
       this.sfxGain = this.ctx.createGain();
       this.sfxGain.connect(this.masterGain);
-      this.sfxGain.gain.value = 0.72;
+      this.sfxGain.gain.value = 0.75;
+
+      this.syncWithSettings();
     } catch (e) {
       console.warn("Web Audio API not supported:", e);
+    }
+  }
+
+  static syncWithSettings() {
+    try {
+      const raw = localStorage.getItem("monster_convoy_save_v1");
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        const settings = parsed.settings;
+        if (settings) {
+          this.setVolumes(settings);
+        }
+      }
+    } catch {}
+  }
+
+  static setVolumes(settings: { sfxVolume?: number; bgmVolume?: number; sfxMuted?: boolean; bgmMuted?: boolean }) {
+    if (!this.ctx) return;
+    if (this.bgmGain && (settings.bgmVolume !== undefined || settings.bgmMuted !== undefined)) {
+      const isMuted = settings.bgmMuted ?? false;
+      const vol = settings.bgmVolume ?? 0.7;
+      this.bgmGain.gain.value = isMuted ? 0 : 0.25 * vol;
+    }
+    if (this.sfxGain && (settings.sfxVolume !== undefined || settings.sfxMuted !== undefined)) {
+      const isMuted = settings.sfxMuted ?? false;
+      const vol = settings.sfxVolume ?? 0.8;
+      this.sfxGain.gain.value = isMuted ? 0 : 0.85 * vol;
     }
   }
 

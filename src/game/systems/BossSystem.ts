@@ -37,7 +37,7 @@ export class BossSystem {
 
   constructor(parent: Container, convoySystem: ConvoySystem) {
     this.convoySystem = convoySystem;
-    this.bossDef = BossDefinitions.the_collector;
+    this.bossDef = BossDefinitions.collector || BossDefinitions.the_collector;
 
     this.container = new Container();
     this.container.visible = false;
@@ -174,20 +174,30 @@ export class BossSystem {
   }
 
   spawn() {
+    if (!this.bossDef) {
+      this.bossDef = BossDefinitions.collector || BossDefinitions.the_collector;
+    }
     this.active = true;
     this.container.visible = true;
     this.container.x = GAME_WIDTH / 2;
     this.container.y = -150;
-    this.maxHp = this.bossDef.maxHp;
+    this.maxHp = this.bossDef?.maxHp ?? 2800;
     this.hp = this.maxHp;
     this.state = "approach";
-    this.currentPhase = this.bossDef.phases[0];
+    this.currentPhase = this.bossDef?.phases?.[0] ?? {
+      name: "Giai đoạn 1",
+      hpThreshold: 1.0,
+      hookInterval: 7,
+      hookDuration: 4,
+      moveSpeed: 0.02,
+      spawnSwarm: false,
+    };
     this.hookCooldown = this.currentPhase.hookInterval;
 
     this.renderWarRig();
     this.updateHpBar();
 
-    EventBus.emit("boss:spawned", { bossId: this.bossDef.id });
+    EventBus.emit("boss:spawned", { bossId: this.bossDef?.id ?? "collector" });
   }
 
   takeDamage(amount: number) {

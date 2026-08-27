@@ -33,8 +33,8 @@ export class UpgradeSystem {
     const engine = convoy.getEngine();
 
     const mgLvl = warRig?.getWeaponLevel("machine_gun") ?? 0;
-    const flameLvl = warRig?.getWeaponLevel("flamethrower") ?? 0;
-    const teslaLvl = warRig?.getWeaponLevel("tesla") ?? 0;
+    const rocketLvl = warRig?.getWeaponLevel("rocket") ?? 0;
+    const laserLvl = warRig?.getWeaponLevel("laser") ?? 0;
     const shieldLvl = Math.max(
       engine?.getWeaponLevel("shield") ?? 0,
       warRig?.getWeaponLevel("shield") ?? 0,
@@ -55,16 +55,16 @@ export class UpgradeSystem {
           return false;
 
         // 2. Unlock cards ONLY appear when the weapon is NOT owned yet (level === 0)
-        if (u.id === "card_get_flame" && flameLvl > 0) return false;
-        if (u.id === "card_get_tesla" && teslaLvl > 0) return false;
+        if (u.id === "card_get_rocket" && rocketLvl > 0) return false;
+        if (u.id === "card_get_laser" && laserLvl > 0) return false;
         if (u.id === "card_get_shield" && shieldLvl > 0) return false;
 
         // 3. Star upgrades ONLY appear when the weapon IS ALREADY OWNED (level >= 1) and not maxed (< 5)
         if (u.id === "star_machine_gun" && (mgLvl < 1 || mgLvl >= 5))
           return false;
-        if (u.id === "star_flamethrower" && (flameLvl < 1 || flameLvl >= 5))
+        if (u.id === "star_rocket" && (rocketLvl < 1 || rocketLvl >= 5))
           return false;
-        if (u.id === "star_tesla" && (teslaLvl < 1 || teslaLvl >= 5))
+        if (u.id === "star_laser" && (laserLvl < 1 || laserLvl >= 5))
           return false;
         if (u.id === "star_shield" && (shieldLvl < 1 || shieldLvl >= 5))
           return false;
@@ -83,35 +83,36 @@ export class UpgradeSystem {
         }
 
         if (u.id === "star_machine_gun") {
-          const nextBullets = mgLvl + 1 + (warRig?.stats.extraProjectiles ?? 0);
-          customized.name = `⭐ Lên Sao Súng Máy (Cấp ${mgLvl + 1})`;
-          customized.targetLabel = `🔫 Súng Máy (Cấp ${mgLvl} ➔ ⭐ Cấp ${mgLvl + 1})`;
-          customized.description = `Nâng cấp Cấp ${mgLvl + 1}: Thêm +1 đường đạn (Tổng: ${nextBullets} tia đạn) & tăng +35% sát thương.`;
-        } else if (u.id === "star_flamethrower") {
-          const nextLvl = flameLvl + 1;
+          const nextLvl = mgLvl + 1;
+          const nextBullets = Math.min(6, nextLvl + (warRig?.stats.extraProjectiles ?? 0));
+          customized.name = `⭐ Lên Sao Súng Máy (Cấp ${nextLvl})`;
+          customized.targetLabel = `🔫 Súng Máy (Cấp ${mgLvl} ➔ ⭐ Cấp ${nextLvl})`;
+          customized.description = `Nâng cấp Cấp ${nextLvl}: Bắn thêm +1 tia đạn tập trung (Tổng: ${nextBullets} tia đạn) & tăng +15% sát thương.`;
+        } else if (u.id === "star_rocket") {
+          const nextLvl = rocketLvl + 1;
           const perk =
             nextLvl === 2
-              ? "Mở rộng tầm phun 340px, tăng +40% sát thương & thêm tàn lửa bốc cháy."
+              ? "Bắn tên lửa bọc thép uy lực hơn, nổ AOE 65px & tăng +40% sát thương."
               : nextLvl === 3
-                ? "Thêm vòi phun trung tâm siêu nạp (Vòm lửa 3 luồng quét sạch 3 làn đường)."
+                ? "Bắn 4 tên lửa theo loạt (2 thẳng, 2 lượn chéo) nổ diện rộng 80px."
                 : nextLvl === 4
-                  ? "Bổ sung 2 luồng lửa quét chéo hai sườn xe (Tứ Hướng Phun Lửa)."
-                  : "Tiến hóa thành Lam Hỏa Plasma Hellfire: Biển lửa xanh quét sạch nửa màn hình!";
-          customized.name = `⭐ Lên Sao Phun Lửa (Cấp ${nextLvl})`;
-          customized.targetLabel = `🔥 Phun Lửa (Cấp ${flameLvl} ➔ ⭐ Cấp ${nextLvl})`;
+                  ? "Bão Micro-Missile 6 quả phân tán quét sạch cụm quái từ xa."
+                  : "Tiến hóa Tên Lửa Nhiệt Hạch Thần Thoại: 6 tên lửa hạt nhân mini nổ chùm liên hoàn!";
+          customized.name = `⭐ Lên Sao Tên Lửa (Cấp ${nextLvl})`;
+          customized.targetLabel = `🚀 Tên Lửa (Cấp ${rocketLvl} ➔ ⭐ Cấp ${nextLvl})`;
           customized.description = `Nâng cấp Cấp ${nextLvl}: ${perk}`;
-        } else if (u.id === "star_tesla") {
-          const nextLvl = teslaLvl + 1;
+        } else if (u.id === "star_laser") {
+          const nextLvl = laserLvl + 1;
           const perk =
             nextLvl === 2
-              ? "Phóng đồng thời 2 tia sét độc lập vào 2 mục tiêu cùng lúc (Giật lan 3 quái)."
+              ? "Tia Laser kép năng lượng cao, xuyên qua 4 quái vật & tăng +45% sát thương."
               : nextLvl === 3
-                ? "Bắn 3 luồng sét cùng lúc + Phát sóng xung kích EMP bảo vệ xe."
+                ? "3 chùm tia Laser (Trái, Giữa, Phải) quét dọc 3 làn đường."
                 : nextLvl === 4
-                  ? "Bắn 4 luồng sét giật chuỗi 5 quái mỗi tia (Giật 20+ quái đồng thời)."
-                  : "Tiến hóa Thiên Lôi Diệt Thế: Sét Vàng Kim 5 tia liên hoàn + Sấm Sét Nổ Tung!";
-          customized.name = `⭐ Lên Sao Tesla (Cấp ${nextLvl})`;
-          customized.targetLabel = `⚡ Tesla (Cấp ${teslaLvl} ➔ ⭐ Cấp ${nextLvl})`;
+                  ? "4 chùm tia Laser Plasma Tím rực rỡ xuyên thấu toàn bộ hàng quái!"
+                  : "Tiến hóa Pháo Quang Tử Siêu Nhiệt: 4 chùm Laser Vàng Kim quét sạch toàn bộ tuyến đường!";
+          customized.name = `⭐ Lên Sao Pháo Laser (Cấp ${nextLvl})`;
+          customized.targetLabel = `⚡ Pháo Laser (Cấp ${laserLvl} ➔ ⭐ Cấp ${nextLvl})`;
           customized.description = `Nâng cấp Cấp ${nextLvl}: ${perk}`;
         } else if (u.id === "star_shield") {
           customized.name = `⭐ Lên Sao Khiên (Cấp ${shieldLvl + 1})`;
@@ -317,10 +318,10 @@ export class UpgradeSystem {
       if (targetTag) {
         const hasDirectTag = m.data.tags.includes(targetTag);
         const hasAttachedTag =
-          (targetTag === "fire" && m.getWeaponLevel("flamethrower") > 0) ||
-          (targetTag === "electric" && m.getWeaponLevel("tesla") > 0) ||
+          (targetTag === "explosive" && m.getWeaponLevel("rocket") > 0) ||
+          (targetTag === "laser" && m.getWeaponLevel("laser") > 0) ||
           (targetTag === "defense" && m.getWeaponLevel("shield") > 0) ||
-          (targetTag === "projectile" && m.getWeaponLevel("machine_gun") > 0);
+          (targetTag === "projectile" && (m.getWeaponLevel("machine_gun") > 0 || m.getWeaponLevel("rocket") > 0));
         if (!hasDirectTag && !hasAttachedTag) continue;
       }
       if (

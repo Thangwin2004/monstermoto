@@ -60,9 +60,9 @@ const ACTION_LABELS: Record<
   string,
   { text: string; color: number; bg: number }
 > = {
-  upgrade_module: { text: "⭐ LÊN CẤP SAO", color: 0xb45309, bg: 0xfef3c7 },
-  stat_boost: { text: "✨ NÂNG CHỈ SỐ", color: 0x0369a1, bg: 0xe0f2fe },
-  new_module: { text: "🆕 MỞ KHÓA VŨ KHÍ", color: 0x15803d, bg: 0xdcfce7 },
+  upgrade_module: { text: "⭐ LÊN SAO", color: 0xb45309, bg: 0xfef3c7 },
+  stat_boost: { text: "✨ NÂNG CẤP", color: 0x0369a1, bg: 0xe0f2fe },
+  new_module: { text: "🆕 VŨ KHÍ MỚI", color: 0x15803d, bg: 0xdcfce7 },
 };
 
 export class UpgradePanel extends Container {
@@ -79,7 +79,7 @@ export class UpgradePanel extends Container {
     // Soft translucent dark backdrop
     this.bg = new Graphics();
     this.bg.rect(0, 0, GAME_WIDTH, GAME_HEIGHT);
-    this.bg.fill({ color: 0x0f172a, alpha: 0.65 });
+    this.bg.fill({ color: 0x0f172a, alpha: 0.75 });
     this.bg.eventMode = "static";
     this.addChild(this.bg);
 
@@ -90,7 +90,7 @@ export class UpgradePanel extends Container {
 
     // ── Bright 3D Dialog Card Base ──
     const cardW = 620;
-    const cardH = 820;
+    const cardH = 840;
 
     // 1. Soft Card Shadow
     const cardShadow = new Graphics();
@@ -142,10 +142,10 @@ export class UpgradePanel extends Container {
     this.modalContainer.addChild(ribbon);
 
     const titleText = new Text({
-      text: "✨ LÊN CẤP ĐOÀN XE!",
+      text: "LÊN CẤP ĐOÀN XE!",
       style: {
         fontFamily: "Be Vietnam Pro, sans-serif",
-        fontSize: 28,
+        fontSize: 26,
         fontWeight: "900",
         fill: 0xffffff,
         stroke: { color: 0x78350f, width: 4 },
@@ -158,16 +158,16 @@ export class UpgradePanel extends Container {
 
     // Subtitle
     const subText = new Text({
-      text: "Chọn 1 nâng cấp để gia tăng hỏa lực chiến xa",
+      text: "Chạm vào thẻ bài để gia tăng hỏa lực chiến xa",
       style: {
         fontFamily: "Be Vietnam Pro, sans-serif",
-        fontSize: 18,
+        fontSize: 16,
         fontWeight: "700",
-        fill: 0x475569,
+        fill: 0x64748b,
       },
     });
     subText.anchor.set(0.5);
-    subText.y = ribbonY + ribbonH + 20;
+    subText.y = ribbonY + ribbonH + 18;
     this.modalContainer.addChild(subText);
 
     // 5. Options Container
@@ -180,8 +180,8 @@ export class UpgradePanel extends Container {
 
     const cardW = 560;
     const cardH = 175;
-    const startY = -205;
-    const gap = 190;
+    const startY = -210;
+    const gap = 195;
 
     for (let i = 0; i < upgrades.length; i++) {
       const upgrade = upgrades[i];
@@ -212,7 +212,7 @@ export class UpgradePanel extends Container {
       // Gloss sheen on top
       body
         .roundRect(-cardW / 2 + 8, -cardH / 2 + 6, cardW - 16, 42, 14)
-        .fill({ color: 0xffffff, alpha: 0.6 });
+        .fill({ color: 0xffffff, alpha: 0.65 });
       content.addChild(body);
 
       // 3. Top Badges Row: Rarity Badge + Action Type Badge
@@ -240,7 +240,7 @@ export class UpgradePanel extends Container {
       // Action Badge (Lên Sao / Nâng Chỉ Số / Thêm Mới)
       const actionBadge = new Graphics();
       actionBadge
-        .roundRect(-cardW / 2 + 114, -cardH / 2 + 14, 145, 24, 12)
+        .roundRect(-cardW / 2 + 114, -cardH / 2 + 14, 130, 24, 12)
         .fill(actionInfo.bg)
         .stroke({ color: theme.border, width: 1.5 });
       content.addChild(actionBadge);
@@ -255,7 +255,7 @@ export class UpgradePanel extends Container {
         },
       });
       actionText.anchor.set(0.5);
-      actionText.x = -cardW / 2 + 186;
+      actionText.x = -cardW / 2 + 179;
       actionText.y = -cardH / 2 + 26;
       content.addChild(actionText);
 
@@ -264,7 +264,7 @@ export class UpgradePanel extends Container {
         text: `ÁP DỤNG: ${upgrade.targetLabel}`,
         style: {
           fontFamily: "Be Vietnam Pro, sans-serif",
-          fontSize: 13,
+          fontSize: 12.5,
           fontWeight: "900",
           fill: theme.textCol,
         },
@@ -274,12 +274,12 @@ export class UpgradePanel extends Container {
       scopeText.y = -cardH / 2 + 26;
       content.addChild(scopeText);
 
-      // 5. Upgrade Name (Crisp, High-Contrast Dark Sapphire)
+      // 5. Upgrade Name
       const nameText = new Text({
         text: upgrade.name,
         style: {
           fontFamily: "Be Vietnam Pro, sans-serif",
-          fontSize: 24,
+          fontSize: 22,
           fontWeight: "900",
           fill: 0x0f172a,
         },
@@ -289,12 +289,12 @@ export class UpgradePanel extends Container {
       nameText.y = -cardH / 2 + 64;
       content.addChild(nameText);
 
-      // 6. Description Text (Clear, High-Contrast Slate)
+      // 6. Description Text (Full card width with spacious layout)
       const descText = new Text({
         text: upgrade.description,
         style: {
           fontFamily: "Be Vietnam Pro, sans-serif",
-          fontSize: 17,
+          fontSize: 16,
           fontWeight: "600",
           fill: 0x334155,
           wordWrap: true,
@@ -307,7 +307,7 @@ export class UpgradePanel extends Container {
       descText.y = -cardH / 2 + 88;
       content.addChild(descText);
 
-      // 7. Interactive Hover & Touch
+      // 7. Interactive Hover & Touch (The entire card acts as a juicy button)
       optBtn.eventMode = "static";
       optBtn.cursor = "pointer";
 
@@ -320,7 +320,7 @@ export class UpgradePanel extends Container {
       });
       optBtn.on("pointerdown", () => {
         content.y = 4;
-        AudioMixer.playButton();
+        AudioMixer.playSFX("sfx_button");
       });
       optBtn.on("pointerup", () => {
         content.y = 0;

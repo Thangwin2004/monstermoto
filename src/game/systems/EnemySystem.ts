@@ -73,8 +73,8 @@ export class EnemySystem {
       this.startEncounter();
     }
 
-    // Ambient Streamer: If screen has too few monsters, stream in scouts immediately
-    if (this.enemies.length < 6) {
+    // Ambient Streamer: If screen has few monsters, stream in scouts immediately
+    if (this.enemies.length < 8) {
       this.ambientSpawnTimer -= dtSec;
       if (this.ambientSpawnTimer <= 0) {
         const scoutType: EnemyArchetype = gameRng.pick([
@@ -82,9 +82,10 @@ export class EnemySystem {
           "swarm",
           "runner",
           "spitter",
+          "bomber",
         ]);
         this.spawnEnemy(scoutType);
-        this.ambientSpawnTimer = 0.65;
+        this.ambientSpawnTimer = 0.45;
       }
     }
 
@@ -252,9 +253,9 @@ export class EnemySystem {
       e.scrapReward = Math.round(def.scrapReward * 2 + 1);
     }
 
-    // Spawn position: across the roadway width
+    // Spawn position: across the roadway width right above top border
     e.x = gameRng.float(ROAD_LEFT + 20, ROAD_RIGHT - 20);
-    e.y = gameRng.float(-90, -30);
+    e.y = gameRng.float(-40, -15);
 
     this.enemies.push(e);
   }

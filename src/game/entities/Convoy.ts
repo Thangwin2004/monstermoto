@@ -179,8 +179,14 @@ export class Convoy extends Container {
       for (const tag of m.data.tags) {
         tags.add(tag);
       }
-      if (m.getWeaponLevel("flamethrower") > 0) tags.add("fire");
-      if (m.getWeaponLevel("tesla") > 0) tags.add("electric");
+      if (m.getWeaponLevel("rocket") > 0) {
+        tags.add("explosive");
+        tags.add("projectile");
+      }
+      if (m.getWeaponLevel("laser") > 0) {
+        tags.add("laser");
+        tags.add("energy");
+      }
       if (m.getWeaponLevel("shield") > 0) tags.add("defense");
       if (m.getWeaponLevel("machine_gun") > 0) {
         tags.add("physical");

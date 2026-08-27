@@ -1,7 +1,7 @@
 import { Container, Graphics, GraphicsContext } from "pixi.js";
 
 export type ProjectileType =
-  | "bullet" | "flame" | "lightning" | "rocket" | "acid";
+  | "bullet" | "flame" | "lightning" | "rocket" | "laser" | "acid";
 
 export interface ProjectileSpawnOptions {
   aoeRadius?: number;
@@ -11,6 +11,8 @@ export interface ProjectileSpawnOptions {
   chainTargets?: number;
   isEnemy?: boolean;
   radius?: number;
+  maxLifetime?: number;
+  pierceCount?: number;
 }
 
 // Performance Cache: Static GraphicsContext for all projectile visuals
@@ -40,6 +42,8 @@ export class Projectile extends Container {
   public shockChance: number = 0;
   public bounceCount: number = 0;
   public chainTargets: number = 0;
+  public maxLifetime: number = 0;
+  public pierceCount: number = 0;
 
   private gfx: Graphics;
   private animTime: number = 0;
@@ -73,6 +77,8 @@ export class Projectile extends Container {
     this.burnChance = opts.burnChance ?? 0;
     this.shockChance = opts.shockChance ?? 0;
     this.bounceCount = opts.bounceCount ?? 0;
+    this.maxLifetime = opts.maxLifetime ?? 0;
+    this.pierceCount = opts.pierceCount ?? 0;
     this.animTime = 0;
 
     const angle = Math.atan2(vy, vx);
@@ -171,6 +177,20 @@ export class Projectile extends Container {
         g.rect(-14, -8, 6, 16).fill(0xf59e0b);
         g.circle(-16, 0, 5).fill(0xfff0aa);
       });
+    } else if (this.projType === "laser") {
+      this.radius = 8;
+      this.gfx.context = getProjectileContext("laser", (g) => {
+        // Glowing Heavy Plasma Laser Beam
+        g.poly([16, -6, 16, 6, -56, 0])
+          .fill({ color: 0x00e5ff, alpha: 0.35 });
+        g.roundRect(-24, -4, 48, 8, 4)
+          .fill(0x00f0ff)
+          .stroke({ color: 0xffffff, width: 2 });
+        g.roundRect(-18, -2, 36, 4, 2)
+          .fill(0xffffff);
+        g.circle(18, 0, 4).fill(0xffffff);
+        g.circle(-26, 0, 3).fill(0xa5f3fc);
+      });
     } else if (this.projType === "acid") {
       this.radius = 10;
       this.gfx.context = getProjectileContext("acid", (g) => {
@@ -187,6 +207,11 @@ export class Projectile extends Container {
 
   update(dtSec: number) {
     this.animTime += dtSec;
+    if (this.maxLifetime > 0 && this.animTime >= this.maxLifetime) {
+      this.deactivate();
+      return;
+    }
+
     this.x += this.vx * dtSec;
     this.y += this.vy * dtSec;
 

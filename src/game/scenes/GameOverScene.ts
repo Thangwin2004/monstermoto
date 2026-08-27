@@ -3,11 +3,14 @@ import { Scene, SceneManager } from "./SceneManager";
 import { GAME_WIDTH, GAME_HEIGHT } from "../constants";
 import { AudioMixer } from "../utils/AudioMixer";
 import { RunState } from "../utils/RunState";
-import { winkGame } from "../../integrations/wink/client";
+import { SaveManager } from "../utils/SaveManager";
+import { GarageModal } from "../ui/GarageModal";
+import { SettingsModal } from "../ui/SettingsModal";
+import { HyperButton, HyperCircleButton } from "../ui/HyperButton";
 
 export class GameOverScene extends Container implements Scene {
   private modalContainer: Container;
-  private playAgainBtn: Container;
+  private playAgainBtn: HyperButton;
   private animTime: number = 0;
 
   constructor() {
@@ -16,26 +19,43 @@ export class GameOverScene extends Container implements Scene {
     // 1. Dark Backdrop
     const bg = new Graphics();
     bg.rect(0, 0, GAME_WIDTH, GAME_HEIGHT);
-    bg.fill({ color: 0x090a0f, alpha: 0.9 });
+    bg.fill({ color: 0x090a0f, alpha: 0.92 });
     this.addChild(bg);
 
+    // Top-Right Settings Button (HyperCircleButton with crisp vector gear)
+    const settingsBtn = new HyperCircleButton({
+      vectorIcon: "gear",
+      radius: 22,
+      color: 0x0ea5e9,
+      shadowColor: 0x0369a1,
+      strokeWidth: 3,
+      onClick: () => {
+        const modal = new SettingsModal(() => {});
+        this.addChild(modal);
+      },
+    });
+    settingsBtn.x = GAME_WIDTH - 44;
+    settingsBtn.y = 38;
+    this.addChild(settingsBtn);
+
+    // 2. Modal Container
     this.modalContainer = new Container();
     this.modalContainer.x = GAME_WIDTH / 2;
-    this.modalContainer.y = GAME_HEIGHT * 0.45;
+    this.modalContainer.y = GAME_HEIGHT * 0.34;
     this.addChild(this.modalContainer);
 
     const isVictory = RunState.current.victory;
-    const cardW = 580;
-    const cardH = 680;
+    const cardW = 560;
+    const cardH = 530;
 
-    // 2. Soft Card Shadow
+    // Soft Card Shadow
     const cardShadow = new Graphics();
     cardShadow
       .roundRect(-cardW / 2 + 8, -cardH / 2 + 16, cardW, cardH, 28)
-      .fill({ color: 0x000000, alpha: 0.45 });
+      .fill({ color: 0x000000, alpha: 0.5 });
     this.modalContainer.addChild(cardShadow);
 
-    // 3. Thick 3D Border (Green for Victory, Crimson for Defeat)
+    // Thick 3D Border (Green for Victory, Crimson for Defeat)
     const borderColor = isVictory ? 0x15803d : 0x991b1b;
     const borderShadow = isVictory ? 0x14532d : 0x450a0a;
 
@@ -46,17 +66,17 @@ export class GameOverScene extends Container implements Scene {
     borderBg
       .roundRect(-cardW / 2, -cardH / 2, cardW, cardH, 28)
       .fill(borderColor)
-      .stroke({ color: 0xffffff, width: 4 });
+      .stroke({ color: 0xffffff, width: 4.5 });
     this.modalContainer.addChild(borderBg);
 
-    // 4. Bright Cream Card Face
+    // Bright Cream Card Face
     const cardFace = new Graphics();
     cardFace
       .roundRect(-cardW / 2 + 14, -cardH / 2 + 14, cardW - 28, cardH - 28, 20)
       .fill(0xf8fafc);
     this.modalContainer.addChild(cardFace);
 
-    // 5. Floating 3D Title Ribbon
+    // Floating 3D Title Ribbon
     const ribbonW = 380;
     const ribbonH = 68;
     const ribbonY = -cardH / 2;
@@ -83,10 +103,10 @@ export class GameOverScene extends Container implements Scene {
     this.modalContainer.addChild(ribbon);
 
     const titleText = new Text({
-      text: isVictory ? "🏆 CHIẾN THẮNG!" : "💀 HẾT LƯỢT",
+      text: isVictory ? "CHIẾN THẮNG!" : "HẾT LƯỢT",
       style: {
         fontFamily: "Be Vietnam Pro, sans-serif",
-        fontSize: 30,
+        fontSize: 28,
         fontWeight: "900",
         fill: 0xffffff,
         stroke: { color: ribbonShadow, width: 4 },
@@ -99,36 +119,71 @@ export class GameOverScene extends Container implements Scene {
 
     this.buildStatsList();
 
-    // 6. 3D Marth3 Buttons
-    this.playAgainBtn = this.createMarth3Button(
-      "CHƠI LẠI",
-      0xf59e0b,
-      0xb45309,
-      0,
-      () => {
+    // 3. Hyper-Casual Action Buttons with Crisp Vector Icons
+    this.playAgainBtn = new HyperButton({
+      label: "CHƠI LẠI",
+      vectorIcon: "play",
+      width: 310,
+      height: 68,
+      fontSize: 25,
+      color: 0xf59e0b,
+      shadowColor: 0xb45309,
+      pulse: true,
+      onClick: () => {
         SceneManager.switchScene("RunScene");
       },
-    );
-    this.playAgainBtn.y = GAME_HEIGHT * 0.82;
+    });
+    this.playAgainBtn.x = GAME_WIDTH / 2;
+    this.playAgainBtn.y = GAME_HEIGHT * 0.72;
     this.addChild(this.playAgainBtn);
 
-    const menuBtn = this.createMarth3Button(
-      "TRANG CHỦ",
-      0x0284c7,
-      0x0369a1,
-      0,
-      () => {
+    const garageBtn = new HyperButton({
+      label: "NÂNG CẤP XE",
+      vectorIcon: "wrench",
+      width: 270,
+      height: 58,
+      fontSize: 21,
+      color: 0x10b981,
+      shadowColor: 0x047857,
+      onClick: () => {
+        const modal = new GarageModal(() => {
+          this.buildStatsList();
+        });
+        this.addChild(modal);
+      },
+    });
+    garageBtn.x = GAME_WIDTH / 2;
+    garageBtn.y = GAME_HEIGHT * 0.81;
+    this.addChild(garageBtn);
+
+    const menuBtn = new HyperButton({
+      label: "TRANG CHỦ",
+      vectorIcon: "home",
+      width: 230,
+      height: 50,
+      fontSize: 18,
+      color: 0x0ea5e9,
+      shadowColor: 0x0369a1,
+      onClick: () => {
         SceneManager.switchScene("MenuScene");
       },
-    );
-    menuBtn.y = GAME_HEIGHT * 0.91;
-    menuBtn.scale.set(0.88);
+    });
+    menuBtn.x = GAME_WIDTH / 2;
+    menuBtn.y = GAME_HEIGHT * 0.89;
     this.addChild(menuBtn);
   }
 
   private buildStatsList() {
     const rs = RunState.current;
     const bestScore = RunState.getBestScore();
+    const curScrap = SaveManager.getScrap();
+
+    const statTag = "__stat_item__";
+    for (let i = this.modalContainer.children.length - 1; i >= 0; i--) {
+      if ((this.modalContainer.children[i] as any)[statTag]) {
+        this.modalContainer.removeChildAt(i);
+      }
+    }
 
     const stats = [
       {
@@ -138,7 +193,8 @@ export class GameOverScene extends Container implements Scene {
       },
       { label: "Quái tiêu diệt", value: `${rs.kills}`, icon: "💀" },
       { label: "Cấp độ đạt được", value: `${rs.level}`, icon: "⭐" },
-      { label: "Phế liệu thu thập", value: `${rs.scrap}`, icon: "🔩" },
+      { label: "Phế liệu nhận được", value: `+${rs.scrap} 🔩`, icon: "🎁" },
+      { label: "Tổng phế liệu ví", value: `${curScrap} 🔩`, icon: "💰" },
       {
         label: "Thời gian sinh tồn",
         value: `${Math.floor(rs.runTime / 60)}:${String(Math.floor(rs.runTime % 60)).padStart(2, "0")}`,
@@ -147,7 +203,7 @@ export class GameOverScene extends Container implements Scene {
     ];
 
     const startY = -180;
-    const rowH = 50;
+    const rowH = 44;
 
     for (let i = 0; i < stats.length; i++) {
       const s = stats[i];
@@ -155,210 +211,79 @@ export class GameOverScene extends Container implements Scene {
 
       // Row background pill
       const rowBg = new Graphics();
+      (rowBg as any)[statTag] = true;
       rowBg
-        .roundRect(-240, y - 20, 480, 42, 10)
-        .fill(i % 2 === 0 ? 0xe2e8f0 : 0xf1f5f9);
+        .roundRect(-240, y - 18, 480, 36, 10)
+        .fill(i === 3 || i === 4 ? 0xfef9c3 : i % 2 === 0 ? 0xe2e8f0 : 0xf1f5f9)
+        .stroke({ color: i === 3 || i === 4 ? 0xfacc15 : 0xcbd5e1, width: 1.5 });
       this.modalContainer.addChild(rowBg);
 
       const labelText = new Text({
         text: `${s.icon}  ${s.label}`,
         style: {
           fontFamily: "Be Vietnam Pro, sans-serif",
-          fontSize: 18,
+          fontSize: 15,
           fontWeight: "700",
-          fill: 0x475569,
+          fill: i === 3 || i === 4 ? 0x854d0e : 0x475569,
         },
       });
+      (labelText as any)[statTag] = true;
       labelText.anchor.set(0, 0.5);
       labelText.x = -220;
-      labelText.y = y + 1;
+      labelText.y = y;
       this.modalContainer.addChild(labelText);
 
       const valText = new Text({
         text: s.value,
         style: {
           fontFamily: "Be Vietnam Pro, sans-serif",
-          fontSize: 20,
+          fontSize: 16,
           fontWeight: "900",
-          fill: 0x0f172a,
+          fill: i === 3 || i === 4 ? 0xb45309 : 0x0f172a,
         },
       });
+      (valText as any)[statTag] = true;
       valText.anchor.set(1, 0.5);
       valText.x = 220;
-      valText.y = y + 1;
+      valText.y = y;
       this.modalContainer.addChild(valText);
     }
 
-    // Score Card Box
-    const scoreBoxY = startY + stats.length * rowH + 20;
-    const scoreBox = new Graphics();
-    scoreBox
-      .roundRect(-240, scoreBoxY - 24, 480, 72, 14)
-      .fill(0xfef3c7)
-      .stroke({ color: 0xf59e0b, width: 3 });
-    this.modalContainer.addChild(scoreBox);
+    // High score banner at bottom of card
+    const scoreY = startY + stats.length * rowH + 16;
+    const scoreBg = new Graphics();
+    (scoreBg as any)[statTag] = true;
+    scoreBg
+      .roundRect(-240, scoreY - 20, 480, 40, 12)
+      .fill(0x0f172a)
+      .stroke({ color: 0xfacc15, width: 2 });
+    this.modalContainer.addChild(scoreBg);
 
-    const scoreTitle = new Text({
-      text: "TỔNG ĐIỂM",
+    const scoreText = new Text({
+      text: `ĐIỂM: ${rs.getScore()}  |  KỶ LỤC: ${bestScore}`,
       style: {
         fontFamily: "Be Vietnam Pro, sans-serif",
-        fontSize: 16,
+        fontSize: 15,
         fontWeight: "900",
-        fill: 0xb45309,
+        fill: 0xfacc15,
+        letterSpacing: 1,
       },
     });
-    scoreTitle.anchor.set(0, 0.5);
-    scoreTitle.x = -215;
-    scoreTitle.y = scoreBoxY + 12;
-    this.modalContainer.addChild(scoreTitle);
-
-    const scoreNum = new Text({
-      text: `${rs.getScore()}`,
-      style: {
-        fontFamily: "Be Vietnam Pro, sans-serif",
-        fontSize: 34,
-        fontWeight: "900",
-        fill: 0xb45309,
-      },
-    });
-    scoreNum.anchor.set(1, 0.5);
-    scoreNum.x = 215;
-    scoreNum.y = scoreBoxY + 12;
-    this.modalContainer.addChild(scoreNum);
-
-    const effDisplayName =
-      winkGame.personalBest?.displayName ||
-      (winkGame.isAuthenticated ? "Thành viên" : "Bạn");
-    const effPbScore =
-      winkGame.personalBest?.score !== undefined
-        ? winkGame.personalBest.score
-        : bestScore;
-    const effRank = winkGame.personalBest?.rank
-      ? `#${winkGame.personalBest.rank}`
-      : "";
-
-    const bestText = new Text({
-      text:
-        effPbScore > 0
-          ? `Kỷ lục: ${effPbScore} (${effDisplayName} ${effRank})`
-          : `Kỷ lục cao nhất: ${bestScore}`,
-      style: {
-        fontFamily: "Be Vietnam Pro, sans-serif",
-        fontSize: 16,
-        fontWeight: "700",
-        fill: 0x94a3b8,
-      },
-    });
-    bestText.anchor.set(0.5);
-    bestText.y = scoreBoxY + 70;
-    this.modalContainer.addChild(bestText);
-
-    // Submit score and refresh personal best
-    winkGame
-      .submitFinalScore({
-        score: rs.getScore(),
-        playTime: Math.floor(rs.runTime),
-        metadata: {
-          distance: Math.floor(rs.distance),
-          kills: rs.kills,
-          level: rs.level,
-          victory: rs.victory,
-        },
-      })
-      .then((res) => {
-        const activeMe = res?.entry || winkGame.personalBest;
-        if (activeMe) {
-          const pScore = activeMe.score;
-          const pName =
-            activeMe.displayName ||
-            (winkGame.isAuthenticated ? "Thành viên" : "Bạn");
-          const pRank = activeMe.rank ? `#${activeMe.rank}` : "";
-          bestText.text = `Kỷ lục: ${pScore} (${pName} ${pRank})`;
-        }
-      })
-      .catch(() => {});
-  }
-
-  private createMarth3Button(
-    label: string,
-    colorTop: number,
-    colorShadow: number,
-    y: number,
-    onClick: () => void,
-  ): Container {
-    const btn = new Container();
-    btn.x = GAME_WIDTH / 2;
-    btn.y = y;
-
-    const content = new Container();
-    btn.addChild(content);
-
-    const w = 300;
-    const h = 68;
-    const radius = 34;
-
-    // Shadow base
-    const shadow = new Graphics();
-    shadow.roundRect(-w / 2, -h / 2 + 8, w, h, radius).fill(colorShadow);
-    btn.addChildAt(shadow, 0);
-
-    // Body
-    const body = new Graphics();
-    body
-      .roundRect(-w / 2, -h / 2, w, h, radius)
-      .fill(colorTop)
-      .stroke({ color: 0xffffff, width: 4 });
-    body
-      .roundRect(-w / 2 + 12, -h / 2 + 4, w - 24, h * 0.38, 14)
-      .fill({ color: 0xffffff, alpha: 0.3 });
-    content.addChild(body);
-
-    const text = new Text({
-      text: label,
-      style: {
-        fontFamily: "Be Vietnam Pro, sans-serif",
-        fontSize: 26,
-        fontWeight: "900",
-        fill: 0xffffff,
-        stroke: { color: colorShadow, width: 4 },
-        letterSpacing: 2,
-      },
-    });
-    text.anchor.set(0.5);
-    text.y = -2;
-    content.addChild(text);
-
-    btn.eventMode = "static";
-    btn.cursor = "pointer";
-
-    btn.on("pointerover", () => {
-      btn.scale.set(1.04);
-    });
-    btn.on("pointerout", () => {
-      btn.scale.set(1);
-      content.y = 0;
-    });
-    btn.on("pointerdown", () => {
-      content.y = 5;
-      AudioMixer.playButton();
-    });
-    btn.on("pointerup", () => {
-      content.y = 0;
-      onClick();
-    });
-
-    return btn;
+    (scoreText as any)[statTag] = true;
+    scoreText.anchor.set(0.5);
+    scoreText.y = scoreY;
+    this.modalContainer.addChild(scoreText);
   }
 
   start() {
-    AudioMixer.playBGM("bgm_menu");
+    const isVictory = RunState.current.victory;
+    AudioMixer.playBGM(isVictory ? "bgm_victory" : "bgm_gameover");
   }
 
   update(dt: number) {
     const dtSec = dt * (1 / 60);
     this.animTime += dtSec;
-    const pulse = 1 + Math.sin(this.animTime * 4) * 0.02;
-    this.playAgainBtn.scale.set(pulse);
+    this.playAgainBtn.updatePulse(dtSec);
   }
 
   resize() {}

@@ -10,6 +10,7 @@ import {
 } from "../constants";
 import { EventBus } from "../utils/EventBus";
 import { gameRng } from "../utils/RNG";
+import { SaveManager } from "../utils/SaveManager";
 
 export class LootSystem {
   public container: Container;
@@ -19,6 +20,7 @@ export class LootSystem {
   public xp: number = 0;
   public level: number = 1;
   public totalKills: number = 0;
+  public totalScrap: number = 0;
 
   // Active Timed Buffs
   public rapidFireTimer: number = 0;
@@ -48,6 +50,11 @@ export class LootSystem {
   onEnemyDefeated(x: number, y: number, isElite: boolean = false) {
     this.totalKills++;
     this.gainXp(isElite ? 35 : 12);
+
+    // Scrap drop reward with Garage Scrap Bonus
+    const scrapBonus = 1 + SaveManager.getStatBonus("scrapBonus");
+    const baseScrap = isElite ? 10 + Math.floor(Math.random() * 8) : (Math.random() < 0.6 ? 2 : 1);
+    this.totalScrap += Math.round(baseScrap * scrapBonus);
 
     // 1. Cap active crates on screen to at most 2
     const activeCount = this.pickups.filter((p) => p.active).length;

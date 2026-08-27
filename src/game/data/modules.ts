@@ -2,6 +2,7 @@ import { ModuleData } from "../entities/Module";
 
 /**
  * 7 module MVP — tiếng Việt.
+ * Các chỉ số cơ bản được tinh chỉnh vừa phải để tạo đất diễn cho nâng cấp Xưởng Xe và Thẻ bài.
  */
 export const ModuleDefinitions: Record<string, ModuleData> = {
   engine: {
@@ -9,8 +10,8 @@ export const ModuleDefinitions: Record<string, ModuleData> = {
     name: "Động Cơ",
     type: "engine",
     rarity: "common",
-    maxHp: 350,
-    armor: 8,
+    maxHp: 220,
+    armor: 4,
     tags: ["engine"],
     color: 0x3366cc,
     emoji: "🚙",
@@ -21,54 +22,54 @@ export const ModuleDefinitions: Record<string, ModuleData> = {
     name: "Súng Máy",
     type: "weapon",
     rarity: "common",
-    maxHp: 150,
+    maxHp: 120,
     armor: 2,
     tags: ["projectile", "physical"],
     color: 0xaa3333,
     emoji: "🔫",
     attack: {
-      damage: 26,
-      cooldown: 0.28, // Slower, rhythmic firing rate (was 0.14)
-      range: 600,
-      projectileSpeed: 1050,
+      damage: 13,
+      cooldown: 0.36,
+      range: 580,
+      projectileSpeed: 1000,
       projectileCount: 1,
     },
   },
 
-  flamethrower: {
-    id: "flamethrower",
-    name: "Phun Lửa",
-    type: "weapon",
-    rarity: "common",
-    maxHp: 160,
-    armor: 2,
-    tags: ["fire"],
-    color: 0xff6600,
-    emoji: "🔥",
-    attack: {
-      damage: 18,
-      cooldown: 0.15, // Paced flame bursts (was 0.06)
-      range: 280,
-      projectileSpeed: 450,
-      aoeRadius: 75,
-    },
-  },
-
-  tesla: {
-    id: "tesla",
-    name: "Tesla",
+  rocket: {
+    id: "rocket",
+    name: "Tên Lửa",
     type: "weapon",
     rarity: "rare",
     maxHp: 130,
     armor: 2,
-    tags: ["electric", "energy"],
-    color: 0x00ccff,
+    tags: ["explosive", "projectile"],
+    color: 0xf97316,
+    emoji: "🚀",
+    attack: {
+      damage: 35,
+      cooldown: 1.15,
+      range: 620,
+      projectileSpeed: 680,
+      aoeRadius: 65,
+    },
+  },
+
+  laser: {
+    id: "laser",
+    name: "Pháo Laser",
+    type: "weapon",
+    rarity: "epic",
+    maxHp: 110,
+    armor: 2,
+    tags: ["laser", "energy"],
+    color: 0x00e5ff,
     emoji: "⚡",
     attack: {
-      damage: 58,
-      cooldown: 0.75, // Strategic high-voltage strike (was 0.45)
-      range: 450,
-      chainTargets: 3,
+      damage: 32,
+      cooldown: 0.85,
+      range: 660,
+      projectileSpeed: 1350,
     },
   },
 
@@ -77,8 +78,8 @@ export const ModuleDefinitions: Record<string, ModuleData> = {
     name: "Khiên",
     type: "defense",
     rarity: "common",
-    maxHp: 450,
-    armor: 15,
+    maxHp: 280,
+    armor: 8,
     tags: ["defense"],
     color: 0x888899,
     emoji: "🛡️",
@@ -86,7 +87,7 @@ export const ModuleDefinitions: Record<string, ModuleData> = {
       {
         target: "behind",
         stat: "damageTaken",
-        value: 0.7,
+        value: 0.75,
         isMultiplier: true,
       },
     ],
@@ -97,7 +98,7 @@ export const ModuleDefinitions: Record<string, ModuleData> = {
     name: "Bình Xăng",
     type: "support",
     rarity: "common",
-    maxHp: 80,
+    maxHp: 70,
     armor: 0,
     tags: ["fire", "support", "explosive"],
     color: 0xcc6600,
@@ -107,7 +108,7 @@ export const ModuleDefinitions: Record<string, ModuleData> = {
         target: "adjacent",
         requireTag: "fire",
         stat: "damage",
-        value: 1.6,
+        value: 1.5,
         isMultiplier: true,
       },
     ],
@@ -121,7 +122,7 @@ export const ModuleDefinitions: Record<string, ModuleData> = {
     name: "Pin",
     type: "support",
     rarity: "common",
-    maxHp: 90,
+    maxHp: 80,
     armor: 0,
     tags: ["energy", "support"],
     color: 0x33aa66,
@@ -131,7 +132,7 @@ export const ModuleDefinitions: Record<string, ModuleData> = {
         target: "adjacent",
         requireTag: "energy",
         stat: "attackSpeed",
-        value: 1.35,
+        value: 1.25,
         isMultiplier: true,
       },
     ],

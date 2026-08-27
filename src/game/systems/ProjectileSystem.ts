@@ -51,12 +51,12 @@ export class ProjectileSystem {
 
       p.update(dtSec);
 
-      // Off screen check
+      // Screen boundary check (bullets deactivate at top edge of visible screen)
       if (
         p.x < -50 ||
         p.x > GAME_WIDTH + 50 ||
-        p.y < -100 ||
-        p.y > GAME_HEIGHT + 100
+        p.y < 0 ||
+        p.y > GAME_HEIGHT + 80
       ) {
         p.deactivate();
       }

@@ -12,6 +12,7 @@ import { AudioMixer } from "../utils/AudioMixer";
 import { circlesOverlap, distance, normalize } from "../utils/MathUtils";
 import { gameRng } from "../utils/RNG";
 import { MODULE_COLLISION_RADIUS } from "../constants";
+import { SaveManager } from "../utils/SaveManager";
 
 /**
  * Helper: get module position in gameLayer space.
@@ -66,7 +67,7 @@ export class CombatSystem {
     const convoy = this.convoySystem.convoy;
     const dtSec = dt * (1 / 60);
 
-    const speedBuff = this.lootSystem.rapidFireTimer > 0 ? 0.5 : 1.0;
+    const speedBuff = this.lootSystem.rapidFireTimer > 0 ? 0.75 : 1.0;
 
     for (const module of convoy.modules) {
       if (module.isDead || !module.data.attack) continue;
@@ -80,178 +81,137 @@ export class CombatSystem {
       // Continuously auto-fire straight forward in travel direction
       if (module.cooldownTimer <= 0) {
         this.fireWeaponForward(module, mPos);
-        module.cooldownTimer = module.getEffectiveCooldown() * speedBuff;
+        module.cooldownTimer = Math.max(0.16, module.getEffectiveCooldown() * speedBuff);
       }
 
-      // ── Integrated Side Mount: Multi-Stream Progressive Flamethrowers (Phun Bão Lửa) ──
-      const flameLvl = module.getWeaponLevel("flamethrower");
-      if (flameLvl > 0) {
-        module.flameCooldownTimer -= dtSec;
-        if (module.flameCooldownTimer <= 0) {
-          module.flameCooldownTimer = Math.max(0.09, 0.18 - flameLvl * 0.018);
-          const flameDmg = Math.round(
-            (24 + flameLvl * 18) * module.stats.damageMultiplier,
+      // ── Integrated Side Mount: Heavy Swarm Rocket Launch Pods (Bệ Phóng Tên Lửa) ──
+      const rocketLvl = module.getWeaponLevel("rocket");
+      if (rocketLvl > 0) {
+        module.rocketCooldownTimer -= dtSec;
+        if (module.rocketCooldownTimer <= 0) {
+          module.rocketCooldownTimer = Math.max(0.70, 1.25 - rocketLvl * 0.11);
+          const heavyBonus = 1 + SaveManager.getStatBonus("heavyWeapon");
+          const rocketDmg = Math.round(
+            (28 + rocketLvl * 15) * module.stats.damageMultiplier * heavyBonus,
           );
-          const burnChance = Math.min(1.0, 0.4 + flameLvl * 0.15);
-          const aoe = 50 + flameLvl * 14;
-          const isPlasma = flameLvl >= 5;
+          const aoe = 60 + rocketLvl * 10;
+          const isNuclear = rocketLvl >= 5;
 
-          AudioMixer.playShoot("flame");
+          AudioMixer.playShoot("rocket");
 
-          // Progressive Multi-Stream Cone based on Star Level:
-          // Level 1: 2 front streams
-          // Level 2: 2 wider front streams + higher velocity
-          // Level 3: 3 streams (Left, Center heavy jet, Right) -> 3-lane cone!
-          // Level 4: 4 streams (2 forward + 2 diagonal flank sweeps)
-          // Level 5: 5 streams of Blue/Purple Plasma Hellfire covering entire forward road!
-          const streams: { x: number; y: number; vx: number; vy: number }[] = [];
+          // Progressive Missile Salvo based on Star Level:
+          // Level 1: 2 rockets (Left & Right)
+          // Level 2: 2 heavy high-speed rockets (Bigger AOE)
+          // Level 3: 4 rockets (2 center + 2 flanking angled)
+          // Level 4: 6 micro-missiles fanning out across roadway
+          // Level 5: 6 Titan Nuclear Rockets with Cluster Blast
+          const rockets: { x: number; y: number; vx: number; vy: number }[] = [];
+          const leftX = mPos.x - 38;
+          const rightX = mPos.x + 38;
+          const podY = mPos.y - 6;
 
-          if (flameLvl === 1) {
-            streams.push({ x: mPos.x - 34, y: mPos.y - 10, vx: -30, vy: -540 });
-            streams.push({ x: mPos.x + 34, y: mPos.y - 10, vx: 30, vy: -540 });
-          } else if (flameLvl === 2) {
-            streams.push({ x: mPos.x - 36, y: mPos.y - 10, vx: -55, vy: -580 });
-            streams.push({ x: mPos.x + 36, y: mPos.y - 10, vx: 55, vy: -580 });
-          } else if (flameLvl === 3) {
-            streams.push({ x: mPos.x - 38, y: mPos.y - 10, vx: -85, vy: -580 });
-            streams.push({ x: mPos.x, y: mPos.y - 28, vx: 0, vy: -650 }); // Center heavy flame
-            streams.push({ x: mPos.x + 38, y: mPos.y - 10, vx: 85, vy: -580 });
-          } else if (flameLvl === 4) {
-            streams.push({ x: mPos.x - 42, y: mPos.y - 4, vx: -160, vy: -480 });
-            streams.push({ x: mPos.x - 20, y: mPos.y - 24, vx: -45, vy: -620 });
-            streams.push({ x: mPos.x + 20, y: mPos.y - 24, vx: 45, vy: -620 });
-            streams.push({ x: mPos.x + 42, y: mPos.y - 4, vx: 160, vy: -480 });
+          if (rocketLvl === 1) {
+            rockets.push({ x: leftX, y: podY, vx: -15, vy: -680 });
+            rockets.push({ x: rightX, y: podY, vx: 15, vy: -680 });
+          } else if (rocketLvl === 2) {
+            rockets.push({ x: leftX, y: podY, vx: -25, vy: -740 });
+            rockets.push({ x: rightX, y: podY, vx: 25, vy: -740 });
+          } else if (rocketLvl === 3) {
+            rockets.push({ x: leftX - 4, y: podY, vx: -65, vy: -700 });
+            rockets.push({ x: leftX + 4, y: podY - 10, vx: -10, vy: -760 });
+            rockets.push({ x: rightX - 4, y: podY - 10, vx: 10, vy: -760 });
+            rockets.push({ x: rightX + 4, y: podY, vx: 65, vy: -700 });
+          } else if (rocketLvl === 4) {
+            rockets.push({ x: leftX - 8, y: podY, vx: -110, vy: -660 });
+            rockets.push({ x: leftX, y: podY - 6, vx: -45, vy: -720 });
+            rockets.push({ x: leftX + 8, y: podY - 12, vx: -15, vy: -780 });
+            rockets.push({ x: rightX - 8, y: podY - 12, vx: 15, vy: -780 });
+            rockets.push({ x: rightX, y: podY - 6, vx: 45, vy: -720 });
+            rockets.push({ x: rightX + 8, y: podY, vx: 110, vy: -660 });
           } else {
-            // Level 5: 5 Plasma Hellfire Streams
-            streams.push({ x: mPos.x - 44, y: mPos.y - 4, vx: -220, vy: -500 });
-            streams.push({ x: mPos.x - 24, y: mPos.y - 22, vx: -85, vy: -660 });
-            streams.push({ x: mPos.x, y: mPos.y - 32, vx: 0, vy: -720 });
-            streams.push({ x: mPos.x + 24, y: mPos.y - 22, vx: 85, vy: -660 });
-            streams.push({ x: mPos.x + 44, y: mPos.y - 4, vx: 220, vy: -500 });
+            // Level 5: 6 Nuclear Cluster Warheads
+            rockets.push({ x: leftX - 10, y: podY, vx: -130, vy: -720 });
+            rockets.push({ x: leftX - 2, y: podY - 8, vx: -50, vy: -780 });
+            rockets.push({ x: leftX + 6, y: podY - 16, vx: -15, vy: -840 });
+            rockets.push({ x: rightX - 6, y: podY - 16, vx: 15, vy: -840 });
+            rockets.push({ x: rightX + 2, y: podY - 8, vx: 50, vy: -780 });
+            rockets.push({ x: rightX + 10, y: podY, vx: 130, vy: -720 });
           }
 
-          for (const s of streams) {
+          for (const r of rockets) {
             this.projectileSystem.spawn(
-              s.x,
-              s.y,
-              s.vx + (Math.random() - 0.5) * 30,
-              s.vy + (Math.random() - 0.5) * 30,
-              flameDmg,
-              "flame",
+              r.x,
+              r.y,
+              r.vx,
+              r.vy,
+              rocketDmg,
+              "rocket",
               {
                 aoeRadius: aoe,
-                burnChance: burnChance,
+                isEnemy: false,
               },
             );
-            if (isPlasma) {
-              this.particleSystem.plasmaFlamePuff(s.x, s.y, s.vx * 0.45, s.vy * 0.45);
-            } else {
-              this.particleSystem.flamePuff(s.x, s.y, s.vx * 0.45, s.vy * 0.45);
+            this.particleSystem.exhaustPuff(r.x, r.y + 12, -r.vx * 0.3, 100);
+            if (isNuclear) {
+              this.particleSystem.critBurst(r.x, r.y);
             }
           }
         }
       }
 
-      // ── Integrated Side Mount: Multi-Target Tesla Lightning Storm (Phóng Sấm Sét Đa Mục Tiêu) ──
-      const teslaLvl = module.getWeaponLevel("tesla");
-      if (teslaLvl > 0) {
-        module.teslaCooldownTimer -= dtSec;
-        if (module.teslaCooldownTimer <= 0) {
-          module.teslaCooldownTimer = Math.max(0.35, 0.75 - teslaLvl * 0.08);
-          const teslaDmg = Math.round(
-            (60 + teslaLvl * 35) * module.stats.damageMultiplier,
+      // ── Integrated Side Mount: Twin High-Tech Heavy Plasma Laser Cannons (Pháo Laser Xuyên Phá) ──
+      const laserLvl = module.getWeaponLevel("laser");
+      if (laserLvl > 0) {
+        module.laserCooldownTimer -= dtSec;
+        if (module.laserCooldownTimer <= 0) {
+          module.laserCooldownTimer = Math.max(0.48, 0.90 - laserLvl * 0.08);
+          const heavyBonus = 1 + SaveManager.getStatBonus("heavyWeapon");
+          const laserDmg = Math.round(
+            (26 + laserLvl * 14) * module.stats.damageMultiplier * heavyBonus,
           );
+          const pierce = laserLvl >= 5 ? 99 : laserLvl >= 4 ? 12 : laserLvl >= 3 ? 6 : laserLvl * 2;
+          const isHyper = laserLvl >= 5;
 
-          // Star level determines simultaneous primary target count & chain depth
-          // ⭐ Level 1: 1 target, chain 2
-          // ⭐ Level 2: 2 targets, chain 3
-          // ⭐ Level 3: 3 targets, chain 4 + EMP shockwave
-          // ⭐ Level 4: 4 targets, chain 5 + EMP shockwave
-          // ⭐ Level 5: 5 targets, chain 6 + Golden Titan Lightning + Thunderclaps!
-          const targetCount = Math.min(5, teslaLvl);
-          const chainPerTarget = Math.min(6, 1 + teslaLvl);
-          const boltColor = teslaLvl >= 5 ? 0xfacc15 : teslaLvl >= 3 ? 0xa855f7 : 0x00f0ff;
+          AudioMixer.playShoot("tesla");
 
-          const leftCoilX = mPos.x - 34;
-          const rightCoilX = mPos.x + 34;
-          const coilY = mPos.y + 14;
+          const leftRailX = mPos.x - 30;
+          const rightRailX = mPos.x + 30;
+          const railY = mPos.y - 20;
 
-          const targets = this.findMultipleTargets(mPos, 580, targetCount);
+          const beams: { x: number; y: number; vx: number; vy: number }[] = [];
 
-          if (targets.length > 0) {
-            AudioMixer.playShoot("tesla");
-
-            // EMP shockwave for Level 3+
-            if (teslaLvl >= 3) {
-              this.particleSystem.empShockwave(mPos.x, mPos.y, 80 + teslaLvl * 20, boltColor);
-            }
-
-            for (let tIdx = 0; tIdx < targets.length; tIdx++) {
-              const target = targets[tIdx];
-              const originX = tIdx % 2 === 0 ? leftCoilX : rightCoilX;
-
-              // Primary bolt
-              this.particleSystem.lightningBolt(originX, coilY, target.x, target.y, boltColor);
-
-              // Thunderclap for Level 5
-              if (teslaLvl >= 5) {
-                this.particleSystem.thunderStrike(target.x, target.y, 0xfacc15);
-              }
-
-              const killed = target.takeDamage(teslaDmg);
-              target.applyShock(3.0);
-              this.particleSystem.hitSpark(target.x, target.y, boltColor, 10);
-              EventBus.emit("damage:number", {
-                x: target.x,
-                y: target.y - 20,
-                amount: teslaDmg,
-                status: "shock",
-              });
-              if (killed) this.onEnemyKilled(target);
-
-              // Chain to secondary nearby enemies
-              let lastX = target.x;
-              let lastY = target.y;
-              let chained = 0;
-
-              for (const other of this.enemySystem.enemies) {
-                if (!other.active || other === target || targets.includes(other)) continue;
-                if (distance(lastX, lastY, other.x, other.y) < 260) {
-                  this.particleSystem.lightningBolt(lastX, lastY, other.x, other.y, boltColor);
-                  const chainDmg = Math.round(teslaDmg * (0.75 + teslaLvl * 0.05));
-                  const k2 = other.takeDamage(chainDmg);
-                  other.applyShock(3.0);
-                  this.particleSystem.hitSpark(other.x, other.y, boltColor, 6);
-                  EventBus.emit("damage:number", {
-                    x: other.x,
-                    y: other.y - 20,
-                    amount: chainDmg,
-                    status: "shock",
-                  });
-                  if (k2) this.onEnemyKilled(other);
-                  lastX = other.x;
-                  lastY = other.y;
-                  chained++;
-                  if (chained >= chainPerTarget) break;
-                }
-              }
-            }
+          if (laserLvl <= 2) {
+            beams.push({ x: leftRailX, y: railY, vx: 0, vy: -1400 });
+            beams.push({ x: rightRailX, y: railY, vx: 0, vy: -1400 });
+          } else if (laserLvl === 3) {
+            beams.push({ x: leftRailX, y: railY, vx: -45, vy: -1400 });
+            beams.push({ x: mPos.x, y: railY - 12, vx: 0, vy: -1450 });
+            beams.push({ x: rightRailX, y: railY, vx: 45, vy: -1400 });
           } else {
-            // Ambient forward discharge when driving
-            this.particleSystem.lightningBolt(
-              leftCoilX,
-              coilY,
-              mPos.x - 20 + (Math.random() - 0.5) * 40,
-              mPos.y - 220,
-              boltColor,
+            // Level 4 & 5: 4-Beam Hyper Photon Array
+            beams.push({ x: leftRailX - 8, y: railY, vx: -90, vy: -1450 });
+            beams.push({ x: leftRailX + 4, y: railY - 10, vx: -25, vy: -1500 });
+            beams.push({ x: rightRailX - 4, y: railY - 10, vx: 25, vy: -1500 });
+            beams.push({ x: rightRailX + 8, y: railY, vx: 90, vy: -1450 });
+          }
+
+          for (const b of beams) {
+            this.projectileSystem.spawn(
+              b.x,
+              b.y,
+              b.vx,
+              b.vy,
+              laserDmg,
+              "laser",
+              {
+                pierceCount: pierce,
+                shockChance: 0.25,
+              },
             );
-            this.particleSystem.lightningBolt(
-              rightCoilX,
-              coilY,
-              mPos.x + 20 + (Math.random() - 0.5) * 40,
-              mPos.y - 220,
-              boltColor,
-            );
+            this.particleSystem.electricSpark(b.x, b.y);
+            if (isHyper) {
+              this.particleSystem.sparkle(b.x, b.y, 0xfde047);
+            }
           }
         }
       }
@@ -265,19 +225,17 @@ export class CombatSystem {
     const speed = attack.projectileSpeed ?? 1000;
 
     let projType: ProjectileType = "bullet";
-    if (module.data.tags.includes("fire")) projType = "flame";
-    else if (module.data.tags.includes("electric")) projType = "lightning";
+    if (module.data.tags.includes("laser")) projType = "laser";
     else if (module.data.tags.includes("explosive")) projType = "rocket";
+    else if (module.data.tags.includes("acid")) projType = "acid";
 
     // Play Firing Sound with Rate Limiter & Multi-variation
     AudioMixer.playShoot(
-      projType === "flame"
-        ? "flame"
-        : projType === "lightning"
-          ? "tesla"
-          : projType === "rocket"
-            ? "rocket"
-            : "bullet",
+      projType === "laser"
+        ? "tesla"
+        : projType === "rocket"
+          ? "rocket"
+          : "bullet",
     );
 
     // Straight forward direction (-90 deg = -Math.PI / 2)
@@ -291,11 +249,11 @@ export class CombatSystem {
       module.data.color,
     );
 
-    // Calculate distinct barrel origins and trajectory angles so bullets never overlap
-    const barrelSpacing = projCount > 1 ? Math.min(11, 46 / (projCount - 1)) : 0;
-    const totalBarrelWidth = barrelSpacing * (projCount - 1);
+    // Natural, punchy bullet spacing across truck hood (không bị bó dính, không xòe rộng)
+    const totalBarrelWidth = Math.min(38, 7.5 * (projCount - 1));
+    const barrelSpacing = projCount > 1 ? totalBarrelWidth / (projCount - 1) : 0;
     const totalSpreadAngle =
-      projCount > 1 ? Math.min(0.38, 0.08 * (projCount - 1)) : 0;
+      projCount > 1 ? Math.min(0.13, 0.026 * (projCount - 1)) : 0;
 
     for (let i = 0; i < projCount; i++) {
       let spawnX = from.x;
@@ -336,10 +294,6 @@ export class CombatSystem {
         },
       );
       if (spawnedP) (spawnedP as any).isCrit = isCrit;
-
-      if (projType === "flame") {
-        this.particleSystem.flamePuff(spawnX, from.y - 24, vx * 0.5, vy * 0.5);
-      }
     }
 
     module.triggerFire();
@@ -353,7 +307,7 @@ export class CombatSystem {
     let minDist = range;
 
     for (const enemy of this.enemySystem.enemies) {
-      if (!enemy.active) continue;
+      if (!enemy.active || enemy.y < 20) continue;
       const d = distance(fromPos.x, fromPos.y, enemy.x, enemy.y);
       if (d < minDist) {
         minDist = d;
@@ -373,14 +327,14 @@ export class CombatSystem {
     return closest;
   }
 
-  /** Find multiple distinct enemy targets within range */
+  /** Find multiple distinct enemy targets within range (only visible on-screen enemies) */
   private findMultipleTargets(
     fromPos: { x: number; y: number },
     range: number,
     maxCount: number = 1,
   ): Enemy[] {
     const valid = this.enemySystem.enemies
-      .filter((e) => e.active && distance(fromPos.x, fromPos.y, e.x, e.y) < range)
+      .filter((e) => e.active && e.y >= 20 && distance(fromPos.x, fromPos.y, e.x, e.y) < range)
       .sort(
         (a, b) =>
           distance(fromPos.x, fromPos.y, a.x, a.y) -
@@ -397,7 +351,8 @@ export class CombatSystem {
       if (!p.active || p.isEnemyProjectile) continue;
 
       for (const e of this.enemySystem.enemies) {
-        if (!e.active) continue;
+        // ONLY collide with active enemies that have entered visible screen area
+        if (!e.active || e.y < 10) continue;
 
         // Fast Bounding-Box Broadphase Filter (Skips ~95% unnecessary distance checks)
         const maxDist = p.radius + e.radius;
@@ -417,9 +372,11 @@ export class CombatSystem {
           const sparkColor =
             p.projType === "flame"
               ? 0xff6600
-              : p.projType === "lightning"
-                ? 0x00ffff
-                : 0xffea00;
+              : p.projType === "lightning" || p.projType === "laser"
+                ? 0x00f0ff
+                : p.projType === "rocket"
+                  ? 0xf97316
+                  : 0xffea00;
           this.particleSystem.hitSpark(
             p.x,
             p.y,
@@ -432,16 +389,15 @@ export class CombatSystem {
 
           if (isCrit) {
             this.particleSystem.critBurst(p.x, p.y);
-            EventBus.emit("camera:shake", { intensity: 4, duration: 0.1 });
           }
 
-          if (p.projType === "lightning" || p.shockChance > 0) {
+          if (p.projType === "laser" || p.projType === "lightning" || p.shockChance > 0) {
             this.particleSystem.electricSpark(p.x, p.y);
-          } else if (
-            p.projType === "flame" ||
-            p.aoeRadius > 0 ||
-            p.burnChance > 0
-          ) {
+          }
+          if (p.projType === "rocket" || p.aoeRadius > 0) {
+            this.particleSystem.explode(p.x, p.y, p.aoeRadius > 0 ? p.aoeRadius : 25, 0xff5500);
+            EventBus.emit("camera:shake", { intensity: 2.2, duration: 0.1 });
+          } else if (p.projType === "flame" || p.burnChance > 0) {
             this.particleSystem.explode(p.x, p.y, 25, 0xff5500);
           }
 
@@ -469,7 +425,9 @@ export class CombatSystem {
             this.handleSplashDamage(p.x, p.y, p.aoeRadius, p.damage * 0.5);
           }
 
-          if (p.bounceCount > 0) {
+          if (p.pierceCount > 0) {
+            p.pierceCount--;
+          } else if (p.bounceCount > 0) {
             this.bounceProjectile(p, e);
           } else {
             p.deactivate();
@@ -490,7 +448,7 @@ export class CombatSystem {
     AudioMixer.playExplosion();
 
     for (const e of this.enemySystem.enemies) {
-      if (!e.active) continue;
+      if (!e.active || e.y < 10) continue;
       const maxDist = radius + e.radius;
       const dx = x - e.x;
       if (dx > maxDist || dx < -maxDist) continue;
@@ -590,7 +548,7 @@ export class CombatSystem {
           const dmg = m.takeDamage(e.damage);
           this.particleSystem.explode(mPos.x, mPos.y, 40, 0xff3b30);
           AudioMixer.playExplosion();
-          EventBus.emit("camera:shake", { intensity: 6, duration: 0.15 });
+          EventBus.emit("camera:shake", { intensity: 3.5, duration: 0.1 });
 
           EventBus.emit("module:damaged", {
             moduleIndex: m.slotIndex,
@@ -691,9 +649,9 @@ export class CombatSystem {
     // Sound effect (rate limited & varied)
     AudioMixer.playKill(enemy.radius >= 35);
 
-    // Screen shake on heavy kills
-    if (enemy.radius >= 35) {
-      EventBus.emit("camera:shake", { intensity: 5, duration: 0.15 });
+    // Subtle tactile screen shake on heavy enemies (colossus, tank, bomber)
+    if (enemy.archetype === "colossus" || enemy.archetype === "tank" || enemy.archetype === "bomber") {
+      EventBus.emit("camera:shake", { intensity: 2.5, duration: 0.12 });
     }
 
     EventBus.emit("enemy:killed", {

@@ -11,6 +11,8 @@ import {
 import { EventBus } from "../utils/EventBus";
 import { moveTowards } from "../utils/MathUtils";
 
+import { SaveManager } from "../utils/SaveManager";
+
 export class ConvoySystem {
   public convoy: Convoy;
 
@@ -69,10 +71,11 @@ export class ConvoySystem {
     // Update modules
     this.convoy.update(dt);
 
-    // Passive gentle convoy auto-repair (+2.5 HP/sec)
+    // Passive gentle convoy auto-repair + Garage Nanite Repair bonus
+    const regenRate = 0.5 + SaveManager.getStatBonus("regen");
     for (const m of this.convoy.modules) {
-      if (!m.isDead && m.hp < m.data.maxHp) {
-        m.heal(2.5 * dtSec);
+      if (!m.isDead && m.hp < m.getMaxHp()) {
+        m.heal(regenRate * dtSec);
       }
     }
 

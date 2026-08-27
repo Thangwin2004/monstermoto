@@ -1,4 +1,4 @@
-import { Container } from "pixi.js";
+import { Container, Graphics, Text } from "pixi.js";
 import { Scene, SceneManager } from "./SceneManager";
 import { RoadSystem } from "../systems/RoadSystem";
 import { ConvoySystem } from "../systems/ConvoySystem";
@@ -12,6 +12,9 @@ import { UpgradeSystem } from "../systems/UpgradeSystem";
 import { ParticleSystem } from "../systems/ParticleSystem";
 import { HUD } from "../ui/HUD";
 import { UpgradePanel } from "../ui/UpgradePanel";
+import { SettingsModal } from "../ui/SettingsModal";
+import { HyperCircleButton } from "../ui/HyperButton";
+import { SaveManager } from "../utils/SaveManager";
 import { ModuleDefinitions } from "../data/modules";
 import { EventBus } from "../utils/EventBus";
 import { AudioMixer } from "../utils/AudioMixer";
@@ -59,6 +62,7 @@ export class RunScene extends Container implements Scene {
 
   // Camera shake
   private shakeTimer: number = 0;
+  private shakeDuration: number = 0;
   private shakeIntensity: number = 0;
 
   constructor() {
@@ -107,7 +111,13 @@ export class RunScene extends Container implements Scene {
   }
 
   private initUI() {
-    this.hud = new HUD();
+    this.hud = new HUD(() => {
+      this.isPaused = true;
+      const modal = new SettingsModal(() => {
+        this.isPaused = false;
+      });
+      this.uiLayer.addChild(modal);
+    });
     this.uiLayer.addChild(this.hud);
 
     this.upgradePanel = new UpgradePanel();
@@ -149,7 +159,7 @@ export class RunScene extends Container implements Scene {
     // Module destroyed
     EventBus.on("module:destroyed", () => {
       this.recalculateFormationAndUpgrades();
-      this.triggerShake(12, 0.45);
+      this.triggerShake(5, 0.2);
       AudioMixer.playSFX("sfx_explosion");
       RunState.current.modulesLost++;
     });
@@ -163,7 +173,7 @@ export class RunScene extends Container implements Scene {
     EventBus.on("boss:spawned", () => {
       this.hud.showBossHp("KẺ THU THẬP");
       AudioMixer.playSFX("sfx_shake");
-      this.triggerShake(18, 1.2);
+      this.triggerShake(5, 0.3);
     });
 
     // Boss defeated
@@ -185,13 +195,21 @@ export class RunScene extends Container implements Scene {
        if (this.isGameOver) return;
        this.isGameOver = true;
 
+       const totalRunScrap =
+         this.lootSystem.totalScrap +
+         Math.floor(this.distanceMeters / 6) +
+         (data.victory ? 250 : 0);
+
        RunState.current.victory = data.victory;
        RunState.current.distance = this.distanceMeters;
        RunState.current.kills = this.lootSystem.totalKills;
        RunState.current.level = this.lootSystem.level;
-       RunState.current.scrap = this.lootSystem.totalKills * 5;
+       RunState.current.scrap = totalRunScrap;
        RunState.current.runTime = this.runTime;
 
+       // Save meta-progression currency & run records
+       SaveManager.addScrap(totalRunScrap);
+       SaveManager.recordRun(this.distanceMeters, this.lootSystem.totalKills);
        RunState.saveBestScore(RunState.current.getScore());
 
        if (this.currentWinkRound) {
@@ -210,11 +228,6 @@ export class RunScene extends Container implements Scene {
          SceneManager.switchScene("GameOverScene");
        }, 800);
      });
-
-    // Enemy killed — light shake
-    EventBus.on("enemy:killed", () => {
-      this.triggerShake(2.5, 0.05);
-    });
   }
 
   start() {
@@ -229,25 +242,25 @@ export class RunScene extends Container implements Scene {
     this.runTime += dtSec;
     this.distanceMeters += ROAD_SPEED * dtSec * 0.05;
 
-    // Dynamic Distance & Time Scaling (Độ khó tăng liên tục, nghẹt thở và kịch tính ở cự ly xa)
+    // Progressive Escalating Difficulty Scaling (Độ khó tăng mạnh theo cự ly, quái đông và trâu hơn)
     const distKm = this.distanceMeters / 1000;
     const difficultyLevel = Math.max(
       1,
-      Math.floor(this.distanceMeters / 250) + 1,
+      Math.floor(this.distanceMeters / 200) + 1,
     );
     const hpScale =
       1 +
-      distKm * 2.2 +
-      Math.pow(distKm, 1.45) * 0.85 +
-      (this.runTime / 120) * 0.4;
-    const speedScale = 1 + Math.min(0.65, distKm * 0.12);
+      distKm * 2.8 +
+      Math.pow(distKm, 1.6) * 1.2 +
+      (this.runTime / 90) * 0.5;
+    const speedScale = 1 + Math.min(0.75, distKm * 0.16);
     const densityMultiplier = Math.min(
-      4.2,
-      1 + distKm * 0.65,
+      4.8,
+      1 + distKm * 0.85,
     );
     const eliteChance = Math.min(
-      0.70,
-      0.04 + distKm * 0.13,
+      0.75,
+      0.05 + distKm * 0.16,
     );
 
     this.enemySystem.setDifficulty(
@@ -317,7 +330,7 @@ export class RunScene extends Container implements Scene {
     // HUD
     this.hud.updateDistance(this.distanceMeters);
     this.hud.updateKills(this.lootSystem.totalKills);
-    this.hud.updateScrap(0);
+    this.hud.updateScrap(this.lootSystem.totalScrap);
     this.hud.updateXp(this.lootSystem.getXpRatio(), this.lootSystem.level);
     this.hud.updateBuffs(
       this.lootSystem.rapidFireTimer,
@@ -331,8 +344,8 @@ export class RunScene extends Container implements Scene {
     if (warRig) {
       this.hud.updateWeapons({
         machine_gun: warRig.getWeaponLevel("machine_gun"),
-        flamethrower: warRig.getWeaponLevel("flamethrower"),
-        tesla: warRig.getWeaponLevel("tesla"),
+        rocket: warRig.getWeaponLevel("rocket"),
+        laser: warRig.getWeaponLevel("laser"),
         shield:
           (engine ? engine.getWeaponLevel("shield") : 0) ||
           warRig.getWeaponLevel("shield"),
@@ -367,7 +380,7 @@ export class RunScene extends Container implements Scene {
     if (type === "buff_nuke") {
       // Massive Screen-Wiping Bomb Explosion SFX & Shockwave
       AudioMixer.playNukeExplosion();
-      this.triggerShake(32, 0.75);
+      this.triggerShake(7, 0.3);
 
       // Central explosive shockwaves & particles
       this.particleSystem.explode(
@@ -401,7 +414,6 @@ export class RunScene extends Container implements Scene {
       AudioMixer.playRapidBuff();
       this.particleSystem.sparkle(cx, cy, 0xf59e0b);
       this.particleSystem.electricSpark(cx, cy);
-      this.triggerShake(8, 0.25);
       EventBus.emit("damage:number", {
         x: cx,
         y: cy - 60,
@@ -411,7 +423,6 @@ export class RunScene extends Container implements Scene {
     } else if (type === "buff_shield") {
       AudioMixer.playShieldBuff();
       this.particleSystem.sparkle(cx, cy, 0x0284c7);
-      this.triggerShake(8, 0.25);
     } else if (type === "buff_heal") {
       AudioMixer.playHealBuff();
       for (const m of this.convoySystem.convoy.modules) {
@@ -426,7 +437,7 @@ export class RunScene extends Container implements Scene {
       });
     } else if (type === "star_upgrade") {
       AudioMixer.playStarUpgrade();
-      this.triggerShake(16, 0.45);
+      this.triggerShake(3, 0.15);
       this.particleSystem.sparkle(cx, cy, 0xfacc15);
 
       const engine = this.convoySystem.convoy.getEngine();
@@ -448,23 +459,23 @@ export class RunScene extends Container implements Scene {
           });
         }
 
-        const flameLvl = warRig.getWeaponLevel("flamethrower");
-        if (flameLvl >= 1 && flameLvl < 5) {
+        const rocketLvl = warRig.getWeaponLevel("rocket");
+        if (rocketLvl >= 1 && rocketLvl < 5) {
           upgradableWeapons.push({
-            id: "flamethrower",
-            name: "PHUN LỬA",
+            id: "rocket",
+            name: "TÊN LỬA",
             targetModule: warRig,
-            curLvl: flameLvl,
+            curLvl: rocketLvl,
           });
         }
 
-        const teslaLvl = warRig.getWeaponLevel("tesla");
-        if (teslaLvl >= 1 && teslaLvl < 5) {
+        const laserLvl = warRig.getWeaponLevel("laser");
+        if (laserLvl >= 1 && laserLvl < 5) {
           upgradableWeapons.push({
-            id: "tesla",
-            name: "TESLA",
+            id: "laser",
+            name: "PHÁO LASER",
             targetModule: warRig,
-            curLvl: teslaLvl,
+            curLvl: laserLvl,
           });
         }
 
@@ -524,21 +535,25 @@ export class RunScene extends Container implements Scene {
   }
 
   private triggerShake(intensity: number, duration: number) {
-    this.shakeIntensity = Math.max(this.shakeIntensity, intensity);
-    this.shakeTimer = Math.max(this.shakeTimer, duration);
+    if (!SaveManager.getSettings().screenShake) return;
+    this.shakeIntensity = Math.min(5.5, Math.max(this.shakeIntensity, intensity));
+    this.shakeDuration = Math.max(this.shakeDuration, duration);
+    this.shakeTimer = this.shakeDuration;
   }
 
   private updateShake(dtSec: number) {
     if (this.shakeTimer > 0) {
       this.shakeTimer -= dtSec;
-      const t = this.shakeTimer > 0 ? this.shakeIntensity : 0;
-      this.gameLayer.x = (Math.random() - 0.5) * t * 2;
-      this.gameLayer.y = (Math.random() - 0.5) * t * 2;
-
       if (this.shakeTimer <= 0) {
         this.gameLayer.x = 0;
         this.gameLayer.y = 0;
         this.shakeIntensity = 0;
+        this.shakeDuration = 0;
+      } else {
+        const progress = this.shakeTimer / (this.shakeDuration || 1);
+        const currentAmp = this.shakeIntensity * progress;
+        this.gameLayer.x = (Math.random() * 2 - 1) * currentAmp;
+        this.gameLayer.y = (Math.random() * 2 - 1) * currentAmp;
       }
     }
   }

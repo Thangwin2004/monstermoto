@@ -1,4 +1,4 @@
-import { Container, Graphics, Text } from "pixi.js";
+import { Container, Graphics, Text, BlurFilter } from "pixi.js";
 import { Scene, SceneManager } from "./SceneManager";
 import { RoadSystem } from "../systems/RoadSystem";
 import { ConvoySystem } from "../systems/ConvoySystem";
@@ -113,7 +113,13 @@ export class RunScene extends Container implements Scene {
   private initUI() {
     this.hud = new HUD(() => {
       this.isPaused = true;
+      const blur = new BlurFilter({ strength: 8, quality: 3 });
+      this.gameLayer.filters = [blur];
+      this.hud.filters = [blur];
+
       const modal = new SettingsModal(() => {
+        this.gameLayer.filters = [];
+        this.hud.filters = [];
         this.isPaused = false;
       });
       this.uiLayer.addChild(modal);
@@ -124,6 +130,8 @@ export class RunScene extends Container implements Scene {
     this.uiLayer.addChild(this.upgradePanel);
 
     this.upgradePanel.onSelect = (upgrade) => {
+      this.gameLayer.filters = [];
+      this.hud.filters = [];
       this.upgradeSystem.applyUpgrade(upgrade, this.convoySystem.convoy);
       this.recalculateFormationAndUpgrades();
       this.isPaused = false;
@@ -151,6 +159,9 @@ export class RunScene extends Container implements Scene {
       );
       if (choices.length > 0) {
         this.isPaused = true;
+        const blur = new BlurFilter({ strength: 8, quality: 3 });
+        this.gameLayer.filters = [blur];
+        this.hud.filters = [blur];
         this.upgradePanel.show(choices);
         AudioMixer.playSFX("sfx_levelup");
       }

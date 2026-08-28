@@ -368,53 +368,33 @@ export class CombatSystem {
           // 1. Play Soft Punchy Hit Sound (Rate limited & smooth pitch variation)
           AudioMixer.playHit(isCrit);
 
-          // 2. High-Impact VFX on Hit
-          const sparkColor =
-            p.projType === "flame"
-              ? 0xff6600
-              : p.projType === "lightning" || p.projType === "laser"
-                ? 0x00f0ff
-                : p.projType === "rocket"
-                  ? 0xf97316
-                  : 0xffea00;
-          this.particleSystem.hitSpark(
-            p.x,
-            p.y,
-            sparkColor,
-            isCrit ? 10 : 6,
-            p.vx * 0.15,
-            p.vy * 0.15,
-          );
-          this.particleSystem.bloodSplatter(e.x, e.y, e.color, 4);
-
+          // 2. High-Performance Streamlined VFX on Hit
           if (isCrit) {
             this.particleSystem.critBurst(p.x, p.y);
+            this.particleSystem.hitSpark(p.x, p.y, 0xffea00, 3, p.vx * 0.1, p.vy * 0.1);
+          } else if (Math.random() < 0.4) {
+            const sparkColor =
+              p.projType === "laser" ? 0x00f0ff : p.projType === "rocket" ? 0xf97316 : 0xffea00;
+            this.particleSystem.hitSpark(p.x, p.y, sparkColor, 1, p.vx * 0.1, p.vy * 0.1);
           }
 
-          if (p.projType === "laser" || p.projType === "lightning" || p.shockChance > 0) {
-            this.particleSystem.electricSpark(p.x, p.y);
-          }
           if (p.projType === "rocket" || p.aoeRadius > 0) {
-            this.particleSystem.explode(p.x, p.y, p.aoeRadius > 0 ? p.aoeRadius : 25, 0xff5500);
-            EventBus.emit("camera:shake", { intensity: 2.2, duration: 0.1 });
-          } else if (p.projType === "flame" || p.burnChance > 0) {
-            this.particleSystem.explode(p.x, p.y, 25, 0xff5500);
+            this.particleSystem.explode(p.x, p.y, 6, 0xff5500);
+            EventBus.emit("camera:shake", { intensity: 1.8, duration: 0.08 });
           }
 
           if (p.burnChance > 0 && gameRng.chance(p.burnChance)) {
-            e.applyBurn(Math.max(12, Math.round(p.damage * 0.6)), 3.5);
-            this.particleSystem.sparkle(e.x, e.y, 0xff5500);
+            e.applyBurn(Math.max(12, Math.round(p.damage * 0.6)), 3.0);
           }
           if (p.shockChance > 0 && gameRng.chance(p.shockChance)) {
-            e.applyShock(2.5);
-            this.particleSystem.electricSpark(e.x, e.y);
+            e.applyShock(2.0);
           }
 
           EventBus.emit("damage:number", {
             x: e.x,
             y: e.y - 20,
             amount: p.damage,
-            crit: isCrit || p.damage >= 25,
+            crit: isCrit || p.damage >= 30,
           });
 
           if (killed) {
@@ -642,16 +622,15 @@ export class CombatSystem {
   // ─── On enemy killed ───
 
   private onEnemyKilled(enemy: Enemy) {
-    // Monster explosion & debris
-    this.particleSystem.explode(enemy.x, enemy.y, enemy.radius * 2.2, 0xff6600);
-    this.particleSystem.bloodSplatter(enemy.x, enemy.y, enemy.color, 8);
+    // High-Priority Juicy Monster Death Burst (Guaranteed visual pop on every kill)
+    this.particleSystem.monsterDeath(enemy.x, enemy.y, enemy.radius, enemy.color);
 
     // Sound effect (rate limited & varied)
     AudioMixer.playKill(enemy.radius >= 35);
 
     // Subtle tactile screen shake on heavy enemies (colossus, tank, bomber)
     if (enemy.archetype === "colossus" || enemy.archetype === "tank" || enemy.archetype === "bomber") {
-      EventBus.emit("camera:shake", { intensity: 2.5, duration: 0.12 });
+      EventBus.emit("camera:shake", { intensity: 2.2, duration: 0.1 });
     }
 
     EventBus.emit("enemy:killed", {
@@ -670,7 +649,7 @@ export class CombatSystem {
 
     // Volatile bomber explodes on death damaging surrounding monsters
     if (enemy.archetype === "bomber") {
-      this.particleSystem.explode(enemy.x, enemy.y, 80, 0xef4444);
+      this.particleSystem.explode(enemy.x, enemy.y, 8, 0xef4444);
       this.handleSplashDamage(enemy.x, enemy.y, 110, 45);
     }
 

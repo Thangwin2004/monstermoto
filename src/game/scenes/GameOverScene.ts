@@ -1,4 +1,4 @@
-import { Container, Text, Graphics } from "pixi.js";
+import { Container, Text, Graphics, BlurFilter } from "pixi.js";
 import { Scene, SceneManager } from "./SceneManager";
 import { GAME_WIDTH, GAME_HEIGHT } from "../constants";
 import { AudioMixer } from "../utils/AudioMixer";
@@ -9,6 +9,7 @@ import { SettingsModal } from "../ui/SettingsModal";
 import { HyperButton, HyperCircleButton } from "../ui/HyperButton";
 
 export class GameOverScene extends Container implements Scene {
+  private contentLayer: Container;
   private modalContainer: Container;
   private playAgainBtn: HyperButton;
   private animTime: number = 0;
@@ -16,37 +17,44 @@ export class GameOverScene extends Container implements Scene {
   constructor() {
     super();
 
+    // Group background and gameover card in contentLayer for blur effects
+    this.contentLayer = new Container();
+    this.addChild(this.contentLayer);
+
     // 1. Dark Backdrop
     const bg = new Graphics();
     bg.rect(0, 0, GAME_WIDTH, GAME_HEIGHT);
     bg.fill({ color: 0x090a0f, alpha: 0.92 });
-    this.addChild(bg);
+    this.contentLayer.addChild(bg);
 
     // Top-Right Settings Button (HyperCircleButton with crisp vector gear)
     const settingsBtn = new HyperCircleButton({
       vectorIcon: "gear",
-      radius: 22,
+      radius: 26,
       color: 0x0ea5e9,
       shadowColor: 0x0369a1,
-      strokeWidth: 3,
+      strokeWidth: 3.5,
       onClick: () => {
-        const modal = new SettingsModal(() => {});
+        this.contentLayer.filters = [new BlurFilter({ strength: 8, quality: 3 })];
+        const modal = new SettingsModal(() => {
+          this.contentLayer.filters = [];
+        });
         this.addChild(modal);
       },
     });
     settingsBtn.x = GAME_WIDTH - 44;
-    settingsBtn.y = 38;
-    this.addChild(settingsBtn);
+    settingsBtn.y = 40;
+    this.contentLayer.addChild(settingsBtn);
 
     // 2. Modal Container
     this.modalContainer = new Container();
     this.modalContainer.x = GAME_WIDTH / 2;
     this.modalContainer.y = GAME_HEIGHT * 0.34;
-    this.addChild(this.modalContainer);
+    this.contentLayer.addChild(this.modalContainer);
 
     const isVictory = RunState.current.victory;
-    const cardW = 560;
-    const cardH = 530;
+    const cardW = 600;
+    const cardH = 580;
 
     // Soft Card Shadow
     const cardShadow = new Graphics();
@@ -77,8 +85,8 @@ export class GameOverScene extends Container implements Scene {
     this.modalContainer.addChild(cardFace);
 
     // Floating 3D Title Ribbon
-    const ribbonW = 380;
-    const ribbonH = 68;
+    const ribbonW = 400;
+    const ribbonH = 76;
     const ribbonY = -cardH / 2;
     const ribbonColor = isVictory ? 0x22c55e : 0xef4444;
     const ribbonShadow = isVictory ? 0x15803d : 0x991b1b;
@@ -106,10 +114,10 @@ export class GameOverScene extends Container implements Scene {
       text: isVictory ? "CHIẾN THẮNG!" : "HẾT LƯỢT",
       style: {
         fontFamily: "Be Vietnam Pro, sans-serif",
-        fontSize: 28,
+        fontSize: 32,
         fontWeight: "900",
         fill: 0xffffff,
-        stroke: { color: ribbonShadow, width: 4 },
+        stroke: { color: ribbonShadow, width: 4.5 },
         letterSpacing: 2,
       },
     });
@@ -123,9 +131,9 @@ export class GameOverScene extends Container implements Scene {
     this.playAgainBtn = new HyperButton({
       label: "CHƠI LẠI",
       vectorIcon: "play",
-      width: 310,
-      height: 68,
-      fontSize: 25,
+      width: 360,
+      height: 84,
+      fontSize: 30,
       color: 0xf59e0b,
       shadowColor: 0xb45309,
       pulse: true,
@@ -134,34 +142,36 @@ export class GameOverScene extends Container implements Scene {
       },
     });
     this.playAgainBtn.x = GAME_WIDTH / 2;
-    this.playAgainBtn.y = GAME_HEIGHT * 0.72;
-    this.addChild(this.playAgainBtn);
+    this.playAgainBtn.y = GAME_HEIGHT * 0.725;
+    this.contentLayer.addChild(this.playAgainBtn);
 
     const garageBtn = new HyperButton({
       label: "NÂNG CẤP XE",
       vectorIcon: "wrench",
-      width: 270,
-      height: 58,
-      fontSize: 21,
+      width: 320,
+      height: 72,
+      fontSize: 25,
       color: 0x10b981,
       shadowColor: 0x047857,
       onClick: () => {
+        this.contentLayer.filters = [new BlurFilter({ strength: 8, quality: 3 })];
         const modal = new GarageModal(() => {
+          this.contentLayer.filters = [];
           this.buildStatsList();
         });
         this.addChild(modal);
       },
     });
     garageBtn.x = GAME_WIDTH / 2;
-    garageBtn.y = GAME_HEIGHT * 0.81;
-    this.addChild(garageBtn);
+    garageBtn.y = GAME_HEIGHT * 0.815;
+    this.contentLayer.addChild(garageBtn);
 
     const menuBtn = new HyperButton({
       label: "TRANG CHỦ",
       vectorIcon: "home",
-      width: 230,
-      height: 50,
-      fontSize: 18,
+      width: 280,
+      height: 62,
+      fontSize: 22,
       color: 0x0ea5e9,
       shadowColor: 0x0369a1,
       onClick: () => {
@@ -169,8 +179,8 @@ export class GameOverScene extends Container implements Scene {
       },
     });
     menuBtn.x = GAME_WIDTH / 2;
-    menuBtn.y = GAME_HEIGHT * 0.89;
-    this.addChild(menuBtn);
+    menuBtn.y = GAME_HEIGHT * 0.895;
+    this.contentLayer.addChild(menuBtn);
   }
 
   private buildStatsList() {
@@ -202,8 +212,8 @@ export class GameOverScene extends Container implements Scene {
       },
     ];
 
-    const startY = -180;
-    const rowH = 44;
+    const startY = -195;
+    const rowH = 48;
 
     for (let i = 0; i < stats.length; i++) {
       const s = stats[i];
@@ -213,7 +223,7 @@ export class GameOverScene extends Container implements Scene {
       const rowBg = new Graphics();
       (rowBg as any)[statTag] = true;
       rowBg
-        .roundRect(-240, y - 18, 480, 36, 10)
+        .roundRect(-260, y - 20, 520, 40, 12)
         .fill(i === 3 || i === 4 ? 0xfef9c3 : i % 2 === 0 ? 0xe2e8f0 : 0xf1f5f9)
         .stroke({ color: i === 3 || i === 4 ? 0xfacc15 : 0xcbd5e1, width: 1.5 });
       this.modalContainer.addChild(rowBg);
@@ -222,14 +232,14 @@ export class GameOverScene extends Container implements Scene {
         text: `${s.icon}  ${s.label}`,
         style: {
           fontFamily: "Be Vietnam Pro, sans-serif",
-          fontSize: 15,
+          fontSize: 17,
           fontWeight: "700",
           fill: i === 3 || i === 4 ? 0x854d0e : 0x475569,
         },
       });
       (labelText as any)[statTag] = true;
       labelText.anchor.set(0, 0.5);
-      labelText.x = -220;
+      labelText.x = -240;
       labelText.y = y;
       this.modalContainer.addChild(labelText);
 
@@ -237,33 +247,33 @@ export class GameOverScene extends Container implements Scene {
         text: s.value,
         style: {
           fontFamily: "Be Vietnam Pro, sans-serif",
-          fontSize: 16,
+          fontSize: 19,
           fontWeight: "900",
           fill: i === 3 || i === 4 ? 0xb45309 : 0x0f172a,
         },
       });
       (valText as any)[statTag] = true;
       valText.anchor.set(1, 0.5);
-      valText.x = 220;
+      valText.x = 240;
       valText.y = y;
       this.modalContainer.addChild(valText);
     }
 
     // High score banner at bottom of card
-    const scoreY = startY + stats.length * rowH + 16;
+    const scoreY = startY + stats.length * rowH + 18;
     const scoreBg = new Graphics();
     (scoreBg as any)[statTag] = true;
     scoreBg
-      .roundRect(-240, scoreY - 20, 480, 40, 12)
+      .roundRect(-260, scoreY - 22, 520, 44, 14)
       .fill(0x0f172a)
-      .stroke({ color: 0xfacc15, width: 2 });
+      .stroke({ color: 0xfacc15, width: 2.5 });
     this.modalContainer.addChild(scoreBg);
 
     const scoreText = new Text({
       text: `ĐIỂM: ${rs.getScore()}  |  KỶ LỤC: ${bestScore}`,
       style: {
         fontFamily: "Be Vietnam Pro, sans-serif",
-        fontSize: 15,
+        fontSize: 18,
         fontWeight: "900",
         fill: 0xfacc15,
         letterSpacing: 1,

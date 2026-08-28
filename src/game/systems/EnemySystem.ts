@@ -7,6 +7,8 @@ import { EnemyDefinitions, EnemyArchetype } from "../data/enemies";
 import { WaveEntry, getEncountersForDifficulty } from "../data/encounters";
 import { gameRng } from "../utils/RNG";
 import { distance } from "../utils/MathUtils";
+import { SaveManager } from "../utils/SaveManager";
+import { EventBus } from "../utils/EventBus";
 
 interface ActiveWave {
   entry: WaveEntry;
@@ -44,6 +46,19 @@ export class EnemySystem {
       this.container.addChild(e);
       return e;
     }, 180);
+
+    // React immediately when setting is toggled to Low Mode
+    EventBus.on("settings:changed", (data) => {
+      if (data.lowParticles) {
+        // Prune excess enemies above 22 immediately so frame rate jumps to 60fps instantly
+        if (this.enemies.length > 22) {
+          const toRemove = this.enemies.splice(22);
+          for (const e of toRemove) {
+            this.pool.release(e);
+          }
+        }
+      }
+    });
   }
 
   /** Set dynamic scaling based on distance travelled */
@@ -236,6 +251,11 @@ export class EnemySystem {
   }
 
   spawnEnemy(type: EnemyArchetype) {
+    const isLow = SaveManager.getSettings().lowParticles;
+    const maxEnemies = isLow ? 22 : 36;
+    // Performance guard: Cap max active monsters to 22 (Low) or 36 (High)
+    if (this.enemies.length >= maxEnemies) return;
+
     const def = EnemyDefinitions[type];
     if (!def) return;
 
@@ -261,7 +281,10 @@ export class EnemySystem {
   }
 
   spawnSwarm(count: number) {
-    for (let i = 0; i < count; i++) {
+    const isLow = SaveManager.getSettings().lowParticles;
+    const maxEnemies = isLow ? 22 : 36;
+    const toSpawn = Math.min(count, Math.max(0, maxEnemies - this.enemies.length));
+    for (let i = 0; i < toSpawn; i++) {
       this.spawnEnemy("swarm");
     }
   }

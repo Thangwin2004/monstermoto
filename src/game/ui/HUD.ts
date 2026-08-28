@@ -9,6 +9,7 @@ import {
 import { EventBus } from "../utils/EventBus";
 import { HyperCircleButton } from "./HyperButton";
 import { VectorIcons } from "./VectorIcons";
+import { SaveManager } from "../utils/SaveManager";
 
 export class HUD extends Container {
   // Top Unified Header Bar
@@ -60,54 +61,70 @@ export class HUD extends Container {
     this.damageNumbersContainer.eventMode = "none";
     this.addChild(this.damageNumbersContainer);
 
-    // ── 2. Unified Frosted Top Header Bar ──
+    // React immediately when graphics setting is changed
+    EventBus.on("settings:changed", (data) => {
+      if (data.lowParticles !== undefined) {
+        if (data.lowParticles) {
+          this.clearDamageNumbers();
+          this.damageNumbersContainer.visible = false;
+        } else {
+          this.damageNumbersContainer.visible = true;
+        }
+      }
+    });
+
+    if (SaveManager.getSettings().lowParticles) {
+      this.damageNumbersContainer.visible = false;
+    }
+
+    // ── 2. Unified Frosted Top Header Bar (Height 96px) ──
     this.headerBg = new Graphics();
     // Dark Frosted Slate Background
-    this.headerBg.rect(0, 0, GAME_WIDTH, 66).fill({ color: 0x090a0f, alpha: 0.92 });
+    this.headerBg.rect(0, 0, GAME_WIDTH, 96).fill({ color: 0x090a0f, alpha: 0.94 });
     // Bottom border line
-    this.headerBg.rect(0, 64, GAME_WIDTH, 2).fill(0x334155);
+    this.headerBg.rect(0, 94, GAME_WIDTH, 2).fill(0x334155);
     this.addChild(this.headerBg);
 
-    // ── 3. Top Left Stats: Distance & Scrap Dock ──
-    // Distance Capsule (x = 16, y = 14, w = 96, h = 38)
+    // ── 3. Top Left Stats: Distance & Scrap Dock (Stacked vertically x=14..130) ──
+    // Distance Capsule (x = 14, y = 10, w = 116, h = 36)
     const distContainer = new Container();
-    distContainer.x = 16;
-    distContainer.y = 14;
+    distContainer.x = 14;
+    distContainer.y = 10;
     this.addChild(distContainer);
 
     const distBg = new Graphics();
-    distBg.roundRect(0, 0, 96, 38, 12).fill(0x1e293b).stroke({ color: 0x38bdf8, width: 2 });
+    distBg.roundRect(0, 0, 116, 36, 12).fill(0x1e293b).stroke({ color: 0x38bdf8, width: 2 });
     distContainer.addChild(distBg);
 
     this.distanceText = new Text({
       text: "📏 0m",
       style: {
         fontFamily: "Be Vietnam Pro, sans-serif",
-        fontSize: 14,
+        fontSize: 15,
         fontWeight: "900",
         fill: 0x38bdf8,
       },
     });
     this.distanceText.anchor.set(0.5);
-    this.distanceText.x = 48;
-    this.distanceText.y = 19;
+    this.distanceText.x = 58;
+    this.distanceText.y = 18;
     distContainer.addChild(this.distanceText);
 
-    // Scrap Capsule (x = 118, y = 14, w = 84, h = 38)
+    // Scrap Capsule (x = 14, y = 52, w = 116, h = 36)
     this.scrapPill = new Container();
-    this.scrapPill.x = 118 + 42;
-    this.scrapPill.y = 14 + 19;
+    this.scrapPill.x = 14 + 58;
+    this.scrapPill.y = 52 + 18;
     this.addChild(this.scrapPill);
 
     const scrapBg = new Graphics();
-    scrapBg.roundRect(-42, -19, 84, 38, 12).fill(0x1e293b).stroke({ color: 0xfacc15, width: 2 });
+    scrapBg.roundRect(-58, -18, 116, 36, 12).fill(0x1e293b).stroke({ color: 0xfacc15, width: 2 });
     this.scrapPill.addChild(scrapBg);
 
     this.scrapText = new Text({
       text: "🔩 0",
       style: {
         fontFamily: "Be Vietnam Pro, sans-serif",
-        fontSize: 14,
+        fontSize: 15,
         fontWeight: "900",
         fill: 0xfacc15,
       },
@@ -117,27 +134,27 @@ export class HUD extends Container {
     this.scrapText.y = 0;
     this.scrapPill.addChild(this.scrapText);
 
-    // ── 4. Top Center: Tactical Weapons Arsenal Dock ──
+    // ── 4. Top Center: Tactical Weapons Arsenal Dock (x=215..505, y=10) ──
     this.weaponsContainer = new Container();
-    this.weaponsContainer.y = 14;
+    this.weaponsContainer.y = 10;
     this.addChild(this.weaponsContainer);
 
-    // ── 5. Top Right: Kills Capsule & Settings Button ──
-    // Kills Capsule (x = GAME_WIDTH - 150, y = 14, w = 82, h = 38)
+    // ── 5. Top Right: Kills Capsule & Settings Button (x=556..708) ──
+    // Kills Capsule (x = 556, y = 10, w = 96, h = 36)
     this.killPill = new Container();
-    this.killPill.x = GAME_WIDTH - 150 + 41;
-    this.killPill.y = 14 + 19;
+    this.killPill.x = 556 + 48;
+    this.killPill.y = 10 + 18;
     this.addChild(this.killPill);
 
     const killBg = new Graphics();
-    killBg.roundRect(-41, -19, 82, 38, 12).fill(0x1e293b).stroke({ color: 0xf43f5e, width: 2 });
+    killBg.roundRect(-48, -18, 96, 36, 12).fill(0x1e293b).stroke({ color: 0xf43f5e, width: 2 });
     this.killPill.addChild(killBg);
 
     this.killText = new Text({
       text: "💀 0",
       style: {
         fontFamily: "Be Vietnam Pro, sans-serif",
-        fontSize: 14,
+        fontSize: 15,
         fontWeight: "900",
         fill: 0xf43f5e,
       },
@@ -147,24 +164,24 @@ export class HUD extends Container {
     this.killText.y = 0;
     this.killPill.addChild(this.killText);
 
-    // Settings Button (x = GAME_WIDTH - 36, y = 33)
+    // Settings Button (x = 684, y = 28, radius = 23)
     this.settingsBtn = new HyperCircleButton({
       vectorIcon: "gear",
-      radius: 19,
+      radius: 23,
       color: 0x0ea5e9,
       shadowColor: 0x0369a1,
-      strokeWidth: 2.5,
+      strokeWidth: 3,
       onClick: () => {
         if (onSettingsClick) onSettingsClick();
       },
     });
-    this.settingsBtn.x = GAME_WIDTH - 34;
-    this.settingsBtn.y = 33;
+    this.settingsBtn.x = 684;
+    this.settingsBtn.y = 28;
     this.addChild(this.settingsBtn);
 
-    // ── 6. Active Buffs Notification Strip (Floating cleanly below header at y = 76) ──
+    // ── 6. Active Buffs Notification Strip (Centered at y = 54) ──
     this.buffsContainer = new Container();
-    this.buffsContainer.y = 76;
+    this.buffsContainer.y = 54;
     this.addChild(this.buffsContainer);
 
     // ── 7. Boss HP Bar (Top Center Overlay) ──
@@ -175,9 +192,9 @@ export class HUD extends Container {
 
     this.bossHpBg = new Graphics();
     this.bossHpBg
-      .roundRect(-BOSS_HP_BAR_WIDTH / 2, 0, BOSS_HP_BAR_WIDTH, BOSS_HP_BAR_HEIGHT, 10)
+      .roundRect(-BOSS_HP_BAR_WIDTH / 2, 0, BOSS_HP_BAR_WIDTH, 28, 14)
       .fill(0x450a0a)
-      .stroke({ color: 0xffffff, width: 3 });
+      .stroke({ color: 0xffffff, width: 3.5 });
     this.bossHpContainer.addChild(this.bossHpBg);
 
     this.bossHpFill = new Graphics();
@@ -187,55 +204,55 @@ export class HUD extends Container {
       text: "BOSS: TITAN SA MẠC",
       style: {
         fontFamily: "Be Vietnam Pro, sans-serif",
-        fontSize: 15,
+        fontSize: 18,
         fontWeight: "900",
         fill: 0xffffff,
-        stroke: { color: 0x991b1b, width: 3 },
+        stroke: { color: 0x991b1b, width: 3.5 },
       },
     });
     this.bossNameText.anchor.set(0.5);
-    this.bossNameText.y = BOSS_HP_BAR_HEIGHT / 2;
+    this.bossNameText.y = 14;
     this.bossHpContainer.addChild(this.bossNameText);
 
     this.bossHpContainer.x = GAME_WIDTH / 2;
 
-    // ── 8. XP Bar (Bottom - Frosted Frame) ──
-    const xpY = GAME_HEIGHT - 34;
-    const xpBarW = GAME_WIDTH - 146;
+    // ── 8. XP Bar (Bottom - Frosted Frame, Height 26px) ──
+    const xpY = GAME_HEIGHT - 44;
+    const xpBarW = GAME_WIDTH - 162;
 
     this.xpBarBg = new Graphics();
-    this.xpBarBg.roundRect(104, xpY + 2, xpBarW, 20, 10).fill(0x0f172a);
+    this.xpBarBg.roundRect(118, xpY + 2, xpBarW, 26, 13).fill(0x0f172a);
     this.xpBarBg
-      .roundRect(104, xpY, xpBarW, 20, 10)
+      .roundRect(118, xpY, xpBarW, 26, 13)
       .fill(0x1e293b)
-      .stroke({ color: 0x38bdf8, width: 2 });
+      .stroke({ color: 0x38bdf8, width: 2.5 });
     this.addChild(this.xpBarBg);
 
     this.xpBarFill = new Graphics();
     this.addChild(this.xpBarFill);
 
-    // Level Pill
+    // Level Pill (w = 92, h = 34)
     this.levelBadge = new Container();
-    this.levelBadge.x = 16 + 40;
-    this.levelBadge.y = xpY + 10;
+    this.levelBadge.x = 16 + 46;
+    this.levelBadge.y = xpY + 13;
     this.addChild(this.levelBadge);
 
     const lvlShadow = new Graphics();
-    lvlShadow.roundRect(-40, -13 + 3, 80, 26, 13).fill(0x0369a1);
+    lvlShadow.roundRect(-46, -17 + 3, 92, 34, 17).fill(0x0369a1);
     this.levelBadge.addChild(lvlShadow);
 
     const lvlBody = new Graphics();
     lvlBody
-      .roundRect(-40, -13, 80, 26, 13)
+      .roundRect(-46, -17, 92, 34, 17)
       .fill(0x0ea5e9)
-      .stroke({ color: 0xffffff, width: 2 });
+      .stroke({ color: 0xffffff, width: 2.5 });
     this.levelBadge.addChild(lvlBody);
 
     this.levelText = new Text({
       text: "CẤP 1",
       style: {
         fontFamily: "Be Vietnam Pro, sans-serif",
-        fontSize: 13,
+        fontSize: 16,
         fill: 0xffffff,
         fontWeight: "900",
       },
@@ -286,9 +303,9 @@ export class HUD extends Container {
 
     if (activeBuffs.length === 0) return;
 
-    const badgeW = 140;
-    const badgeH = 28;
-    const gap = 10;
+    const badgeW = 180;
+    const badgeH = 34;
+    const gap = 12;
     const totalW = activeBuffs.length * badgeW + (activeBuffs.length - 1) * gap;
     const startX = (GAME_WIDTH - totalW) / 2;
 
@@ -298,17 +315,17 @@ export class HUD extends Container {
       cont.x = startX + i * (badgeW + gap);
 
       const gfx = new Graphics();
-      gfx.roundRect(0, 0, badgeW, badgeH, 14)
+      gfx.roundRect(0, 0, badgeW, badgeH, 17)
         .fill(0x0f172a)
-        .stroke({ color: b.strokeColor, width: 2 });
-      gfx.roundRect(4, 2, badgeW - 8, 10, 5).fill({ color: b.color, alpha: 0.4 });
+        .stroke({ color: b.strokeColor, width: 2.5 });
+      gfx.roundRect(4, 2, badgeW - 8, 12, 6).fill({ color: b.color, alpha: 0.4 });
       cont.addChild(gfx);
 
       const txt = new Text({
         text: b.label,
         style: {
           fontFamily: "Be Vietnam Pro, sans-serif",
-          fontSize: 12,
+          fontSize: 14,
           fontWeight: "900",
           fill: b.strokeColor,
         },
@@ -323,7 +340,7 @@ export class HUD extends Container {
   }
 
   showPickupToast(text: string, color: number = 0xf59e0b, icon: string = "🎁") {
-    const toast = new PickupToast(GAME_WIDTH / 2, 130, text, color, icon);
+    const toast = new PickupToast(GAME_WIDTH / 2, 140, text, color, icon);
     this.addChild(toast);
     this.pickupToasts.push(toast);
   }
@@ -350,20 +367,20 @@ export class HUD extends Container {
 
   updateXp(ratio: number, level: number) {
     this.xpBarFill.clear();
-    const xpY = GAME_HEIGHT - 34;
-    const maxW = GAME_WIDTH - 146 - 4;
+    const xpY = GAME_HEIGHT - 44;
+    const maxW = GAME_WIDTH - 162 - 4;
     const w = maxW * Math.min(1, Math.max(0, ratio));
 
     // Smooth Neon Blue Fill
-    this.xpBarFill.roundRect(106, xpY + 2, w, 16, 8).fill(0x0284c7);
+    this.xpBarFill.roundRect(120, xpY + 2, w, 22, 11).fill(0x0284c7);
     this.xpBarFill
-      .roundRect(106, xpY + 2, w, 6, 3)
+      .roundRect(120, xpY + 2, w, 8, 4)
       .fill({ color: 0xffffff, alpha: 0.45 });
 
     this.levelText.text = `CẤP ${level}`;
   }
 
-  /** Update equipped weapons dock tray (Compact, centered between x = 210 and x = 530) */
+  /** Update equipped weapons dock tray (Compact, centered in header) */
   updateWeapons(weaponLevels: Record<string, number>) {
     this.weaponsContainer.removeChildren();
 
@@ -472,7 +489,7 @@ export class HUD extends Container {
         },
       });
       badge.anchor.set(1, 0.5);
-      badge.x = slotW - 8;
+      badge.x = slotW - 6;
       badge.y = slotH / 2;
       card.addChild(badge);
 
@@ -493,8 +510,8 @@ export class HUD extends Container {
       -BOSS_HP_BAR_WIDTH / 2 + 4,
       4,
       w,
-      BOSS_HP_BAR_HEIGHT - 8,
-      8,
+      20,
+      10,
     );
     this.bossHpFill.fill(0xef4444);
     this.bossHpFill
@@ -502,7 +519,7 @@ export class HUD extends Container {
         -BOSS_HP_BAR_WIDTH / 2 + 4,
         4,
         w,
-        (BOSS_HP_BAR_HEIGHT - 8) * 0.4,
+        8,
         4,
       )
       .fill({ color: 0xffffff, alpha: 0.35 });
@@ -510,6 +527,14 @@ export class HUD extends Container {
 
   hideBossHp() {
     this.bossHpContainer.visible = false;
+  }
+
+  private clearDamageNumbers() {
+    for (const dn of this.damageNumbers) {
+      dn.visible = false;
+      this.damageNumberPool.push(dn);
+    }
+    this.damageNumbers = [];
   }
 
   private spawnDamageNumber(
@@ -520,8 +545,16 @@ export class HUD extends Container {
     heal?: boolean,
     status?: "burn" | "shock" | "crit",
   ) {
-    if (this.damageNumbers.length >= 30 && (status === "burn" || status === "shock") && !crit) {
-      return;
+    const isLow = SaveManager.getSettings().lowParticles;
+    const isCritOrHeal = crit || heal || status === "crit";
+
+    // In Low Mode: only show satisfying Crits and Heals, capped at max 4 for 0 lag
+    if (isLow) {
+      if (!isCritOrHeal || this.damageNumbers.length >= 4) return;
+    } else {
+      // In High Mode: throttle max 12 damage numbers, drop minor ticks when > 6
+      if (this.damageNumbers.length >= 12 && !isCritOrHeal) return;
+      if (this.damageNumbers.length >= 6 && amount < 25 && !isCritOrHeal) return;
     }
 
     let dn = this.damageNumberPool.pop();
@@ -549,11 +582,16 @@ export class HUD extends Container {
       this.killPill.scale.set(s);
     }
 
-    // Damage numbers (Pooled)
+    // Damage numbers (Pooled with juicy pop bounce)
     for (let i = this.damageNumbers.length - 1; i >= 0; i--) {
       const dn = this.damageNumbers[i];
       dn.life -= dtSec;
-      dn.y -= 65 * dtSec;
+      const progress = 1 - dn.life / dn.maxLife;
+
+      // Pop bounce: starts slightly enlarged, floats smoothly upward with easing
+      const pop = 1 + 0.25 * Math.sin(progress * Math.PI);
+      dn.scale.set((dn.scale.x > 1.1 ? 1.2 : 1.0) * pop);
+      dn.y -= (65 - progress * 20) * dtSec;
       dn.alpha = Math.max(0, dn.life / dn.maxLife);
 
       if (dn.life <= 0) {
@@ -608,20 +646,20 @@ class PickupToast extends Container {
     this.maxLife = 1.3;
     this.eventMode = "none";
 
-    const badgeW = 200;
-    const badgeH = 34;
+    const badgeW = 260;
+    const badgeH = 44;
 
     const bg = new Graphics();
-    bg.roundRect(-badgeW / 2, 0, badgeW, badgeH, 17)
+    bg.roundRect(-badgeW / 2, 0, badgeW, badgeH, 22)
       .fill(0x0f172a)
-      .stroke({ color: color, width: 2 });
+      .stroke({ color: color, width: 2.5 });
     this.addChild(bg);
 
     const label = new Text({
       text: `${icon} ${text}`,
       style: {
         fontFamily: "Be Vietnam Pro, sans-serif",
-        fontSize: 15,
+        fontSize: 18,
         fontWeight: "900",
         fill: 0xffffff,
         letterSpacing: 1,
@@ -635,7 +673,7 @@ class PickupToast extends Container {
 
 class DamageNumber extends Text {
   public life: number = 0;
-  public maxLife: number = 0.65;
+  public maxLife: number = 0.42;
 
   constructor() {
     super({
@@ -662,34 +700,34 @@ class DamageNumber extends Text {
   ) {
     let color = 0xffffff;
     let prefix = "";
-    let size = 22;
+    let size = 20;
 
     if (status === "burn") {
       color = 0xff5500;
       prefix = "🔥 ";
-      size = 20;
+      size = 18;
     } else if (status === "shock") {
       color = 0x00e5ff;
       prefix = "⚡ ";
-      size = 22;
+      size = 20;
     } else if (crit || status === "crit") {
       color = 0xfacc15;
       prefix = "💥 ";
-      size = 30;
+      size = 26;
     } else if (heal) {
       color = 0x22c55e;
       prefix = "+";
-      size = 22;
+      size = 20;
     }
 
     this.text = `${prefix}${Math.round(amount)}`;
     this.style.fill = color;
     this.style.fontSize = size;
-    this.x = x + (Math.random() - 0.5) * 20;
+    this.x = x + (Math.random() - 0.5) * 16;
     this.y = y;
-    this.scale.set(crit ? 1.25 : 1.0);
+    this.scale.set(crit ? 1.2 : 1.0);
     this.alpha = 1;
-    this.life = 0.65;
-    this.maxLife = 0.65;
+    this.life = 0.42;
+    this.maxLife = 0.42;
   }
 }

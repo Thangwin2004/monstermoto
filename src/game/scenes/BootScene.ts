@@ -18,9 +18,10 @@ export class BootScene extends Container implements Scene {
 
     const titleStyle = new TextStyle({
       fontFamily: "Be Vietnam Pro, sans-serif",
-      fontSize: 42,
+      fontSize: 48,
       fontWeight: "900",
       fill: 0xffaa00,
+      stroke: { color: 0x78350f, width: 6 },
     });
     const title = new Text({ text: "QUÁI VẬT HỘ TỐNG", style: titleStyle });
     title.anchor.set(0.5);
@@ -29,11 +30,12 @@ export class BootScene extends Container implements Scene {
     this.addChild(title);
 
     this.loadingText = new Text({
-      text: "Đang tải...",
+      text: "Đang tải tài nguyên...",
       style: {
         fontFamily: "Be Vietnam Pro, sans-serif",
-        fontSize: 24,
-        fill: 0xaaaaaa,
+        fontSize: 26,
+        fontWeight: "700",
+        fill: 0xe2e8f0,
       },
     });
     this.loadingText.anchor.set(0.5);
@@ -43,13 +45,13 @@ export class BootScene extends Container implements Scene {
 
     this.progressBg = new Graphics();
     this.progressBg.roundRect(
-      GAME_WIDTH / 2 - 150,
+      GAME_WIDTH / 2 - 180,
       GAME_HEIGHT / 2 + 60,
-      300,
-      12,
-      6,
+      360,
+      22,
+      11,
     );
-    this.progressBg.fill(0x222222);
+    this.progressBg.fill(0x1e293b).stroke({ color: 0x334155, width: 2 });
     this.addChild(this.progressBg);
 
     this.progressFill = new Graphics();
@@ -98,13 +100,13 @@ export class BootScene extends Container implements Scene {
   private updateProgress(ratio: number) {
     this.progressFill.clear();
     this.progressFill.roundRect(
-      GAME_WIDTH / 2 - 150,
+      GAME_WIDTH / 2 - 180,
       GAME_HEIGHT / 2 + 60,
-      300 * ratio,
-      12,
-      6,
+      360 * ratio,
+      22,
+      11,
     );
-    this.progressFill.fill(0xffaa00);
+    this.progressFill.fill(0xf59e0b);
   }
 
   resize(width: number, height: number) {}

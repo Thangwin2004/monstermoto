@@ -62,6 +62,12 @@ export type GameEventMap = {
     heal?: boolean;
     status?: "burn" | "shock" | "crit";
   };
+  "settings:changed": {
+    lowParticles?: boolean;
+    screenShake?: boolean;
+    sfxMuted?: boolean;
+    bgmMuted?: boolean;
+  };
 };
 
 export type GameEvent = keyof GameEventMap;

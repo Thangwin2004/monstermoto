@@ -556,66 +556,11 @@ export class Enemy extends Container {
       if (this.shockTimer <= 0) this.slowMultiplier = 1;
     }
 
-    // Ultra-Vibrant Status Visual Effects
-    this.statusGlow.clear();
+    // High-Performance Status Visual Effects (Zero-overhead tinting without per-frame vector drawing)
     if (this.burnTimer > 0) {
-      // Dancing orange/red fire tongues
-      const r = this.radius;
-      this.statusGlow
-        .circle(0, 0, r + 8)
-        .fill({ color: 0xff3b30, alpha: 0.25 });
-
-      for (let i = 0; i < 5; i++) {
-        const angle = ((Math.PI * 2) / 5) * i + this.animTime * 4;
-        const fx = Math.cos(angle) * (r + 4);
-        const fy =
-          Math.sin(angle) * (r + 4) -
-          Math.abs(Math.sin(this.animTime * 12 + i)) * 12;
-        this.statusGlow
-          .circle(fx, fy, 6 + Math.sin(this.animTime * 10 + i) * 3)
-          .fill(i % 2 === 0 ? 0xff6600 : 0xffcc00);
-      }
       this.monsterBody.tint = 0xff7733;
     } else if (this.shockTimer > 0) {
-      // Ultra-Vivid High-Voltage Electric Arcs & Convulsion Twitching
-      const r = this.radius;
-      const strobe = Math.sin(this.animTime * 30) > 0;
-
-      // Pulsing Electric Field
-      this.statusGlow
-        .circle(0, 0, r + 10)
-        .stroke({ color: 0x00f0ff, width: 3, alpha: 0.85 });
-      this.statusGlow
-        .circle(0, 0, r + 14)
-        .stroke({ color: 0x67e8f9, width: 1.5, alpha: 0.45 });
-
-      // Violent Jagged Lightning Arcs crawling across the monster
-      for (let i = 0; i < 6; i++) {
-        const a1 = ((Math.PI * 2) / 6) * i + Math.random() * 0.4;
-        const a2 = a1 + 1.2;
-        const x1 = Math.cos(a1) * (r * 0.3);
-        const y1 = Math.sin(a1) * (r * 0.3);
-        const x2 = Math.cos(a2) * (r + 8);
-        const y2 = Math.sin(a2) * (r + 8);
-        const midX = (x1 + x2) / 2 + (Math.random() - 0.5) * 16;
-        const midY = (y1 + y2) / 2 + (Math.random() - 0.5) * 16;
-
-        // Outer cyan arc
-        this.statusGlow
-          .moveTo(x1, y1)
-          .lineTo(midX, midY)
-          .lineTo(x2, y2)
-          .stroke({ color: 0x00e5ff, width: 3.5 });
-
-        // Inner bright white arc
-        this.statusGlow
-          .moveTo(x1, y1)
-          .lineTo(midX, midY)
-          .lineTo(x2, y2)
-          .stroke({ color: 0xffffff, width: 1.5 });
-      }
-
-      // High-voltage convulsion strobe tint
+      const strobe = Math.sin(this.animTime * 20) > 0;
       this.monsterBody.tint = strobe ? 0xffffff : 0x00d4ff;
     } else if (this.flashTimer <= 0) {
       this.monsterBody.tint = 0xffffff;

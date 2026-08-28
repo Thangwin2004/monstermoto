@@ -15,10 +15,10 @@ export class GarageModal extends Container {
     super();
     this.onCloseCallback = onClose;
 
-    // 1. Dark Backdrop
+    // 1. Dark Backdrop (covers whole screen with dark blur effect)
     const backdrop = new Graphics();
-    backdrop.rect(0, 0, GAME_WIDTH, GAME_HEIGHT);
-    backdrop.fill({ color: 0x090a0f, alpha: 0.88 });
+    backdrop.rect(-100, -100, GAME_WIDTH + 200, GAME_HEIGHT + 200);
+    backdrop.fill({ color: 0x000000, alpha: 0.85 });
     backdrop.eventMode = "static";
     backdrop.on("pointerdown", (e) => e.stopPropagation());
     this.addChild(backdrop);
@@ -29,14 +29,14 @@ export class GarageModal extends Container {
     this.modalContainer.y = GAME_HEIGHT / 2;
     this.addChild(this.modalContainer);
 
-    const cardW = 620;
-    const cardH = 980;
+    const cardW = 640;
+    const cardH = 1080;
 
     // Soft Shadow base
     const cardShadow = new Graphics();
     cardShadow
       .roundRect(-cardW / 2 + 6, -cardH / 2 + 14, cardW, cardH, 28)
-      .fill({ color: 0x000000, alpha: 0.5 });
+      .fill({ color: 0x000000, alpha: 0.55 });
     this.modalContainer.addChild(cardShadow);
 
     // 3D Metallic Slate Border
@@ -54,13 +54,13 @@ export class GarageModal extends Container {
     const cardFace = new Graphics();
     cardFace
       .roundRect(-cardW / 2 + 12, -cardH / 2 + 12, cardW - 24, cardH - 24, 20)
-      .fill(0x0f172a);
+      .fill(0x0b1120);
     this.modalContainer.addChild(cardFace);
 
-    // 3. 3D Golden Title Ribbon
+    // 3. 3D Golden Title Ribbon (Floating cleanly above card with 18px clearance from Scrap Pill)
     const ribbonW = 440;
-    const ribbonH = 64;
-    const ribbonY = -cardH / 2;
+    const ribbonH = 60;
+    const ribbonY = -cardH / 2 - 20;
 
     const ribbon = new Graphics();
     ribbon
@@ -80,14 +80,14 @@ export class GarageModal extends Container {
     titleRow.y = ribbonY + ribbonH / 2 - 2;
 
     const wrenchIcon = VectorIcons.createIcon("wrench", 26, 0xffffff);
-    wrenchIcon.x = -130;
+    wrenchIcon.x = -135;
     titleRow.addChild(wrenchIcon);
 
     const titleText = new Text({
       text: "XƯỞNG XE CHIẾN ĐẤU",
       style: {
         fontFamily: "Be Vietnam Pro, sans-serif",
-        fontSize: 23,
+        fontSize: 24,
         fontWeight: "900",
         fill: 0xffffff,
         stroke: { color: 0x78350f, width: 4 },
@@ -95,51 +95,52 @@ export class GarageModal extends Container {
       },
     });
     titleText.anchor.set(0, 0.5);
-    titleText.x = -105;
+    titleText.x = -110;
     titleRow.addChild(titleText);
     this.modalContainer.addChild(titleRow);
 
     // 4. Top-Right Close Button (HyperCircleButton with crisp vector cross)
     const closeCornerBtn = new HyperCircleButton({
       vectorIcon: "cross",
-      radius: 22,
+      radius: 24,
       color: 0xef4444,
       shadowColor: 0x991b1b,
-      strokeWidth: 3,
+      strokeWidth: 3.5,
       onClick: () => {
         this.destroy();
         this.onCloseCallback();
       },
     });
-    closeCornerBtn.x = cardW / 2 - 18;
-    closeCornerBtn.y = -cardH / 2 + 18;
+    closeCornerBtn.x = cardW / 2 - 14;
+    closeCornerBtn.y = -cardH / 2 + 14;
     this.modalContainer.addChild(closeCornerBtn);
 
-    // 5. Scrap Balance Pill
+    // 5. Scrap Balance Pill (Placed with 18px clear air below Ribbon)
+    const scrapPillY = -cardH / 2 + 76;
     const scrapPill = new Graphics();
     scrapPill
-      .roundRect(-150, -cardH / 2 + 56, 300, 38, 19)
+      .roundRect(-150, scrapPillY - 18, 300, 36, 18)
       .fill(0x1e293b)
-      .stroke({ color: 0xfacc15, width: 2.5 });
+      .stroke({ color: 0xfacc15, width: 2 });
     this.modalContainer.addChild(scrapPill);
 
     this.scrapText = new Text({
       text: `🔩 PHẾ LIỆU: ${SaveManager.getScrap()}`,
       style: {
         fontFamily: "Be Vietnam Pro, sans-serif",
-        fontSize: 17,
+        fontSize: 16.5,
         fontWeight: "900",
         fill: 0xfacc15,
         letterSpacing: 1,
       },
     });
     this.scrapText.anchor.set(0.5);
-    this.scrapText.y = -cardH / 2 + 75;
+    this.scrapText.y = scrapPillY;
     this.modalContainer.addChild(this.scrapText);
 
-    // 6. Upgrade Cards List Container
+    // 6. Upgrade Cards List Container (Starts with 22px clear air at y = -cardH / 2 + 116)
     this.cardsContainer = new Container();
-    this.cardsContainer.y = -cardH / 2 + 104;
+    this.cardsContainer.y = -cardH / 2 + 116;
     this.modalContainer.addChild(this.cardsContainer);
 
     this.renderUpgradeCards();
@@ -148,9 +149,9 @@ export class GarageModal extends Container {
     const closeBtn = new HyperButton({
       label: "TIẾP TỤC",
       vectorIcon: "check",
-      width: 260,
-      height: 54,
-      fontSize: 20,
+      width: 290,
+      height: 62,
+      fontSize: 22,
       color: 0x0ea5e9,
       shadowColor: 0x0369a1,
       onClick: () => {
@@ -158,7 +159,7 @@ export class GarageModal extends Container {
         this.onCloseCallback();
       },
     });
-    closeBtn.y = cardH / 2 - 42;
+    closeBtn.y = cardH / 2 - 46;
     this.modalContainer.addChild(closeBtn);
   }
 
@@ -167,7 +168,7 @@ export class GarageModal extends Container {
     this.scrapText.text = `🔩 PHẾ LIỆU: ${SaveManager.getScrap()}`;
 
     const configs = Object.values(GARAGE_UPGRADE_CONFIGS);
-    const rowH = 88;
+    const rowH = 94;
     const currentScrap = SaveManager.getScrap();
 
     for (let i = 0; i < configs.length; i++) {
@@ -182,28 +183,28 @@ export class GarageModal extends Container {
       row.y = rowY;
       this.cardsContainer.addChild(row);
 
-      // Row background
+      // Row background (580 x 86)
       const rowBg = new Graphics();
       rowBg
-        .roundRect(-280, 0, 560, 80, 14)
+        .roundRect(-290, 0, 580, 86, 14)
         .fill(0x1e293b)
-        .stroke({ color: canAfford ? 0x475569 : 0x334155, width: 2 });
+        .stroke({ color: canAfford ? 0x475569 : 0x334155, width: 1.5 });
       row.addChild(rowBg);
 
-      // Icon badge
+      // Icon badge (68 x 68)
       const iconBg = new Graphics();
       iconBg
-        .roundRect(-268, 10, 56, 60, 12)
+        .roundRect(-278, 9, 68, 68, 12)
         .fill(cfg.color);
       row.addChild(iconBg);
 
       const iconText = new Text({
         text: cfg.icon,
-        style: { fontSize: 26 },
+        style: { fontSize: 28 },
       });
       iconText.anchor.set(0.5);
-      iconText.x = -240;
-      iconText.y = 40;
+      iconText.x = -244;
+      iconText.y = 43;
       row.addChild(iconText);
 
       // Title & Level text
@@ -211,12 +212,12 @@ export class GarageModal extends Container {
         text: `${cfg.name}  `,
         style: {
           fontFamily: "Be Vietnam Pro, sans-serif",
-          fontSize: 15,
+          fontSize: 16.5,
           fontWeight: "900",
           fill: 0xffffff,
         },
       });
-      title.x = -202;
+      title.x = -196;
       title.y = 10;
       row.addChild(title);
 
@@ -224,30 +225,30 @@ export class GarageModal extends Container {
         text: isMax ? "TỐI ĐA" : `Cấp ${curLvl}/${cfg.maxLevel}`,
         style: {
           fontFamily: "Be Vietnam Pro, sans-serif",
-          fontSize: 12,
+          fontSize: 13,
           fontWeight: "900",
           fill: isMax ? 0x22c55e : 0xfacc15,
         },
       });
-      lvlBadge.x = -202 + title.width + 4;
-      lvlBadge.y = 12;
+      lvlBadge.x = -196 + title.width + 6;
+      lvlBadge.y = 12.5;
       row.addChild(lvlBadge);
 
-      // Star Pips (10 pips)
+      // Star Pips (10 pips, clean horizontal line)
       const pipsGfx = new Graphics();
-      const pipW = 14;
+      const pipW = 13;
       const pipH = 5;
       const pipGap = 3;
       for (let p = 0; p < cfg.maxLevel; p++) {
-        const px = -202 + p * (pipW + pipGap);
-        const py = 32;
+        const px = -196 + p * (pipW + pipGap);
+        const py = 34;
         pipsGfx
           .roundRect(px, py, pipW, pipH, 2)
           .fill(p < curLvl ? 0xfacc15 : 0x334155);
       }
       row.addChild(pipsGfx);
 
-      // Stat Description
+      // Stat Description (Single-line, concise, never wraps or clips)
       const curBonus = curLvl * cfg.valuePerLevel;
       const nextBonus = (curLvl + 1) * cfg.valuePerLevel;
       const curValStr = cfg.isMultiplier
@@ -257,24 +258,28 @@ export class GarageModal extends Container {
         ? `+${Math.round(nextBonus * 100)}%`
         : `+${nextBonus} ${cfg.unit}`;
 
+      const descStr = isMax
+        ? `Đã đạt tối đa: ${curValStr}`
+        : `${curValStr} ➔ ${nextValStr} (${cfg.shortDesc})`;
+
       const desc = new Text({
-        text: isMax ? `Hiện tại: ${curValStr}` : `${curValStr} ➔ ${nextValStr} (${cfg.desc})`,
+        text: descStr,
         style: {
           fontFamily: "Be Vietnam Pro, sans-serif",
-          fontSize: 11.5,
-          fontWeight: "600",
+          fontSize: 13,
+          fontWeight: "700",
           fill: 0x94a3b8,
         },
       });
-      desc.x = -202;
-      desc.y = 46;
+      desc.x = -196;
+      desc.y = 48;
       row.addChild(desc);
 
       // Upgrade Action Button (Hyper-Casual Bouncy 3D Capsule)
-      const btnW = 116;
-      const btnH = 46;
-      const btnX = 205;
-      const btnY = 40;
+      const btnW = 120;
+      const btnH = 50;
+      const btnX = 212;
+      const btnY = 42;
 
       const btn = new Container();
       btn.x = btnX;
@@ -308,7 +313,7 @@ export class GarageModal extends Container {
         text: isMax ? "TỐI ĐA" : `🔩 ${cost}`,
         style: {
           fontFamily: "Be Vietnam Pro, sans-serif",
-          fontSize: isMax ? 13 : 15,
+          fontSize: isMax ? 13 : 16,
           fontWeight: "900",
           fill: isMax ? 0x94a3b8 : canAfford ? 0xffffff : 0x64748b,
           stroke: canAfford ? { color: 0xc2410c, width: 2 } : undefined,

@@ -15,6 +15,7 @@ export interface GarageStatConfig {
   unit: string;
   isMultiplier?: boolean;
   desc: string;
+  shortDesc: string;
 }
 
 export const GARAGE_UPGRADE_CONFIGS: Record<string, GarageStatConfig> = {
@@ -28,7 +29,8 @@ export const GARAGE_UPGRADE_CONFIGS: Record<string, GarageStatConfig> = {
     costMultiplier: 1.35,
     valuePerLevel: 25,
     unit: "HP",
-    desc: "+25 HP Tối đa cho toàn bộ các module xe.",
+    desc: "+25 HP Tối đa cho toàn bộ module xe.",
+    shortDesc: "Tăng HP tối đa",
   },
   damage: {
     id: "damage",
@@ -42,6 +44,7 @@ export const GARAGE_UPGRADE_CONFIGS: Record<string, GarageStatConfig> = {
     unit: "%",
     isMultiplier: true,
     desc: "+8% Sát thương cơ bản cho tất cả vũ khí.",
+    shortDesc: "Tăng sát thương",
   },
   attackSpeed: {
     id: "attackSpeed",
@@ -55,6 +58,7 @@ export const GARAGE_UPGRADE_CONFIGS: Record<string, GarageStatConfig> = {
     unit: "%",
     isMultiplier: true,
     desc: "+5% Tốc độ bắn và nạp đạn cho xe.",
+    shortDesc: "Tăng tốc độ bắn",
   },
   crit: {
     id: "crit",
@@ -67,7 +71,8 @@ export const GARAGE_UPGRADE_CONFIGS: Record<string, GarageStatConfig> = {
     valuePerLevel: 0.03,
     unit: "%",
     isMultiplier: true,
-    desc: "+3% Tỉ lệ chí mạng & +15% sát thương chí mạng.",
+    desc: "+3% Tỉ lệ chí mạng & sát thương.",
+    shortDesc: "Tăng tỉ lệ chí mạng",
   },
   magnet: {
     id: "magnet",
@@ -79,7 +84,8 @@ export const GARAGE_UPGRADE_CONFIGS: Record<string, GarageStatConfig> = {
     costMultiplier: 1.35,
     valuePerLevel: 30,
     unit: "px",
-    desc: "+30px Bán kính tự động hút phế liệu & vật phẩm.",
+    desc: "+30px Bán kính tự động hút phế liệu.",
+    shortDesc: "Mở rộng bán kính hút",
   },
   heavyWeapon: {
     id: "heavyWeapon",
@@ -92,7 +98,8 @@ export const GARAGE_UPGRADE_CONFIGS: Record<string, GarageStatConfig> = {
     valuePerLevel: 0.10,
     unit: "%",
     isMultiplier: true,
-    desc: "+10% Sát thương nổ Tên Lửa & uy lực Pháo Laser.",
+    desc: "+10% Sát thương Tên Lửa & Pháo Laser.",
+    shortDesc: "Tăng uy lực Tên Lửa & Laser",
   },
   regen: {
     id: "regen",
@@ -105,6 +112,7 @@ export const GARAGE_UPGRADE_CONFIGS: Record<string, GarageStatConfig> = {
     valuePerLevel: 1.2,
     unit: "HP/s",
     desc: "Tự động hồi +1.2 HP/giây khi di chuyển.",
+    shortDesc: "Hồi phục HP/giây",
   },
   scrapBonus: {
     id: "scrapBonus",
@@ -117,7 +125,8 @@ export const GARAGE_UPGRADE_CONFIGS: Record<string, GarageStatConfig> = {
     valuePerLevel: 0.12,
     unit: "%",
     isMultiplier: true,
-    desc: "+12% Lượng phế liệu kiếm được trong mỗi chuyến đi.",
+    desc: "+12% Lượng phế liệu thu được.",
+    shortDesc: "Tăng phế liệu thu được",
   },
 };
 

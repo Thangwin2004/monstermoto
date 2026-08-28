@@ -48,9 +48,9 @@ export class HyperButton extends Container {
   constructor(options: HyperButtonOptions) {
     super();
     this.options = {
-      width: 280,
-      height: 64,
-      fontSize: 22,
+      width: 320,
+      height: 72,
+      fontSize: 24,
       color: 0xf97316, // Orange
       shadowColor: 0xc2410c,
       strokeWidth: 4.5,
@@ -209,7 +209,7 @@ export class HyperCircleButton extends Container {
 
   constructor(options: HyperCircleButtonOptions) {
     super();
-    const r = options.radius ?? 24;
+    const r = options.radius ?? 26;
     const shadowOffset = Math.max(3, Math.round(r * 0.16));
     const color = options.color ?? 0x0ea5e9;
     const shadowColor = options.shadowColor ?? 0x0369a1;

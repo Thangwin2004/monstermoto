@@ -178,6 +178,13 @@ export class HyperButton extends Container {
 
   public setLabel(text: string) {
     this.labelText.text = text;
+    if (this.iconGfx && this.options.vectorIcon) {
+      const iconSize = Math.round(this.options.fontSize! * 1.15);
+      const gap = 12;
+      const totalContentW = iconSize + gap + this.labelText.width;
+      this.iconGfx.x = -totalContentW / 2 + iconSize / 2;
+      this.labelText.x = -totalContentW / 2 + iconSize + gap;
+    }
   }
 
   public updatePulse(dtSec: number) {

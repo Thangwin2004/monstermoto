@@ -14,31 +14,22 @@ import {
 export class RoadSystem {
   public container: Container;
   public speed: number = ROAD_SPEED;
-
+  private roadHeight: number;
+  private staticRoadBg: Graphics;
   private scrollElements: { gfx: Graphics; y: number; speed: number }[] = [];
 
-  constructor() {
+  constructor(height: number = GAME_HEIGHT) {
     this.container = new Container();
+    this.roadHeight = Math.max(GAME_HEIGHT, height);
 
-    // ── 1. Outer Desert Canyon Cliff Terrain (Bright Sunny Golden Sandstone) ──
-    const leftOuter = new Graphics();
-    leftOuter.rect(0, 0, ROAD_LEFT - 14, GAME_HEIGHT);
-    leftOuter.fill(0xb45309); // Sunny golden sandstone
-    this.container.addChild(leftOuter);
+    // ── 1. Static Highway & Canyon Terrain (Consolidated Graphics) ──
+    this.staticRoadBg = new Graphics();
+    this.container.addChild(this.staticRoadBg);
+    this.redrawRoadBackground(this.roadHeight);
 
-    const rightOuter = new Graphics();
-    rightOuter.rect(
-      ROAD_RIGHT + 14,
-      0,
-      GAME_WIDTH - ROAD_RIGHT - 14,
-      GAME_HEIGHT,
-    );
-    rightOuter.fill(0xb45309);
-    this.container.addChild(rightOuter);
-
-    // Scrolling Desert Cacti & Canyon Boulders
+    // ── 2. Scrolling Props (Cacti & Boulders) ──
     const propSpacing = 140;
-    const numProps = Math.ceil(GAME_HEIGHT / propSpacing) + 2;
+    const numProps = Math.ceil(this.roadHeight / propSpacing) + 3;
     for (let i = 0; i < numProps; i++) {
       // Left Cactus or Rock
       const isCactusLeft = i % 2 === 0;
@@ -68,38 +59,10 @@ export class RoadSystem {
       });
     }
 
-    // ── 2. Desert Dirt & Sand Shoulders (Vibrant Golden Sand) ──
-    const leftShoulder = new Graphics();
-    leftShoulder.rect(ROAD_LEFT - 14, 0, 14, GAME_HEIGHT);
-    leftShoulder.fill(0xd97706);
-    this.container.addChild(leftShoulder);
-
-    const rightShoulder = new Graphics();
-    rightShoulder.rect(ROAD_RIGHT, 0, 14, GAME_HEIGHT);
-    rightShoulder.fill(0xd97706);
-    this.container.addChild(rightShoulder);
-
-    // ── 3. Clean Highway Asphalt (Bright Slate) ──
-    const roadBg = new Graphics();
-    roadBg.rect(ROAD_LEFT, 0, ROAD_WIDTH, GAME_HEIGHT);
-    roadBg.fill(0x334155);
-    this.container.addChild(roadBg);
-
-    // ── 4. Solid Sunshine Yellow Edge Lines ──
-    const leftEdge = new Graphics();
-    leftEdge.rect(ROAD_LEFT, 0, 4, GAME_HEIGHT);
-    leftEdge.fill(0xfbbf24);
-    this.container.addChild(leftEdge);
-
-    const rightEdge = new Graphics();
-    rightEdge.rect(ROAD_RIGHT - 4, 0, 4, GAME_HEIGHT);
-    rightEdge.fill(0xfbbf24);
-    this.container.addChild(rightEdge);
-
-    // ── 5. Center Dashed Line (White, Scrolling) ──
+    // ── 3. Center Dashed Line (White, Scrolling) ──
     const dashSpacing = 130;
     const dashH = 50;
-    const numDashes = Math.ceil(GAME_HEIGHT / dashSpacing) + 2;
+    const numDashes = Math.ceil(this.roadHeight / dashSpacing) + 3;
     for (let i = 0; i < numDashes; i++) {
       const dash = new Graphics();
       dash.roundRect(-3, 0, 6, dashH, 3);
@@ -111,9 +74,9 @@ export class RoadSystem {
       this.scrollElements.push({ gfx: dash, y: startY, speed: 1 });
     }
 
-    // ── 6. Metal Crash Guardrails (Scrolling on edges) ──
+    // ── 4. Metal Crash Guardrails (Scrolling on edges) ──
     const railSpacing = 90;
-    const numRails = Math.ceil(GAME_HEIGHT / railSpacing) + 2;
+    const numRails = Math.ceil(this.roadHeight / railSpacing) + 3;
     for (let i = 0; i < numRails; i++) {
       const leftRail = this.createGuardrail();
       leftRail.x = ROAD_LEFT - 8;
@@ -133,6 +96,27 @@ export class RoadSystem {
         speed: 1,
       });
     }
+  }
+
+  private redrawRoadBackground(h: number) {
+    this.staticRoadBg.clear();
+
+    // Outer Desert Canyon Cliff Terrain (Bright Sunny Golden Sandstone)
+    this.staticRoadBg.rect(0, 0, ROAD_LEFT - 14, h).fill(0xb45309);
+    this.staticRoadBg
+      .rect(ROAD_RIGHT + 14, 0, GAME_WIDTH - ROAD_RIGHT - 14, h)
+      .fill(0xb45309);
+
+    // Desert Dirt & Sand Shoulders (Vibrant Golden Sand)
+    this.staticRoadBg.rect(ROAD_LEFT - 14, 0, 14, h).fill(0xd97706);
+    this.staticRoadBg.rect(ROAD_RIGHT, 0, 14, h).fill(0xd97706);
+
+    // Clean Highway Asphalt (Bright Slate)
+    this.staticRoadBg.rect(ROAD_LEFT, 0, ROAD_WIDTH, h).fill(0x334155);
+
+    // Solid Sunshine Yellow Edge Lines
+    this.staticRoadBg.rect(ROAD_LEFT, 0, 4, h).fill(0xfbbf24);
+    this.staticRoadBg.rect(ROAD_RIGHT - 4, 0, 4, h).fill(0xfbbf24);
   }
 
   private createCactus(): Graphics {
@@ -181,6 +165,11 @@ export class RoadSystem {
     return gfx;
   }
 
+  resize(_width: number, height: number) {
+    this.roadHeight = Math.max(GAME_HEIGHT, height);
+    this.redrawRoadBackground(this.roadHeight);
+  }
+
   update(dt: number) {
     const dtSec = dt * (1 / 60);
     const scrollDist = this.speed * dtSec;
@@ -190,8 +179,8 @@ export class RoadSystem {
       el.gfx.y = el.y;
 
       // Loop back to top
-      if (el.y > GAME_HEIGHT + 100) {
-        el.y -= GAME_HEIGHT + 240;
+      if (el.y > this.roadHeight + 100) {
+        el.y -= this.roadHeight + 240;
         el.gfx.y = el.y;
       }
     }

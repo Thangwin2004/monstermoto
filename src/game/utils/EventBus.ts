@@ -68,6 +68,7 @@ export type GameEventMap = {
     sfxMuted?: boolean;
     bgmMuted?: boolean;
   };
+  "language:changed": string;
 };
 
 export type GameEvent = keyof GameEventMap;

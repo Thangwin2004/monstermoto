@@ -9,6 +9,8 @@ import { AudioMixer } from "./game/utils/AudioMixer";
 import { waitForGameFonts } from "./utils/fontLoader";
 import { installFocusPause } from "./utils/FocusPauseController";
 import { installInteractionGuard } from "./utils/interactionGuard";
+import { winkGame } from "./integrations/wink/client";
+import { I18n } from "./game/utils/I18n";
 
 installInteractionGuard();
 
@@ -38,28 +40,39 @@ installInteractionGuard();
   const container = document.getElementById("pixi-container")!;
   container.appendChild(app.canvas);
 
-  // ── Responsive letterbox scaling ──
+  // ── Responsive scaling ──
   const gameContainer = new Container();
   app.stage.addChild(gameContainer);
 
   function resize() {
-    const screenW = window.innerWidth;
-    const screenH = window.innerHeight;
+    const screenW = container.clientWidth || window.innerWidth;
+    const screenH = container.clientHeight || window.innerHeight;
     const gameAspect = GAME_WIDTH / GAME_HEIGHT;
     const screenAspect = screenW / screenH;
 
     let scale: number;
-    let offsetX = 0;
-    let offsetY = 0;
+    let offsetX: number;
+    let offsetY: number;
+    let virtualWidth: number;
+    let virtualHeight: number;
 
-    if (screenAspect > gameAspect) {
-      // Screen is wider than game → fit by height, letterbox sides
+    if (screenAspect <= gameAspect) {
+      // Mobile portrait mode (including tall phones like iPhone 12/13/14 Pro 390x844):
+      // Scale by width so game spans 100% of viewport width with 0px horizontal margin.
+      // Game height extends vertically to fill entire viewport with 0px vertical black bars!
+      scale = screenW / GAME_WIDTH;
+      offsetX = 0;
+      offsetY = 0;
+      virtualWidth = GAME_WIDTH;
+      virtualHeight = screenH / scale;
+    } else {
+      // Wide screens / desktop previews / tablets:
+      // Fit height 100%, center game horizontally.
       scale = screenH / GAME_HEIGHT;
       offsetX = (screenW - GAME_WIDTH * scale) / 2;
-    } else {
-      // Screen is taller than game → fit by width, letterbox top/bottom
-      scale = screenW / GAME_WIDTH;
-      offsetY = (screenH - GAME_HEIGHT * scale) / 2;
+      offsetY = 0;
+      virtualWidth = GAME_WIDTH;
+      virtualHeight = GAME_HEIGHT;
     }
 
     app.renderer.resize(screenW, screenH);
@@ -67,10 +80,12 @@ installInteractionGuard();
     gameContainer.x = offsetX;
     gameContainer.y = offsetY;
 
-    SceneManager.resize(GAME_WIDTH, GAME_HEIGHT);
+    SceneManager.resize(virtualWidth, virtualHeight);
   }
 
   window.addEventListener("resize", resize);
+  const resizeObserver = new ResizeObserver(resize);
+  resizeObserver.observe(container);
   resize();
 
   // ── Resume audio on first interaction ──
@@ -85,12 +100,20 @@ installInteractionGuard();
   // ── Scene setup ──
   SceneManager.initialize(app, gameContainer);
 
-  installFocusPause({
+  const focusPause = installFocusPause({
     isRunning: () => app.ticker.started,
     pause: () => app.ticker.stop(),
     resume: () => app.ticker.start(),
     pauseAudio: () => AudioMixer.pauseForFocus(),
     resumeAudio: () => AudioMixer.resumeFromFocus(),
+  });
+
+  winkGame.bindLifecycle({
+    onPause: focusPause.pauseFromHost,
+    onResume: focusPause.resumeFromHost,
+    onMute: () => AudioMixer.setHostMuted(true),
+    onUnmute: () => AudioMixer.setHostMuted(false),
+    onLocale: (locale) => I18n.setLanguage(locale === "en" ? "en" : "vi"),
   });
 
   // Register scene factories (create fresh instance each switch)

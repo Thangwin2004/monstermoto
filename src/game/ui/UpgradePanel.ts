@@ -2,6 +2,8 @@ import { Container, Graphics, Text } from "pixi.js";
 import { GAME_WIDTH, GAME_HEIGHT } from "../constants";
 import { UpgradeDefinition } from "../data/upgrades";
 import { AudioMixer } from "../utils/AudioMixer";
+import { I18n } from "../utils/I18n";
+import { SceneManager } from "../scenes/SceneManager";
 
 const RARITY_THEMES: Record<
   string,
@@ -68,7 +70,14 @@ const ACTION_LABELS: Record<
 export class UpgradePanel extends Container {
   private bg: Graphics;
   private modalContainer: Container;
+  private cardShadow!: Graphics;
+  private borderBg!: Graphics;
+  private cardFace!: Graphics;
+  private ribbon!: Graphics;
   private optionsContainer: Container;
+  private titleText!: Text;
+  private subText!: Text;
+  private currentHeight: number = GAME_HEIGHT;
 
   public onSelect: (upgrade: UpgradeDefinition) => void = () => {};
 
@@ -76,62 +85,68 @@ export class UpgradePanel extends Container {
     super();
     this.visible = false;
 
-    // Soft translucent dark backdrop
-    // Dark Blur Backdrop (covers full viewport)
+    const initialH = SceneManager.getVirtualSize?.()?.height ?? GAME_HEIGHT;
+    this.currentHeight = Math.max(GAME_HEIGHT, initialH);
+
+    // Fullscreen Dark Backdrop (oversized to guarantee zero gaps at bottom)
     this.bg = new Graphics();
-    this.bg.rect(-100, -100, GAME_WIDTH + 200, GAME_HEIGHT + 200);
-    this.bg.fill({ color: 0x000000, alpha: 0.85 });
     this.bg.eventMode = "static";
     this.addChild(this.bg);
 
     this.modalContainer = new Container();
-    this.modalContainer.x = GAME_WIDTH / 2;
-    this.modalContainer.y = GAME_HEIGHT / 2;
     this.addChild(this.modalContainer);
 
-    // ── Bright 3D Dialog Card Base ──
+    this.initDialogBase();
+
+    this.optionsContainer = new Container();
+    this.modalContainer.addChild(this.optionsContainer);
+
+    this.updateLayout();
+  }
+
+  private initDialogBase() {
     const cardW = 630;
-    const cardH = 920;
+    const cardH = 880; // Compact, perfectly proportioned to eliminate bottom dead space
 
     // 1. Soft Card Shadow
-    const cardShadow = new Graphics();
-    cardShadow
+    this.cardShadow = new Graphics();
+    this.cardShadow
       .roundRect(-cardW / 2 + 6, -cardH / 2 + 16, cardW, cardH, 28)
       .fill({ color: 0x000000, alpha: 0.45 });
-    this.modalContainer.addChild(cardShadow);
+    this.modalContainer.addChild(this.cardShadow);
 
     // 2. Thick 3D Cyan/Blue Border Base
-    const borderBg = new Graphics();
-    borderBg
+    this.borderBg = new Graphics();
+    this.borderBg
       .roundRect(-cardW / 2, -cardH / 2 + 8, cardW, cardH, 28)
       .fill(0x0284c7);
-    borderBg
+    this.borderBg
       .roundRect(-cardW / 2, -cardH / 2, cardW, cardH, 28)
       .fill(0x38bdf8)
       .stroke({ color: 0xffffff, width: 4.5 });
-    this.modalContainer.addChild(borderBg);
+    this.modalContainer.addChild(this.borderBg);
 
     // 3. Bright Clean White Card Face
-    const cardFace = new Graphics();
-    cardFace
+    this.cardFace = new Graphics();
+    this.cardFace
       .roundRect(-cardW / 2 + 14, -cardH / 2 + 14, cardW - 28, cardH - 28, 20)
       .fill(0xffffff);
-    this.modalContainer.addChild(cardFace);
+    this.modalContainer.addChild(this.cardFace);
 
     // 4. Floating 3D Title Ribbon
     const ribbonW = 420;
     const ribbonH = 72;
     const ribbonY = -cardH / 2 - 16;
 
-    const ribbon = new Graphics();
-    ribbon
+    this.ribbon = new Graphics();
+    this.ribbon
       .roundRect(-ribbonW / 2, ribbonY + 6, ribbonW, ribbonH, ribbonH / 2)
       .fill(0xb45309);
-    ribbon
+    this.ribbon
       .roundRect(-ribbonW / 2, ribbonY, ribbonW, ribbonH, ribbonH / 2)
       .fill(0xf59e0b)
       .stroke({ color: 0xffffff, width: 4.5 });
-    ribbon
+    this.ribbon
       .roundRect(
         -ribbonW / 2 + 16,
         ribbonY + 4,
@@ -140,49 +155,65 @@ export class UpgradePanel extends Container {
         12,
       )
       .fill({ color: 0xffffff, alpha: 0.35 });
-    this.modalContainer.addChild(ribbon);
+    this.modalContainer.addChild(this.ribbon);
 
-    const titleText = new Text({
-      text: "LÊN CẤP ĐOÀN XE!",
+    this.titleText = new Text({
+      text: I18n.t("upgrade.title"),
       style: {
         fontFamily: "Be Vietnam Pro, sans-serif",
-        fontSize: 26,
+        fontSize: 28,
         fontWeight: "900",
         fill: 0xffffff,
         stroke: { color: 0x78350f, width: 4.5 },
         letterSpacing: 2,
       },
     });
-    titleText.anchor.set(0.5);
-    titleText.y = ribbonY + ribbonH / 2 - 2;
-    this.modalContainer.addChild(titleText);
+    this.titleText.anchor.set(0.5);
+    this.titleText.y = ribbonY + ribbonH / 2 - 2;
+    this.modalContainer.addChild(this.titleText);
 
     // Subtitle
-    const subText = new Text({
-      text: "Chạm vào thẻ bài để gia tăng hỏa lực chiến xa",
+    this.subText = new Text({
+      text: I18n.t("upgrade.subtitle"),
       style: {
         fontFamily: "Be Vietnam Pro, sans-serif",
-        fontSize: 17,
+        fontSize: 18,
         fontWeight: "700",
         fill: 0x64748b,
       },
     });
-    subText.anchor.set(0.5);
-    subText.y = -cardH / 2 + 76;
-    this.modalContainer.addChild(subText);
+    this.subText.anchor.set(0.5);
+    this.subText.y = -cardH / 2 + 64;
+    this.modalContainer.addChild(this.subText);
+  }
 
-    // 5. Options Container
-    this.optionsContainer = new Container();
-    this.modalContainer.addChild(this.optionsContainer);
+  public resize(_width: number, height: number) {
+    this.currentHeight = Math.max(GAME_HEIGHT, height);
+    this.updateLayout();
+  }
+
+  private updateLayout() {
+    this.bg.clear();
+    this.bg
+      .rect(-200, -200, GAME_WIDTH + 400, Math.max(3500, this.currentHeight + 600))
+      .fill({ color: 0x000000, alpha: 0.88 });
+
+    this.modalContainer.x = GAME_WIDTH / 2;
+    // Perfectly centered vertically in viewport (no shoving to top!)
+    this.modalContainer.y = this.currentHeight / 2;
   }
 
   show(upgrades: UpgradeDefinition[]) {
     this.optionsContainer.removeChildren();
+    this.titleText.text = I18n.t("upgrade.title");
+    this.subText.text = I18n.t("upgrade.subtitle");
+
+    this.updateLayout();
 
     const cardW = 580;
-    const cardH = 190;
-    const startY = -215;
-    const gap = 215;
+    const cardH = 224;
+    const startY = -240;
+    const gap = 240;
 
     for (let i = 0; i < upgrades.length; i++) {
       const upgrade = upgrades[i];
@@ -192,6 +223,7 @@ export class UpgradePanel extends Container {
 
       const optBtn = new Container();
       optBtn.y = startY + i * gap;
+
 
       const content = new Container();
       optBtn.addChild(content);
@@ -216,16 +248,10 @@ export class UpgradePanel extends Container {
         .fill({ color: 0xffffff, alpha: 0.65 });
       content.addChild(body);
 
-      // 3. Top Badges Row: Rarity Badge + Action Type Badge
-      const rarityBadge = new Graphics();
-      rarityBadge
-        .roundRect(-cardW / 2 + 16, -cardH / 2 + 14, 105, 28, 14)
-        .fill(theme.bg)
-        .stroke({ color: 0xffffff, width: 1.5 });
-      content.addChild(rarityBadge);
-
+      // 3. Row 1: Rarity Badge + Action Type Badge side-by-side
+      const rarityStr = I18n.rarity(upgrade.rarity, theme.label);
       const rarityText = new Text({
-        text: theme.label,
+        text: rarityStr,
         style: {
           fontFamily: "Be Vietnam Pro, sans-serif",
           fontSize: 13,
@@ -233,21 +259,26 @@ export class UpgradePanel extends Container {
           fill: 0xffffff,
         },
       });
+      const rarityW = Math.max(88, rarityText.width + 24);
+      const badgeH = 28;
+      const row1Y = -cardH / 2 + 14;
+
+      const rarityBadge = new Graphics();
+      rarityBadge
+        .roundRect(-cardW / 2 + 16, row1Y, rarityW, badgeH, 14)
+        .fill(theme.bg)
+        .stroke({ color: 0xffffff, width: 1.5 });
+      content.addChild(rarityBadge);
+
       rarityText.anchor.set(0.5);
-      rarityText.x = -cardW / 2 + 68;
-      rarityText.y = -cardH / 2 + 28;
+      rarityText.x = -cardW / 2 + 16 + rarityW / 2;
+      rarityText.y = row1Y + badgeH / 2;
       content.addChild(rarityText);
 
-      // Action Badge (Lên Sao / Nâng Chỉ Số / Thêm Mới)
-      const actionBadge = new Graphics();
-      actionBadge
-        .roundRect(-cardW / 2 + 130, -cardH / 2 + 14, 150, 28, 14)
-        .fill(actionInfo.bg)
-        .stroke({ color: theme.border, width: 1.5 });
-      content.addChild(actionBadge);
-
+      // Action Badge (Lên Sao / Nâng Chỉ Số / Vũ Khí Mới)
+      const actionStr = I18n.action(upgrade.actionType, actionInfo.text);
       const actionText = new Text({
-        text: actionInfo.text,
+        text: actionStr,
         style: {
           fontFamily: "Be Vietnam Pro, sans-serif",
           fontSize: 13,
@@ -255,57 +286,72 @@ export class UpgradePanel extends Container {
           fill: actionInfo.color,
         },
       });
+      const actionW = Math.max(120, actionText.width + 24);
+      const actionX = -cardW / 2 + 16 + rarityW + 10;
+
+      const actionBadge = new Graphics();
+      actionBadge
+        .roundRect(actionX, row1Y, actionW, badgeH, 14)
+        .fill(actionInfo.bg)
+        .stroke({ color: theme.border, width: 1.5 });
+      content.addChild(actionBadge);
+
       actionText.anchor.set(0.5);
-      actionText.x = -cardW / 2 + 205;
-      actionText.y = -cardH / 2 + 28;
+      actionText.x = actionX + actionW / 2;
+      actionText.y = row1Y + badgeH / 2;
       content.addChild(actionText);
 
-      // 4. Target Module Scope Badge (Right-aligned)
+      // 4. Row 2: Target Scope on its OWN independent line (No overlap possible!)
+      const targetStr = I18n.upgradeTarget(upgrade.targetLabel);
       const scopeText = new Text({
-        text: `ÁP DỤNG: ${upgrade.targetLabel}`,
+        text: I18n.t("upgrade.scope", { value: targetStr }),
         style: {
           fontFamily: "Be Vietnam Pro, sans-serif",
-          fontSize: 14.5,
+          fontSize: 15,
           fontWeight: "900",
           fill: theme.textCol,
+          wordWrap: true,
+          wordWrapWidth: cardW - 36,
         },
       });
-      scopeText.anchor.set(1, 0.5);
-      scopeText.x = cardW / 2 - 18;
-      scopeText.y = -cardH / 2 + 28;
+      scopeText.anchor.set(0, 0.5);
+      scopeText.x = -cardW / 2 + 18;
+      scopeText.y = -cardH / 2 + 58;
       content.addChild(scopeText);
 
-      // 5. Upgrade Name
+      // 5. Row 3: Upgrade Name
       const nameText = new Text({
-        text: upgrade.name,
+        text: I18n.upgradeName(upgrade.id, upgrade.name),
         style: {
           fontFamily: "Be Vietnam Pro, sans-serif",
-          fontSize: 26,
+          fontSize: 25,
           fontWeight: "900",
           fill: 0x0f172a,
+          wordWrap: true,
+          wordWrapWidth: cardW - 36,
         },
       });
       nameText.anchor.set(0, 0.5);
       nameText.x = -cardW / 2 + 18;
-      nameText.y = -cardH / 2 + 68;
+      nameText.y = -cardH / 2 + 96;
       content.addChild(nameText);
 
-      // 6. Description Text (Full card width with spacious layout)
+      // 6. Row 4: Description Text
       const descText = new Text({
-        text: upgrade.description,
+        text: I18n.upgradeDesc(upgrade.id, upgrade.description),
         style: {
           fontFamily: "Be Vietnam Pro, sans-serif",
-          fontSize: 18,
+          fontSize: 17,
           fontWeight: "600",
           fill: 0x334155,
           wordWrap: true,
           wordWrapWidth: cardW - 36,
-          lineHeight: 25,
+          lineHeight: 24,
         },
       });
       descText.anchor.set(0, 0);
       descText.x = -cardW / 2 + 18;
-      descText.y = -cardH / 2 + 96;
+      descText.y = -cardH / 2 + 130;
       content.addChild(descText);
 
       // 7. Interactive Hover & Touch (The entire card acts as a juicy button)

@@ -69,13 +69,22 @@ export class SceneManager {
       nextScene.start();
     }
 
-    this.resize(this.app.screen.width, this.app.screen.height);
+    this.resize(this.lastVirtualWidth, this.lastVirtualHeight);
   }
 
+  private static lastVirtualWidth: number = 720;
+  private static lastVirtualHeight: number = 1280;
+
   public static resize(width: number, height: number) {
+    this.lastVirtualWidth = width;
+    this.lastVirtualHeight = height;
     if (this.currentScene?.resize) {
       this.currentScene.resize(width, height);
     }
+  }
+
+  public static getVirtualSize(): { width: number; height: number } {
+    return { width: this.lastVirtualWidth, height: this.lastVirtualHeight };
   }
 
   public static getApp(): Application {

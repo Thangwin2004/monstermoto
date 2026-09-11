@@ -3,22 +3,32 @@ import { GAME_WIDTH, GAME_HEIGHT } from "../constants";
 import { SaveManager } from "../utils/SaveManager";
 import { AudioMixer } from "../utils/AudioMixer";
 import { EventBus } from "../utils/EventBus";
-import { HyperButton, HyperCircleButton } from "./HyperButton";
+import { HyperCircleButton } from "./HyperButton";
 import { VectorIcons } from "./VectorIcons";
+import { I18n, type Language } from "../utils/I18n";
+import { SceneManager } from "../scenes/SceneManager";
 
 export class SettingsModal extends Container {
   private modalContainer: Container;
   private contentContainer: Container;
+  private titleText!: Text;
+  private gearIcon!: Container;
   private onCloseCallback: () => void;
+  private isInGame: boolean;
+  private resetConfirm?: Container;
+  private modalHeight: number;
 
-  constructor(onClose: () => void) {
+  constructor(onClose: () => void, isInGame = false, customHeight?: number) {
     super();
     this.onCloseCallback = onClose;
+    this.isInGame = isInGame;
+    const virtualH = SceneManager.getVirtualSize?.()?.height ?? GAME_HEIGHT;
+    this.modalHeight = Math.max(GAME_HEIGHT, virtualH, customHeight ?? 0);
 
-    // 1. Semi-Transparent Dark Blur Backdrop (covers full screen)
+    // 1. Semi-Transparent Dark Blur Backdrop covering full viewport
     const backdrop = new Graphics();
-    backdrop.rect(-100, -100, GAME_WIDTH + 200, GAME_HEIGHT + 200);
-    backdrop.fill({ color: 0x000000, alpha: 0.85 });
+    backdrop.rect(-100, -100, GAME_WIDTH + 200, Math.max(3500, this.modalHeight + 600));
+    backdrop.fill({ color: 0x000000, alpha: 0.88 });
     backdrop.eventMode = "static";
     backdrop.on("pointerdown", (e) => e.stopPropagation());
     this.addChild(backdrop);
@@ -26,27 +36,27 @@ export class SettingsModal extends Container {
     // 2. Central 3D Modal Window
     this.modalContainer = new Container();
     this.modalContainer.x = GAME_WIDTH / 2;
-    this.modalContainer.y = GAME_HEIGHT / 2;
+    this.modalContainer.y = this.modalHeight / 2;
     this.addChild(this.modalContainer);
 
-    const cardW = 600;
-    const cardH = 840;
+    const cardW = 620;
+    const cardH = this.isInGame ? 580 : 1060;
 
     // Soft Card Shadow
     const cardShadow = new Graphics();
     cardShadow
       .roundRect(-cardW / 2 + 8, -cardH / 2 + 16, cardW, cardH, 28)
-      .fill({ color: 0x000000, alpha: 0.4 });
+      .fill({ color: 0x000000, alpha: 0.45 });
     this.modalContainer.addChild(cardShadow);
 
     // Thick 3D Royal Blue Border (Marth3 Design Standard)
     const borderBg = new Graphics();
     borderBg
       .roundRect(-cardW / 2, -cardH / 2 + 8, cardW, cardH, 28)
-      .fill(0x0369a1); // Shadow Base
+      .fill(0x0369a1);
     borderBg
       .roundRect(-cardW / 2, -cardH / 2, cardW, cardH, 28)
-      .fill(0x0284c7) // Main Border
+      .fill(0x0284c7)
       .stroke({ color: 0xffffff, width: 4.5 });
     this.modalContainer.addChild(borderBg);
 
@@ -58,20 +68,26 @@ export class SettingsModal extends Container {
     this.modalContainer.addChild(cardFace);
 
     // 3. Floating 3D Title Ribbon (Cyan / Sky Blue)
-    const ribbonW = 380;
+    const ribbonW = 340;
     const ribbonH = 68;
     const ribbonY = -cardH / 2 - 14;
 
     const ribbon = new Graphics();
     ribbon
       .roundRect(-ribbonW / 2, ribbonY + 6, ribbonW, ribbonH, ribbonH / 2)
-      .fill(0x0369a1); // Shadow
+      .fill(0x0369a1);
     ribbon
       .roundRect(-ribbonW / 2, ribbonY, ribbonW, ribbonH, ribbonH / 2)
       .fill(0x0ea5e9)
       .stroke({ color: 0xffffff, width: 4.5 });
     ribbon
-      .roundRect(-ribbonW / 2 + 16, ribbonY + 4, ribbonW - 32, ribbonH * 0.38, 12)
+      .roundRect(
+        -ribbonW / 2 + 16,
+        ribbonY + 4,
+        ribbonW - 32,
+        ribbonH * 0.38,
+        12,
+      )
       .fill({ color: 0xffffff, alpha: 0.35 });
     this.modalContainer.addChild(ribbon);
 
@@ -79,12 +95,11 @@ export class SettingsModal extends Container {
     const titleRow = new Container();
     titleRow.y = ribbonY + ribbonH / 2 - 2;
 
-    const gearIcon = VectorIcons.createIcon("gear", 26, 0xffffff);
-    gearIcon.x = -105;
-    titleRow.addChild(gearIcon);
+    this.gearIcon = VectorIcons.createIcon("gear", 26, 0xffffff);
+    titleRow.addChild(this.gearIcon);
 
-    const titleText = new Text({
-      text: "CÀI ĐẶT GAME",
+    this.titleText = new Text({
+      text: this.isInGame ? I18n.t("settings.run") : I18n.t("settings.game"),
       style: {
         fontFamily: "Be Vietnam Pro, sans-serif",
         fontSize: 24,
@@ -94,15 +109,14 @@ export class SettingsModal extends Container {
         letterSpacing: 1.5,
       },
     });
-    titleText.anchor.set(0, 0.5);
-    titleText.x = -80;
-    titleRow.addChild(titleText);
+    this.titleText.anchor.set(0, 0.5);
+    titleRow.addChild(this.titleText);
     this.modalContainer.addChild(titleRow);
 
     // 4. Top-Right Circular Close Button (HyperCircleButton ❌ with crisp vector cross)
     const closeCornerBtn = new HyperCircleButton({
       vectorIcon: "cross",
-      radius: 24,
+      radius: 25,
       color: 0xef4444,
       shadowColor: 0x991b1b,
       strokeWidth: 3.5,
@@ -111,40 +125,36 @@ export class SettingsModal extends Container {
         this.onCloseCallback();
       },
     });
-    closeCornerBtn.x = cardW / 2 - 14;
-    closeCornerBtn.y = -cardH / 2 + 14;
+    closeCornerBtn.x = cardW / 2 - 28;
+    closeCornerBtn.y = -cardH / 2 + 28;
     this.modalContainer.addChild(closeCornerBtn);
 
-    // 5. Settings Content Rows
+    // 5. Settings Content Rows Container
     this.contentContainer = new Container();
     this.contentContainer.y = -cardH / 2 + 76;
     this.modalContainer.addChild(this.contentContainer);
 
     this.renderSettings();
-
-    // 6. Bottom Confirm / Close Button (HyperButton with crisp vector check)
-    const doneBtn = new HyperButton({
-      label: "ĐỒNG Ý",
-      vectorIcon: "check",
-      width: 290,
-      height: 64,
-      fontSize: 23,
-      color: 0x0ea5e9,
-      shadowColor: 0x0369a1,
-      onClick: () => {
-        this.destroy();
-        this.onCloseCallback();
-      },
-    });
-    doneBtn.y = cardH / 2 - 46;
-    this.modalContainer.addChild(doneBtn);
   }
 
   private renderSettings() {
     this.contentContainer.removeChildren();
+    this.titleText.text = this.isInGame
+      ? I18n.t("settings.run")
+      : I18n.t("settings.game");
+
+    // Optical centering for gear icon + title text
+    const spacing = 12;
+    const totalW = 26 + spacing + this.titleText.width;
+    if (this.gearIcon) {
+      this.gearIcon.x = -totalW / 2 + 13;
+      this.titleText.x = -totalW / 2 + 26 + spacing;
+    }
+
     const settings = SaveManager.getSettings();
 
-    const rows: {
+    // Clean labels: no (SFX), no (BGM)
+    const allRows: {
       id: string;
       label: string;
       subLabel?: string;
@@ -156,7 +166,7 @@ export class SettingsModal extends Container {
     }[] = [
       {
         id: "sfx",
-        label: "Âm thanh (SFX)",
+        label: I18n.t("settings.sfx"),
         iconType: "speaker",
         iconColor: 0x0284c7,
         pillColor: 0xe0f2fe,
@@ -169,7 +179,7 @@ export class SettingsModal extends Container {
       },
       {
         id: "bgm",
-        label: "Nhạc nền (BGM)",
+        label: I18n.t("settings.bgm"),
         iconType: "music",
         iconColor: 0x2563eb,
         pillColor: 0xdbeafe,
@@ -182,8 +192,10 @@ export class SettingsModal extends Container {
       },
       {
         id: "shake",
-        label: "Rung màn hình",
-        subLabel: settings.screenShake ? "Bật cảm giác rung lực" : "Tắt chống chóng mặt",
+        label: I18n.t("settings.shake"),
+        subLabel: settings.screenShake
+          ? I18n.t("settings.shakeSubOn")
+          : I18n.t("settings.shakeSubOff"),
         iconType: "vibration",
         iconColor: 0xf97316,
         pillColor: 0xffedd5,
@@ -197,8 +209,10 @@ export class SettingsModal extends Container {
       },
       {
         id: "particles",
-        label: "Hiệu ứng đồ họa",
-        subLabel: !settings.lowParticles ? "Rực rỡ: Hạt & số sát thương" : "Tiết kiệm: Tối ưu 60 FPS mượt mà",
+        label: I18n.t("settings.particles"),
+        subLabel: !settings.lowParticles
+          ? I18n.t("settings.particlesSubOn")
+          : I18n.t("settings.particlesSubOff"),
         iconType: "lightning",
         iconColor: 0xeab308,
         pillColor: 0xfef9c3,
@@ -212,7 +226,11 @@ export class SettingsModal extends Container {
       },
     ];
 
-    const rowH = 76;
+    const rows = allRows.filter(
+      (row) => !this.isInGame || row.id !== "particles",
+    );
+
+    const rowH = 80;
     for (let i = 0; i < rows.length; i++) {
       const r = rows[i];
       const rowY = i * rowH;
@@ -220,35 +238,37 @@ export class SettingsModal extends Container {
       // Pure White Row Card with Light Blue Stroke
       const rowBg = new Graphics();
       rowBg
-        .roundRect(-260, rowY, 520, 64, 18)
+        .roundRect(-270, rowY, 540, 68, 18)
         .fill(0xffffff)
         .stroke({ color: 0xe2e8f0, width: 2 });
       this.contentContainer.addChild(rowBg);
 
       // Icon Pill with Vector Icon
       const iconPill = new Graphics();
-      iconPill.circle(-225, rowY + 32, 22).fill(r.enabled ? r.pillColor : 0xf1f5f9);
+      iconPill
+        .circle(-232, rowY + 34, 24)
+        .fill(r.enabled ? r.pillColor : 0xf1f5f9);
       this.contentContainer.addChild(iconPill);
 
       const vectorIcon = VectorIcons.createIcon(
         r.iconType,
-        26,
+        28,
         r.enabled ? r.iconColor : 0x94a3b8,
       );
-      vectorIcon.x = -225;
-      vectorIcon.y = rowY + 32;
+      vectorIcon.x = -232;
+      vectorIcon.y = rowY + 34;
       this.contentContainer.addChild(vectorIcon);
 
-      // Label & Subtitle Text
+      // Label & Subtitle Text (Increased sizes)
       const textGroup = new Container();
-      textGroup.x = -190;
-      textGroup.y = rowY + 12;
+      textGroup.x = -195;
+      textGroup.y = rowY + 11;
 
       const label = new Text({
         text: r.label,
         style: {
           fontFamily: "Be Vietnam Pro, sans-serif",
-          fontSize: 17,
+          fontSize: 22,
           fontWeight: "800",
           fill: 0x1e293b,
         },
@@ -260,137 +280,405 @@ export class SettingsModal extends Container {
           text: r.subLabel,
           style: {
             fontFamily: "Be Vietnam Pro, sans-serif",
-            fontSize: 12,
-            fontWeight: "600",
+            fontSize: 16,
+            fontWeight: "700",
             fill: r.enabled ? 0x0284c7 : 0x64748b,
           },
         });
-        sub.y = 24;
+        sub.y = 26;
         textGroup.addChild(sub);
       } else {
-        label.y = 8;
+        label.y = 9;
       }
 
       this.contentContainer.addChild(textGroup);
 
       // Cute 3D Toggle Switch (Knob + Track)
       const toggleSwitch = this.create3DToggleSwitch(r.enabled, r.onToggle);
-      toggleSwitch.x = 195;
-      toggleSwitch.y = rowY + 32;
+      toggleSwitch.x = 205;
+      toggleSwitch.y = rowY + 34;
       this.contentContainer.addChild(toggleSwitch);
     }
 
-    // Info How-To-Play Card (Soft Ivory Box with Gold Border)
-    const infoY = rows.length * rowH + 12;
-    const infoBg = new Graphics();
-    infoBg
-      .roundRect(-260, infoY, 520, 126, 18)
-      .fill(0xfefce8)
-      .stroke({ color: 0xfacc15, width: 2.5 });
-    this.contentContainer.addChild(infoBg);
+    // Language Selector Row
+    this.addLanguageSelector(rows.length * rowH + 6);
 
-    const infoTitle = new Text({
-      text: "HƯỚNG DẪN CHIẾN ĐẤU",
-      style: {
-        fontFamily: "Be Vietnam Pro, sans-serif",
-        fontSize: 16,
-        fontWeight: "900",
-        fill: 0xb45309,
-        letterSpacing: 1,
-      },
-    });
-    infoTitle.x = -240;
-    infoTitle.y = infoY + 12;
-    this.contentContainer.addChild(infoTitle);
+    if (!this.isInGame) {
+      // Main-menu-only content: help guide and reset progress
+      const infoY = rows.length * rowH + 98;
+      const infoBg = new Graphics();
+      infoBg
+        .roundRect(-270, infoY, 540, 142, 18)
+        .fill(0xfefce8)
+        .stroke({ color: 0xfacc15, width: 2.5 });
+      this.contentContainer.addChild(infoBg);
 
-    const infoBody = new Text({
-      text: "• Vuốt kéo để lái xe tránh đâm quái vật trực diện.\n• Thu thập Phế liệu để nâng cấp vĩnh viễn trong Xưởng Xe.\n• Trang bị Tên Lửa và Laser để quét sạch quái cự ly xa!",
-      style: {
-        fontFamily: "Be Vietnam Pro, sans-serif",
-        fontSize: 14.5,
-        fontWeight: "600",
-        fill: 0x78350f,
-        lineHeight: 22,
-      },
-    });
-    infoBody.x = -240;
-    infoBody.y = infoY + 38;
-    this.contentContainer.addChild(infoBody);
+      const infoTitle = new Text({
+        text: I18n.t("settings.helpTitle"),
+        style: {
+          fontFamily: "Be Vietnam Pro, sans-serif",
+          fontSize: 20,
+          fontWeight: "900",
+          fill: 0xb45309,
+          letterSpacing: 1,
+        },
+      });
+      infoTitle.x = -248;
+      infoTitle.y = infoY + 12;
+      this.contentContainer.addChild(infoTitle);
 
-    // Reset Progress Text Link (Subtle Red Link)
-    const resetY = infoY + 148;
-    const resetBtn = new Text({
-      text: "Đặt lại toàn bộ tiến trình Xưởng Xe",
-      style: {
-        fontFamily: "Be Vietnam Pro, sans-serif",
-        fontSize: 15,
-        fontWeight: "800",
-        fill: 0xef4444,
-      },
-    });
-    resetBtn.anchor.set(0.5);
-    resetBtn.y = resetY;
-    resetBtn.eventMode = "static";
-    resetBtn.cursor = "pointer";
-    resetBtn.on("pointerdown", () => {
-      if (window.confirm("Bạn có chắc chắn muốn xóa toàn bộ tiến trình và phế liệu không?")) {
-        SaveManager.resetProgress();
-        this.renderSettings();
-      }
-    });
-    this.contentContainer.addChild(resetBtn);
+      const infoBody = new Text({
+        text: I18n.t("settings.helpBody"),
+        style: {
+          fontFamily: "Be Vietnam Pro, sans-serif",
+          fontSize: 17,
+          fontWeight: "600",
+          fill: 0x78350f,
+          lineHeight: 25,
+          wordWrap: true,
+          wordWrapWidth: 500,
+        },
+      });
+      infoBody.x = -248;
+      infoBody.y = infoY + 40;
+      this.contentContainer.addChild(infoBody);
+
+      // Reset progress button (Compact, polished 3D danger button)
+      const resetY = infoY + 172;
+      const resetBtn = new Container();
+      resetBtn.y = resetY;
+
+      const btnW = 230;
+      const btnH = 46;
+
+      const btnContent = new Container();
+      resetBtn.addChild(btnContent);
+
+      // 3D Shadow Base
+      const resetShadow = new Graphics();
+      resetShadow
+        .roundRect(-btnW / 2, -btnH / 2 + 4, btnW, btnH, 14)
+        .fill(0x991b1b);
+      resetBtn.addChildAt(resetShadow, 0);
+
+      // Ruby Red Button Body
+      const resetBg = new Graphics();
+      resetBg
+        .roundRect(-btnW / 2, -btnH / 2, btnW, btnH, 14)
+        .fill(0xef4444)
+        .stroke({ color: 0xffffff, width: 2.2 });
+      resetBg
+        .roundRect(-btnW / 2 + 4, -btnH / 2 + 2, btnW - 8, btnH * 0.38, 6)
+        .fill({ color: 0xffffff, alpha: 0.3 });
+      btnContent.addChild(resetBg);
+
+      const resetText = new Text({
+        text: `🗑️ ${I18n.t("settings.reset")}`,
+        style: {
+          fontFamily: "Be Vietnam Pro, sans-serif",
+          fontSize: 16,
+          fontWeight: "900",
+          fill: 0xffffff,
+          stroke: { color: 0x991b1b, width: 2 },
+          letterSpacing: 0.5,
+        },
+      });
+      resetText.anchor.set(0.5);
+      btnContent.addChild(resetText);
+
+      resetBtn.eventMode = "static";
+      resetBtn.cursor = "pointer";
+      resetBtn.on("pointerover", () => resetBtn.scale.set(1.05));
+      resetBtn.on("pointerout", () => {
+        resetBtn.scale.set(1.0);
+        btnContent.y = 0;
+      });
+      resetBtn.on("pointerdown", () => {
+        btnContent.y = 3;
+        resetBtn.scale.set(0.95);
+      });
+      resetBtn.on("pointerup", () => {
+        btnContent.y = 0;
+        resetBtn.scale.set(1.0);
+        AudioMixer.playSFX("sfx_button");
+        this.showResetConfirm();
+      });
+      this.contentContainer.addChild(resetBtn);
+    }
   }
 
-  private create3DToggleSwitch(enabled: boolean, onToggle: () => void): Container {
+  private addLanguageSelector(y: number) {
+    const row = new Container();
+    row.y = y;
+
+    const bg = new Graphics();
+    bg.roundRect(-270, 0, 540, 68, 18)
+      .fill(0xffffff)
+      .stroke({ color: 0xe2e8f0, width: 2 });
+    row.addChild(bg);
+
+    const label = new Text({
+      text: `🌐 ${I18n.t("settings.language")}`,
+      style: {
+        fontFamily: "Be Vietnam Pro, sans-serif",
+        fontSize: 21,
+        fontWeight: "800",
+        fill: 0x1e293b,
+      },
+    });
+    label.x = -245;
+    label.y = 20;
+    row.addChild(label);
+
+    const makeChoice = (lang: Language, text: string, x: number) => {
+      const choice = new Container();
+      const active = I18n.language === lang;
+
+      const choiceW = 108;
+      const choiceH = 44;
+
+      const choiceBg = new Graphics();
+      if (active) {
+        // 3D Shadow Base
+        const sh = new Graphics();
+        sh.roundRect(-choiceW / 2, -choiceH / 2 + 3, choiceW, choiceH, 22)
+          .fill(0x0369a1);
+        choice.addChild(sh);
+
+        choiceBg
+          .roundRect(-choiceW / 2, -choiceH / 2, choiceW, choiceH, 22)
+          .fill(0x0284c7)
+          .stroke({ color: 0xffffff, width: 2.2 });
+        choiceBg
+          .roundRect(
+            -choiceW / 2 + 4,
+            -choiceH / 2 + 2,
+            choiceW - 8,
+            choiceH * 0.38,
+            8,
+          )
+          .fill({ color: 0xffffff, alpha: 0.28 });
+      } else {
+        choiceBg
+          .roundRect(-choiceW / 2, -choiceH / 2, choiceW, choiceH, 22)
+          .fill(0xf1f5f9)
+          .stroke({ color: 0xcbd5e1, width: 1.8 });
+      }
+      choice.addChild(choiceBg);
+
+      const choiceText = new Text({
+        text,
+        style: {
+          fontFamily: "Be Vietnam Pro, sans-serif",
+          fontSize: 15,
+          fontWeight: "900",
+          fill: active ? 0xffffff : 0x475569,
+          stroke: active ? { color: 0x0369a1, width: 2 } : undefined,
+        },
+      });
+      choiceText.anchor.set(0.5);
+      choice.addChild(choiceText);
+      choice.x = x;
+      choice.y = 34;
+      choice.eventMode = "static";
+      choice.cursor = "pointer";
+      choice.on("pointerdown", () => {
+        if (I18n.language === lang) return;
+        AudioMixer.playSFX("sfx_button");
+        I18n.setLanguage(lang);
+        this.renderSettings();
+      });
+      row.addChild(choice);
+    };
+
+    // Bounds [-270, 270]. Margin from right edge is 16px (rightmost at 254).
+    // Button 2 (English) center at 200 (bounds [146, 254]).
+    // Button 1 (Tiếng Việt) center at 82 (bounds [28, 136]).
+    makeChoice("vi", "Tiếng Việt", 82);
+    makeChoice("en", "English", 200);
+    this.contentContainer.addChild(row);
+  }
+
+  /**
+   * Custom in-game confirmation dialog (Zero native browser alerts/confirms!)
+   */
+  private showResetConfirm() {
+    if (this.resetConfirm) return;
+
+    const overlay = new Container();
+    overlay.x = 0;
+    overlay.y = 0;
+
+    // Dim background
+    const shade = new Graphics();
+    shade
+      .rect(-GAME_WIDTH, -this.modalHeight, GAME_WIDTH * 3, this.modalHeight * 3)
+      .fill({ color: 0x000000, alpha: 0.72 });
+    shade.eventMode = "static";
+    shade.on("pointerdown", (event) => event.stopPropagation());
+    overlay.addChild(shade);
+
+    // 3D Dialog Card Base
+    const cardW = 540;
+    const cardH = 320;
+
+    const cardShadow = new Graphics();
+    cardShadow
+      .roundRect(-cardW / 2 + 6, -cardH / 2 + 12, cardW, cardH, 24)
+      .fill({ color: 0x000000, alpha: 0.5 });
+    overlay.addChild(cardShadow);
+
+    const card = new Graphics();
+    card
+      .roundRect(-cardW / 2, -cardH / 2 + 6, cardW, cardH, 24)
+      .fill(0x0369a1);
+    card
+      .roundRect(-cardW / 2, -cardH / 2, cardW, cardH, 24)
+      .fill(0xfbfaf5)
+      .stroke({ color: 0x0284c7, width: 5 });
+    overlay.addChild(card);
+
+    // Title
+    const title = new Text({
+      text: I18n.t("settings.resetTitle"),
+      style: {
+        fontFamily: "Be Vietnam Pro, sans-serif",
+        fontSize: 26,
+        fontWeight: "900",
+        fill: 0xdc2626,
+        align: "center",
+      },
+    });
+    title.anchor.set(0.5);
+    title.y = -95;
+    overlay.addChild(title);
+
+    // Body
+    const body = new Text({
+      text: I18n.t("settings.resetBody"),
+      style: {
+        fontFamily: "Be Vietnam Pro, sans-serif",
+        fontSize: 18,
+        fontWeight: "700",
+        fill: 0x334155,
+        align: "center",
+        wordWrap: true,
+        wordWrapWidth: 460,
+        lineHeight: 27,
+      },
+    });
+    body.anchor.set(0.5);
+    body.y = -20;
+    overlay.addChild(body);
+
+    // 2 Action Buttons
+    const makeButton = (
+      label: string,
+      x: number,
+      color: number,
+      shadow: number,
+      onClick: () => void,
+    ) => {
+      const button = new Container();
+      button.x = x;
+      button.y = 85;
+
+      const buttonBg = new Graphics();
+      buttonBg.roundRect(-95, -28 + 4, 190, 56, 28).fill(shadow);
+      buttonBg
+        .roundRect(-95, -28, 190, 56, 28)
+        .fill(color)
+        .stroke({ color: 0xffffff, width: 3 });
+      button.addChild(buttonBg);
+
+      const text = new Text({
+        text: label,
+        style: {
+          fontFamily: "Be Vietnam Pro, sans-serif",
+          fontSize: 19,
+          fontWeight: "900",
+          fill: 0xffffff,
+        },
+      });
+      text.anchor.set(0.5);
+      button.addChild(text);
+
+      button.eventMode = "static";
+      button.cursor = "pointer";
+      button.on("pointerdown", onClick);
+      overlay.addChild(button);
+    };
+
+    makeButton(I18n.t("settings.cancel"), -110, 0x64748b, 0x334155, () =>
+      this.closeResetConfirm(),
+    );
+    makeButton(I18n.t("settings.confirm"), 110, 0xdc2626, 0x991b1b, () => {
+      SaveManager.resetProgress();
+      this.closeResetConfirm();
+      this.renderSettings();
+      AudioMixer.playSFX("sfx_button");
+    });
+
+    this.resetConfirm = overlay;
+    this.modalContainer.addChild(overlay);
+  }
+
+  private closeResetConfirm() {
+    if (this.resetConfirm) {
+      this.modalContainer.removeChild(this.resetConfirm);
+      this.resetConfirm.destroy({ children: true });
+      this.resetConfirm = undefined;
+    }
+  }
+
+  /**
+   * 3D Toggle Switch Component
+   */
+  private create3DToggleSwitch(
+    enabled: boolean,
+    onToggle: () => void,
+  ): Container {
     const sw = new Container();
-    const w = 86;
-    const h = 40;
-    const r = h / 2;
+    sw.eventMode = "static";
+    sw.cursor = "pointer";
 
-    // Track Shadow Base
-    const trackShadow = new Graphics();
-    trackShadow
-      .roundRect(-w / 2, -h / 2 + 3, w, h, r)
-      .fill(enabled ? 0x15803d : 0x64748b);
-    sw.addChild(trackShadow);
+    const width = 84;
+    const height = 44;
+    const radius = 22;
 
-    // Track Body
     const track = new Graphics();
     track
-      .roundRect(-w / 2, -h / 2, w, h, r)
-      .fill(enabled ? 0x22c55e : 0x94a3b8)
+      .roundRect(-width / 2, -height / 2 + 3, width, height, radius)
+      .fill(enabled ? 0x15803d : 0x94a3b8);
+    track
+      .roundRect(-width / 2, -height / 2, width, height, radius)
+      .fill(enabled ? 0x22c55e : 0xcbd5e1)
       .stroke({ color: 0xffffff, width: 2.5 });
     sw.addChild(track);
 
-    // Text ON/OFF indicator inside track
+    const knob = new Graphics();
+    const knobX = enabled ? width / 2 - 22 : -width / 2 + 22;
+    knob.circle(knobX, 2, 17).fill(0x94a3b8);
+    knob
+      .circle(knobX, 0, 17)
+      .fill(0xffffff)
+      .stroke({ color: enabled ? 0x16a34a : 0x94a3b8, width: 2 });
+    sw.addChild(knob);
+
     const stateText = new Text({
-      text: enabled ? "BẬT" : "TẮT",
+      text: enabled ? I18n.t("settings.on") : I18n.t("settings.off"),
       style: {
         fontFamily: "Be Vietnam Pro, sans-serif",
         fontSize: 13,
         fontWeight: "900",
-        fill: 0xffffff,
+        fill: enabled ? 0xffffff : 0x64748b,
       },
     });
     stateText.anchor.set(0.5);
-    stateText.x = enabled ? -14 : 14;
+    stateText.x = enabled ? -12 : 12;
     stateText.y = 0;
     sw.addChild(stateText);
 
-    // 3D White Sliding Knob
-    const knobX = enabled ? w / 2 - r : -w / 2 + r;
-    const knobShadow = new Graphics();
-    knobShadow.circle(knobX, 2, r - 3).fill(0x94a3b8);
-    sw.addChild(knobShadow);
-
-    const knob = new Graphics();
-    knob.circle(knobX, 0, r - 3).fill(0xffffff).stroke({ color: 0xe2e8f0, width: 2 });
-    // Knob shine
-    knob.circle(knobX - 3, -3, (r - 3) * 0.4).fill({ color: 0xffffff, alpha: 0.8 });
-    sw.addChild(knob);
-
-    sw.eventMode = "static";
-    sw.cursor = "pointer";
     sw.on("pointerdown", () => {
       AudioMixer.playSFX("sfx_button");
       onToggle();
@@ -398,4 +686,10 @@ export class SettingsModal extends Container {
 
     return sw;
   }
+
+  public resize(_width: number, height: number) {
+    this.modalHeight = Math.max(GAME_HEIGHT, height);
+    this.modalContainer.y = this.modalHeight / 2;
+  }
 }
+

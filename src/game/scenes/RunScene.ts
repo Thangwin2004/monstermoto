@@ -20,6 +20,7 @@ import { EventBus } from "../utils/EventBus";
 import { AudioMixer } from "../utils/AudioMixer";
 import { RunState } from "../utils/RunState";
 import { resetRng } from "../utils/RNG";
+import { I18n } from "../utils/I18n";
 import { winkGame, type WinkRound } from "../../integrations/wink/client";
 import { PICKUP_CONFIGS, type PickupType } from "../entities/Pickup";
 import {
@@ -52,6 +53,7 @@ export class RunScene extends Container implements Scene {
   // UI
   private hud!: HUD;
   private upgradePanel!: UpgradePanel;
+  private activeSettingsModal: SettingsModal | null = null;
 
   // Run state
   private isPaused: boolean = false;
@@ -59,6 +61,7 @@ export class RunScene extends Container implements Scene {
   private distanceMeters: number = 0;
   private bossSpawned: boolean = false;
   private isGameOver: boolean = false;
+  private currentHeight: number = GAME_HEIGHT;
 
   // Camera shake
   private shakeTimer: number = 0;
@@ -71,6 +74,9 @@ export class RunScene extends Container implements Scene {
     // Reset RNG and RunState for new run
     resetRng();
     RunState.reset();
+
+    const initialH = SceneManager.getVirtualSize?.()?.height ?? GAME_HEIGHT;
+    this.currentHeight = initialH;
 
     // Create layers
     this.gameLayer = new Container();
@@ -86,11 +92,12 @@ export class RunScene extends Container implements Scene {
   }
 
   private initSystems() {
-    this.roadSystem = new RoadSystem();
+    this.roadSystem = new RoadSystem(this.currentHeight);
     this.gameLayer.addChild(this.roadSystem.container);
 
     this.lootSystem = new LootSystem(this.gameLayer);
     this.convoySystem = new ConvoySystem(this.gameLayer);
+    this.convoySystem.convoy.y = this.currentHeight * 0.824;
     this.enemySystem = new EnemySystem(this.gameLayer, this.convoySystem);
     this.projectileSystem = new ProjectileSystem(this.gameLayer);
     this.bossSystem = new BossSystem(this.gameLayer, this.convoySystem);
@@ -117,11 +124,17 @@ export class RunScene extends Container implements Scene {
       this.gameLayer.filters = [blur];
       this.hud.filters = [blur];
 
-      const modal = new SettingsModal(() => {
-        this.gameLayer.filters = [];
-        this.hud.filters = [];
-        this.isPaused = false;
-      });
+      const modal = new SettingsModal(
+        () => {
+          this.activeSettingsModal = null;
+          this.gameLayer.filters = [];
+          this.hud.filters = [];
+          this.isPaused = false;
+        },
+        true,
+        this.currentHeight,
+      );
+      this.activeSettingsModal = modal;
       this.uiLayer.addChild(modal);
     });
     this.uiLayer.addChild(this.hud);
@@ -182,7 +195,7 @@ export class RunScene extends Container implements Scene {
 
     // Boss spawned
     EventBus.on("boss:spawned", () => {
-      this.hud.showBossHp("KẺ THU THẬP");
+      this.hud.showBossHp(I18n.t("hud.bossName"));
       AudioMixer.playSFX("sfx_shake");
       this.triggerShake(5, 0.3);
     });
@@ -233,6 +246,20 @@ export class RunScene extends Container implements Scene {
              distance: Math.floor(this.distanceMeters),
            },
          });
+         if (winkGame.canSubmitScore) {
+           void winkGame.submitFinalScore({
+             score: RunState.current.getScore(),
+             playTime: Math.max(0, Math.floor(this.runTime)),
+             gameMode: "survival",
+             counter: Math.max(0, Math.floor(this.lootSystem.level)),
+             metadata: {
+               victory: Boolean(data.victory),
+               kills: Math.max(0, Math.floor(this.lootSystem.totalKills)),
+               distance: Math.max(0, Math.floor(this.distanceMeters)),
+             },
+           }).catch(() => {});
+         }
+         this.currentWinkRound = null;
        }
 
        setTimeout(() => {
@@ -380,10 +407,18 @@ export class RunScene extends Container implements Scene {
       (m) => !m.isDead && m.data.type === "weapon",
     );
     const cfg = PICKUP_CONFIGS[type as PickupType] || PICKUP_CONFIGS.buff_rapid;
+    const pickupKeyMap: Record<string, string> = {
+      buff_rapid: "pickup.rapid",
+      buff_shield: "pickup.shield",
+      buff_heal: "pickup.heal",
+      buff_nuke: "pickup.nuke",
+      star_upgrade: "pickup.star",
+    };
+    const toastLabel = I18n.t(pickupKeyMap[type] || "pickup.rapid");
 
     // Trigger floating notification toast on HUD
     EventBus.emit("pickup:toast", {
-      text: cfg.label,
+      text: toastLabel,
       color: cfg.color,
       icon: cfg.icon,
     });
@@ -526,8 +561,12 @@ export class RunScene extends Container implements Scene {
         picked.targetModule.upgradeWeapon(picked.id);
         this.recalculateFormationAndUpgrades();
 
+        const weaponLocalized = I18n.weaponName(picked.id);
         EventBus.emit("pickup:toast", {
-          text: `⭐ ${picked.name} LÊN CẤP ${picked.curLvl + 1}!`,
+          text: I18n.t("pickup.starUp", {
+            name: weaponLocalized.toUpperCase(),
+            lvl: picked.curLvl + 1,
+          }),
           color: 0xfacc15,
           icon: "⭐",
         });
@@ -537,7 +576,7 @@ export class RunScene extends Container implements Scene {
           if (!m.isDead) m.heal(150);
         }
         EventBus.emit("pickup:toast", {
-          text: "⭐ VŨ KHÍ ĐÃ TỐI ĐA (+150 HP!)",
+          text: I18n.t("pickup.maxWeapon"),
           color: 0xfacc15,
           icon: "⭐",
         });
@@ -569,5 +608,14 @@ export class RunScene extends Container implements Scene {
     }
   }
 
-  resize() {}
+  resize(_width: number, height: number) {
+    this.currentHeight = height;
+    this.roadSystem.resize(_width, height);
+    this.hud.resize(_width, height);
+    this.upgradePanel.resize(_width, height);
+    if (this.activeSettingsModal?.resize) {
+      this.activeSettingsModal.resize(_width, height);
+    }
+    this.convoySystem.convoy.y = height * 0.824;
+  }
 }

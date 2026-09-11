@@ -5,6 +5,7 @@ import { GAME_WIDTH, GAME_HEIGHT, BOSS_HP } from "../constants";
 import { BossDefinitions, BossDefinition, BossPhase } from "../data/bosses";
 import { EventBus } from "../utils/EventBus";
 import { gameRng } from "../utils/RNG";
+import { I18n } from "../utils/I18n";
 
 export class BossSystem {
   public container: Container;
@@ -73,7 +74,7 @@ export class BossSystem {
     this.hpBarContainer.addChild(this.hpBarFill);
 
     this.nameLabel = new Text({
-      text: "CỰ THÚ SA MẠC THỐNG TRỊ",
+      text: I18n.t("boss.overlord"),
       style: {
         fontFamily: "Be Vietnam Pro, sans-serif",
         fontSize: 16,
@@ -85,6 +86,10 @@ export class BossSystem {
     this.nameLabel.anchor.set(0.5);
     this.nameLabel.y = -105;
     this.hpBarContainer.addChild(this.nameLabel);
+
+    EventBus.on("language:changed", () => {
+      this.nameLabel.text = I18n.t("boss.overlord");
+    });
   }
 
   private renderWarRig() {

@@ -7,6 +7,8 @@ export class AudioMixer {
 
   private static currentBgmSource: AudioBufferSourceNode | null = null;
   private static wasContextRunningBeforeFocus = false;
+  private static hostMuted = false;
+  private static masterVolume = 1;
 
   // Smart audio rate limiters & dynamic variation state
   private static lastShootTime = 0;
@@ -771,7 +773,13 @@ export class AudioMixer {
   }
 
   static setMasterVolume(val: number) {
-    if (this.masterGain) this.masterGain.gain.value = val;
+    this.masterVolume = Math.max(0, Math.min(1, val));
+    if (this.masterGain) this.masterGain.gain.value = this.hostMuted ? 0 : this.masterVolume;
+  }
+
+  static setHostMuted(muted: boolean) {
+    this.hostMuted = muted;
+    if (this.masterGain) this.masterGain.gain.value = muted ? 0 : this.masterVolume;
   }
 
   static resume() {

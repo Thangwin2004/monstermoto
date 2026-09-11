@@ -2,105 +2,110 @@ import { Container, Graphics, Text } from "pixi.js";
 import { GAME_WIDTH, GAME_HEIGHT } from "../constants";
 import { SaveManager, GARAGE_UPGRADE_CONFIGS } from "../utils/SaveManager";
 import { AudioMixer } from "../utils/AudioMixer";
-import { HyperButton, HyperCircleButton } from "./HyperButton";
+import { HyperCircleButton } from "./HyperButton";
 import { VectorIcons } from "./VectorIcons";
+import { I18n } from "../utils/I18n";
+import { EventBus } from "../utils/EventBus";
+import { SceneManager } from "../scenes/SceneManager";
 
 export class GarageModal extends Container {
-  private modalContainer: Container;
+  private modalHeight: number;
+  private headerContainer!: Container;
+  private titleText!: Text;
+  private wrenchIcon!: Container;
   private scrapText!: Text;
-  private cardsContainer: Container;
+  private scrollWrapper!: Container;
+  private scrollContainer!: Container;
+  private scrollMask!: Graphics;
+  private scrollbarGfx!: Graphics;
   private onCloseCallback: () => void;
 
-  constructor(onClose: () => void) {
+  // Scroll state
+  private scrollY: number = 0;
+  private minScrollY: number = 0;
+  private isDragging: boolean = false;
+  private dragStartY: number = 0;
+  private dragStartScrollY: number = 0;
+  private hasDragged: boolean = false;
+
+  constructor(onClose: () => void, customHeight?: number) {
     super();
     this.onCloseCallback = onClose;
+    const virtualH = SceneManager.getVirtualSize?.()?.height ?? GAME_HEIGHT;
+    this.modalHeight = Math.max(GAME_HEIGHT, virtualH, customHeight ?? 0);
 
-    // 1. Dark Backdrop (covers whole screen with dark blur effect)
+    this.initLayout();
+  }
+
+  public resize(_width: number, height: number) {
+    this.modalHeight = Math.max(GAME_HEIGHT, height);
+    this.initLayout();
+  }
+
+  private initLayout() {
+    this.removeChildren();
+
+    // 1. Full-Screen Workshop Backdrop (Oversized to guarantee zero black bars at bottom)
     const backdrop = new Graphics();
-    backdrop.rect(-100, -100, GAME_WIDTH + 200, GAME_HEIGHT + 200);
-    backdrop.fill({ color: 0x000000, alpha: 0.85 });
+    backdrop
+      .rect(-100, -100, GAME_WIDTH + 200, Math.max(3500, this.modalHeight + 600))
+      .fill(0x070b14);
     backdrop.eventMode = "static";
     backdrop.on("pointerdown", (e) => e.stopPropagation());
     this.addChild(backdrop);
 
-    // 2. Central 3D Modal Window
-    this.modalContainer = new Container();
-    this.modalContainer.x = GAME_WIDTH / 2;
-    this.modalContainer.y = GAME_HEIGHT / 2;
-    this.addChild(this.modalContainer);
+    // Subtle dark industrial grid vignette
+    const vignette = new Graphics();
+    vignette
+      .rect(0, 0, GAME_WIDTH, 140)
+      .fill({ color: 0x000000, alpha: 0.4 });
+    vignette
+      .rect(0, this.modalHeight - 120, GAME_WIDTH, 120)
+      .fill({ color: 0x000000, alpha: 0.65 });
+    this.addChild(vignette);
 
-    const cardW = 640;
-    const cardH = 1080;
+    // 2. Fixed Top Header Bar (Height: 124px, zero overlap)
+    this.headerContainer = new Container();
+    this.addChild(this.headerContainer);
 
-    // Soft Shadow base
-    const cardShadow = new Graphics();
-    cardShadow
-      .roundRect(-cardW / 2 + 6, -cardH / 2 + 14, cardW, cardH, 28)
-      .fill({ color: 0x000000, alpha: 0.55 });
-    this.modalContainer.addChild(cardShadow);
+    const headerBg = new Graphics();
+    headerBg
+      .rect(0, 0, GAME_WIDTH, 124)
+      .fill({ color: 0x0f172a, alpha: 0.98 });
+    headerBg
+      .rect(0, 122, GAME_WIDTH, 2)
+      .fill(0x334155);
+    headerBg
+      .rect(GAME_WIDTH / 2 - 160, 122, 320, 2)
+      .fill(0xf59e0b);
+    this.headerContainer.addChild(headerBg);
 
-    // 3D Metallic Slate Border
-    const cardBorder = new Graphics();
-    cardBorder
-      .roundRect(-cardW / 2, -cardH / 2 + 8, cardW, cardH, 28)
-      .fill(0x0f172a);
-    cardBorder
-      .roundRect(-cardW / 2, -cardH / 2, cardW, cardH, 28)
-      .fill(0x1e293b)
-      .stroke({ color: 0xffffff, width: 4.5 });
-    this.modalContainer.addChild(cardBorder);
-
-    // Card Face
-    const cardFace = new Graphics();
-    cardFace
-      .roundRect(-cardW / 2 + 12, -cardH / 2 + 12, cardW - 24, cardH - 24, 20)
-      .fill(0x0b1120);
-    this.modalContainer.addChild(cardFace);
-
-    // 3. 3D Golden Title Ribbon (Floating cleanly above card with 18px clearance from Scrap Pill)
-    const ribbonW = 440;
-    const ribbonH = 60;
-    const ribbonY = -cardH / 2 - 20;
-
-    const ribbon = new Graphics();
-    ribbon
-      .roundRect(-ribbonW / 2, ribbonY + 6, ribbonW, ribbonH, ribbonH / 2)
-      .fill(0xb45309);
-    ribbon
-      .roundRect(-ribbonW / 2, ribbonY, ribbonW, ribbonH, ribbonH / 2)
-      .fill(0xf59e0b)
-      .stroke({ color: 0xffffff, width: 4.5 });
-    ribbon
-      .roundRect(-ribbonW / 2 + 16, ribbonY + 4, ribbonW - 32, ribbonH * 0.38, 12)
-      .fill({ color: 0xffffff, alpha: 0.32 });
-    this.modalContainer.addChild(ribbon);
-
-    // Title Row with crisp vector wrench icon + Text
+    // Row 1: Title & Close Button (y = 38)
     const titleRow = new Container();
-    titleRow.y = ribbonY + ribbonH / 2 - 2;
+    titleRow.y = 38;
+    this.headerContainer.addChild(titleRow);
 
-    const wrenchIcon = VectorIcons.createIcon("wrench", 26, 0xffffff);
-    wrenchIcon.x = -135;
-    titleRow.addChild(wrenchIcon);
+    this.wrenchIcon = VectorIcons.createIcon("wrench", 26, 0xf59e0b);
+    titleRow.addChild(this.wrenchIcon);
 
-    const titleText = new Text({
-      text: "XƯỞNG XE CHIẾN ĐẤU",
+    this.titleText = new Text({
+      text: I18n.t("garage.title"),
       style: {
         fontFamily: "Be Vietnam Pro, sans-serif",
         fontSize: 24,
         fontWeight: "900",
         fill: 0xffffff,
         stroke: { color: 0x78350f, width: 4 },
-        letterSpacing: 1.5,
+        letterSpacing: 1.2,
       },
     });
-    titleText.anchor.set(0, 0.5);
-    titleText.x = -110;
-    titleRow.addChild(titleText);
-    this.modalContainer.addChild(titleRow);
+    this.titleText.anchor.set(0, 0.5);
+    titleRow.addChild(this.titleText);
 
-    // 4. Top-Right Close Button (HyperCircleButton with crisp vector cross)
-    const closeCornerBtn = new HyperCircleButton({
+    this.updateTitlePosition();
+
+    // Close Button (Top-Right, easily clickable)
+    const closeBtn = new HyperCircleButton({
       vectorIcon: "cross",
       radius: 24,
       color: 0xef4444,
@@ -111,64 +116,170 @@ export class GarageModal extends Container {
         this.onCloseCallback();
       },
     });
-    closeCornerBtn.x = cardW / 2 - 14;
-    closeCornerBtn.y = -cardH / 2 + 14;
-    this.modalContainer.addChild(closeCornerBtn);
+    closeBtn.x = GAME_WIDTH - 44;
+    closeBtn.y = 38;
+    this.headerContainer.addChild(closeBtn);
 
-    // 5. Scrap Balance Pill (Placed with 18px clear air below Ribbon)
-    const scrapPillY = -cardH / 2 + 76;
+    // Row 2: Scrap Balance Pill (y = 86, plenty of breathing room from title row)
+    const scrapPillW = 280;
+    const scrapPillH = 38;
+    const scrapPillY = 86;
+
     const scrapPill = new Graphics();
     scrapPill
-      .roundRect(-150, scrapPillY - 18, 300, 36, 18)
+      .roundRect(
+        GAME_WIDTH / 2 - scrapPillW / 2,
+        scrapPillY - scrapPillH / 2,
+        scrapPillW,
+        scrapPillH,
+        scrapPillH / 2,
+      )
       .fill(0x1e293b)
-      .stroke({ color: 0xfacc15, width: 2 });
-    this.modalContainer.addChild(scrapPill);
+      .stroke({ color: 0xfacc15, width: 2.2 });
+    this.headerContainer.addChild(scrapPill);
 
     this.scrapText = new Text({
-      text: `🔩 PHẾ LIỆU: ${SaveManager.getScrap()}`,
+      text: I18n.t("garage.scrap", { value: SaveManager.getScrap() }),
       style: {
         fontFamily: "Be Vietnam Pro, sans-serif",
-        fontSize: 16.5,
+        fontSize: 17,
         fontWeight: "900",
         fill: 0xfacc15,
-        letterSpacing: 1,
+        letterSpacing: 0.8,
       },
     });
     this.scrapText.anchor.set(0.5);
+    this.scrapText.x = GAME_WIDTH / 2;
     this.scrapText.y = scrapPillY;
-    this.modalContainer.addChild(this.scrapText);
+    this.headerContainer.addChild(this.scrapText);
 
-    // 6. Upgrade Cards List Container (Starts with 22px clear air at y = -cardH / 2 + 116)
-    this.cardsContainer = new Container();
-    this.cardsContainer.y = -cardH / 2 + 116;
-    this.modalContainer.addChild(this.cardsContainer);
+    // 3. Scrollable Cards List Area
+    const listTopY = 132;
+    const listBottomY = this.modalHeight - 16;
+    const listH = Math.max(300, listBottomY - listTopY);
+    const listW = GAME_WIDTH;
 
-    this.renderUpgradeCards();
+    this.scrollWrapper = new Container();
+    this.scrollWrapper.x = 0;
+    this.scrollWrapper.y = listTopY;
+    this.addChild(this.scrollWrapper);
 
-    // 7. Bottom Close Button (HyperButton with crisp vector check)
-    const closeBtn = new HyperButton({
-      label: "TIẾP TỤC",
-      vectorIcon: "check",
-      width: 290,
-      height: 62,
-      fontSize: 22,
-      color: 0x0ea5e9,
-      shadowColor: 0x0369a1,
-      onClick: () => {
-        this.destroy();
-        this.onCloseCallback();
-      },
+    this.scrollMask = new Graphics();
+    this.scrollMask.rect(0, 0, listW, listH).fill(0xffffff);
+    this.scrollWrapper.addChild(this.scrollMask);
+
+    this.scrollContainer = new Container();
+    this.scrollContainer.mask = this.scrollMask;
+    this.scrollWrapper.addChild(this.scrollContainer);
+
+    this.scrollbarGfx = new Graphics();
+    this.scrollWrapper.addChild(this.scrollbarGfx);
+
+    // Setup Drag & Wheel Listeners
+    this.setupScrollInteraction(this.scrollWrapper, listH);
+
+    // Render cards into scrollContainer
+    this.renderUpgradeCards(listW, listH);
+
+    // Re-render when language changes
+    EventBus.on("language:changed", () => {
+      this.titleText.text = I18n.t("garage.title");
+      this.updateTitlePosition();
+      this.scrapText.text = I18n.t("garage.scrap", {
+        value: SaveManager.getScrap(),
+      });
+      this.renderUpgradeCards(listW, listH);
     });
-    closeBtn.y = cardH / 2 - 46;
-    this.modalContainer.addChild(closeBtn);
   }
 
-  private renderUpgradeCards() {
-    this.cardsContainer.removeChildren();
-    this.scrapText.text = `🔩 PHẾ LIỆU: ${SaveManager.getScrap()}`;
+  private updateTitlePosition() {
+    const spacing = 12;
+    const totalW = 26 + spacing + this.titleText.width;
+    const startX = (GAME_WIDTH - totalW) / 2;
+    this.wrenchIcon.x = startX + 13;
+    this.titleText.x = startX + 26 + spacing;
+  }
+
+  private setupScrollInteraction(scrollWrapper: Container, listH: number) {
+    scrollWrapper.eventMode = "static";
+
+    scrollWrapper.on("pointerdown", (e) => {
+      this.isDragging = true;
+      this.hasDragged = false;
+      this.dragStartY = e.global.y;
+      this.dragStartScrollY = this.scrollY;
+    });
+
+    const onPointerMove = (e: any) => {
+      if (!this.isDragging) return;
+      const delta = e.global.y - this.dragStartY;
+      if (Math.abs(delta) > 5) {
+        this.hasDragged = true;
+      }
+      this.setScroll(this.dragStartScrollY + delta, listH);
+    };
+
+    const onPointerUp = () => {
+      this.isDragging = false;
+    };
+
+    scrollWrapper.on("globalpointermove", onPointerMove);
+    scrollWrapper.on("pointerup", onPointerUp);
+    scrollWrapper.on("pointerupoutside", onPointerUp);
+
+    // Mouse wheel support
+    const wheelHandler = (e: WheelEvent) => {
+      this.setScroll(this.scrollY - e.deltaY * 0.7, listH);
+    };
+    window.addEventListener("wheel", wheelHandler, { passive: true });
+    this.on("destroyed", () => {
+      window.removeEventListener("wheel", wheelHandler);
+    });
+  }
+
+  private setScroll(nextY: number, listH: number) {
+    if (this.minScrollY >= 0) {
+      this.scrollY = 0;
+      this.scrollContainer.y = 0;
+      this.scrollbarGfx.clear();
+      return;
+    }
+    this.scrollY = Math.max(this.minScrollY, Math.min(0, nextY));
+    this.scrollContainer.y = this.scrollY;
+    this.updateScrollbar(listH);
+  }
+
+  private updateScrollbar(listH: number) {
+    this.scrollbarGfx.clear();
+    if (this.minScrollY >= 0) return;
+
+    const contentH = Math.abs(this.minScrollY) + listH;
+    if (contentH <= listH + 10) return;
+
+    const barW = 5;
+    const thumbH = Math.max(40, (listH / contentH) * listH);
+    const scrollRatio = -this.scrollY / Math.abs(this.minScrollY || 1);
+    const thumbY = scrollRatio * (listH - thumbH);
+
+    this.scrollbarGfx
+      .roundRect(GAME_WIDTH - 12, thumbY, barW, thumbH, 2.5)
+      .fill({ color: 0xfacc15, alpha: 0.75 });
+  }
+
+  private renderUpgradeCards(listW: number, listH: number) {
+    this.scrollContainer.removeChildren();
+    if (this.scrapText) {
+      this.scrapText.text = I18n.t("garage.scrap", {
+        value: SaveManager.getScrap(),
+      });
+    }
 
     const configs = Object.values(GARAGE_UPGRADE_CONFIGS);
-    const rowH = 94;
+    const cardW = 660; // Centered with generous 30px side margins
+    const cardH = 138; // Scaled up from 104px (+34px taller) for maximum readability & prominence
+    const gap = 16;
+    const rowH = cardH + gap;
+    const startY = 12 + cardH / 2;
     const currentScrap = SaveManager.getScrap();
 
     for (let i = 0; i < configs.length; i++) {
@@ -178,77 +289,94 @@ export class GarageModal extends Container {
       const cost = SaveManager.getUpgradeCost(cfg.id);
       const canAfford = currentScrap >= cost && !isMax;
 
-      const rowY = i * rowH;
+      const rowY = startY + i * rowH;
       const row = new Container();
+      row.x = listW / 2;
       row.y = rowY;
-      this.cardsContainer.addChild(row);
+      this.scrollContainer.addChild(row);
 
-      // Row background (580 x 86)
-      const rowBg = new Graphics();
-      rowBg
-        .roundRect(-290, 0, 580, 86, 14)
+      // 1. 3D Card Shadow Base
+      const shadow = new Graphics();
+      shadow
+        .roundRect(-cardW / 2, -cardH / 2 + 5, cardW, cardH, 20)
+        .fill(0x04070e);
+      row.addChild(shadow);
+
+      // 2. Card Body
+      const body = new Graphics();
+      body
+        .roundRect(-cardW / 2, -cardH / 2, cardW, cardH, 20)
         .fill(0x1e293b)
-        .stroke({ color: canAfford ? 0x475569 : 0x334155, width: 1.5 });
-      row.addChild(rowBg);
+        .stroke({ color: canAfford ? 0x64748b : 0x334155, width: 2.2 });
+      row.addChild(body);
 
-      // Icon badge (68 x 68)
+      // 3. Vibrant Large Icon Badge (82 x 82)
       const iconBg = new Graphics();
       iconBg
-        .roundRect(-278, 9, 68, 68, 12)
-        .fill(cfg.color);
+        .roundRect(-cardW / 2 + 18, -41, 82, 82, 18)
+        .fill(cfg.color)
+        .stroke({ color: 0xffffff, width: 2.5 });
       row.addChild(iconBg);
 
       const iconText = new Text({
         text: cfg.icon,
-        style: { fontSize: 28 },
+        style: { fontSize: 38 },
       });
       iconText.anchor.set(0.5);
-      iconText.x = -244;
-      iconText.y = 43;
+      iconText.x = -cardW / 2 + 59;
+      iconText.y = 0;
       row.addChild(iconText);
 
-      // Title & Level text
+      // 4. Content Column (x = -cardW / 2 + 118)
+      const colX = -cardW / 2 + 118;
+
+      // Line 1: Title + Level Badge (y = -cardH / 2 + 20)
+      const upgradeName = I18n.t(`garage.name.${cfg.id}`) || cfg.name;
       const title = new Text({
-        text: `${cfg.name}  `,
+        text: upgradeName,
         style: {
           fontFamily: "Be Vietnam Pro, sans-serif",
-          fontSize: 16.5,
+          fontSize: 21,
           fontWeight: "900",
           fill: 0xffffff,
+          stroke: { color: 0x0f172a, width: 3 },
         },
       });
-      title.x = -196;
-      title.y = 10;
+      title.x = colX;
+      title.y = -cardH / 2 + 20;
       row.addChild(title);
 
       const lvlBadge = new Text({
-        text: isMax ? "TỐI ĐA" : `Cấp ${curLvl}/${cfg.maxLevel}`,
+        text: isMax
+          ? I18n.t("garage.maxed")
+          : I18n.t("garage.level", { cur: curLvl, max: cfg.maxLevel }),
         style: {
           fontFamily: "Be Vietnam Pro, sans-serif",
-          fontSize: 13,
+          fontSize: 15,
           fontWeight: "900",
           fill: isMax ? 0x22c55e : 0xfacc15,
+          stroke: { color: 0x000000, width: 2.5 },
         },
       });
-      lvlBadge.x = -196 + title.width + 6;
-      lvlBadge.y = 12.5;
+      lvlBadge.x = colX + title.width + 12;
+      lvlBadge.y = -cardH / 2 + 24;
       row.addChild(lvlBadge);
 
-      // Star Pips (10 pips, clean horizontal line)
+      // Line 2: 10 Level Pips (Thick and clear)
       const pipsGfx = new Graphics();
-      const pipW = 13;
-      const pipH = 5;
-      const pipGap = 3;
+      const pipW = 18;
+      const pipH = 7;
+      const pipGap = 4;
       for (let p = 0; p < cfg.maxLevel; p++) {
-        const px = -196 + p * (pipW + pipGap);
-        const py = 34;
+        const px = colX + p * (pipW + pipGap);
+        const py = -cardH / 2 + 56;
         pipsGfx
-          .roundRect(px, py, pipW, pipH, 2)
+          .roundRect(px, py, pipW, pipH, 3.5)
           .fill(p < curLvl ? 0xfacc15 : 0x334155);
       }
       row.addChild(pipsGfx);
 
-      // Stat Description (Single-line, concise, never wraps or clips)
+      // Line 3: Stat description text (Large, high-contrast, 16.5px bold)
       const curBonus = curLvl * cfg.valuePerLevel;
       const nextBonus = (curLvl + 1) * cfg.valuePerLevel;
       const curValStr = cfg.isMultiplier
@@ -258,65 +386,74 @@ export class GarageModal extends Container {
         ? `+${Math.round(nextBonus * 100)}%`
         : `+${nextBonus} ${cfg.unit}`;
 
-      const descStr = isMax
-        ? `Đã đạt tối đa: ${curValStr}`
-        : `${curValStr} ➔ ${nextValStr} (${cfg.shortDesc})`;
+      const upgradeShortDesc =
+        I18n.t(`garage.desc.${cfg.id}`) || cfg.shortDesc;
+      const descText = isMax
+        ? I18n.t("garage.current", {
+            value: curValStr,
+            desc: upgradeShortDesc,
+          })
+        : `${curValStr} ➔ ${nextValStr} (${upgradeShortDesc})`;
 
       const desc = new Text({
-        text: descStr,
+        text: descText,
         style: {
           fontFamily: "Be Vietnam Pro, sans-serif",
-          fontSize: 13,
+          fontSize: 16.5,
           fontWeight: "700",
-          fill: 0x94a3b8,
+          fill: 0xf1f5f9,
+          wordWrap: true,
+          wordWrapWidth: 340,
         },
       });
-      desc.x = -196;
-      desc.y = 48;
+      desc.x = colX;
+      desc.y = -cardH / 2 + 80;
       row.addChild(desc);
 
-      // Upgrade Action Button (Hyper-Casual Bouncy 3D Capsule)
-      const btnW = 120;
-      const btnH = 50;
-      const btnX = 212;
-      const btnY = 42;
+      // 5. Action Upgrade Button (140 x 64)
+      const btnW = 140;
+      const btnH = 64;
+      const btnX = cardW / 2 - 88;
 
       const btn = new Container();
       btn.x = btnX;
-      btn.y = btnY;
+      btn.y = 0;
 
       const btnContent = new Container();
       btn.addChild(btnContent);
 
       const btnBg = new Graphics();
       if (isMax) {
-        btnBg.roundRect(-btnW / 2, -btnH / 2, btnW, btnH, 12).fill(0x334155);
+        btnBg.roundRect(-btnW / 2, -btnH / 2, btnW, btnH, 16).fill(0x334155);
       } else if (canAfford) {
         // Shadow base
         const sh = new Graphics();
-        sh.roundRect(-btnW / 2, -btnH / 2 + 4, btnW, btnH, 12).fill(0xc2410c);
+        sh.roundRect(-btnW / 2, -btnH / 2 + 5, btnW, btnH, 16).fill(0xc2410c);
         btn.addChildAt(sh, 0);
 
         btnBg
-          .roundRect(-btnW / 2, -btnH / 2, btnW, btnH, 12)
+          .roundRect(-btnW / 2, -btnH / 2, btnW, btnH, 16)
           .fill(0xf97316)
           .stroke({ color: 0xffffff, width: 2.5 });
         btnBg
-          .roundRect(-btnW / 2 + 4, -btnH / 2 + 2, btnW - 8, btnH * 0.38, 6)
+          .roundRect(-btnW / 2 + 4, -btnH / 2 + 2, btnW - 8, btnH * 0.38, 7)
           .fill({ color: 0xffffff, alpha: 0.35 });
       } else {
-        btnBg.roundRect(-btnW / 2, -btnH / 2, btnW, btnH, 12).fill(0x1e293b).stroke({ color: 0x475569, width: 1.5 });
+        btnBg
+          .roundRect(-btnW / 2, -btnH / 2, btnW, btnH, 16)
+          .fill(0x1e293b)
+          .stroke({ color: 0x475569, width: 1.8 });
       }
       btnContent.addChild(btnBg);
 
       const btnLabel = new Text({
-        text: isMax ? "TỐI ĐA" : `🔩 ${cost}`,
+        text: isMax ? I18n.t("garage.maxed") : `🔩 ${cost}`,
         style: {
           fontFamily: "Be Vietnam Pro, sans-serif",
-          fontSize: isMax ? 13 : 16,
+          fontSize: isMax ? 17 : 21,
           fontWeight: "900",
           fill: isMax ? 0x94a3b8 : canAfford ? 0xffffff : 0x64748b,
-          stroke: canAfford ? { color: 0xc2410c, width: 2 } : undefined,
+          stroke: canAfford ? { color: 0xc2410c, width: 2.5 } : undefined,
         },
       });
       btnLabel.anchor.set(0.5);
@@ -325,30 +462,74 @@ export class GarageModal extends Container {
       if (canAfford) {
         btn.eventMode = "static";
         btn.cursor = "pointer";
-        btn.on("pointerover", () => {
-          btn.scale.set(1.06);
-        });
+        btn.on("pointerover", () => btn.scale.set(1.05));
         btn.on("pointerout", () => {
           btn.scale.set(1.0);
           btnContent.y = 0;
         });
         btn.on("pointerdown", (e) => {
           e.stopPropagation();
-          btnContent.y = 3;
-          btn.scale.set(0.94);
+          btnContent.y = 4;
+          btn.scale.set(0.95);
         });
         btn.on("pointerup", (e) => {
           e.stopPropagation();
           btnContent.y = 0;
           btn.scale.set(1.0);
-          if (SaveManager.buyUpgrade(cfg.id)) {
-            AudioMixer.playSFX("sfx_button");
-            this.renderUpgradeCards();
+          if (!this.hasDragged) {
+            if (SaveManager.buyUpgrade(cfg.id)) {
+              AudioMixer.playSFX("sfx_button");
+              this.renderUpgradeCards(listW, listH);
+            }
           }
         });
       }
 
       row.addChild(btn);
     }
+
+    // Helpful Tip Banner below the last upgrade card
+    const lastCardBottom = startY + (configs.length - 1) * rowH + cardH / 2;
+    const tipBoxY = lastCardBottom + 18;
+    const tipBoxW = cardW;
+    const tipBoxH = 50;
+
+    const tipContainer = new Container();
+    tipContainer.x = listW / 2;
+    tipContainer.y = tipBoxY + tipBoxH / 2;
+
+    const tipBg = new Graphics();
+    tipBg
+      .roundRect(-tipBoxW / 2, -tipBoxH / 2, tipBoxW, tipBoxH, 14)
+      .fill({ color: 0x0f172a, alpha: 0.92 })
+      .stroke({ color: 0x334155, width: 1.8 });
+    tipContainer.addChild(tipBg);
+
+    const tipText = new Text({
+      text: I18n.t("garage.tip"),
+      style: {
+        fontFamily: "Be Vietnam Pro, sans-serif",
+        fontSize: 15.5,
+        fontWeight: "700",
+        fill: 0x94a3b8,
+      },
+    });
+    tipText.anchor.set(0.5);
+    tipContainer.addChild(tipText);
+    this.scrollContainer.addChild(tipContainer);
+
+    const totalH = tipBoxY + tipBoxH + 24;
+
+    // Check if scrolling is really needed
+    if (totalH <= listH) {
+      this.minScrollY = 0;
+      this.scrollY = 0;
+      this.scrollContainer.y = 0;
+      this.scrollbarGfx.clear();
+    } else {
+      this.minScrollY = listH - totalH;
+      this.updateScrollbar(listH);
+    }
   }
 }
+

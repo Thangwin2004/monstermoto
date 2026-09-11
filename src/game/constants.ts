@@ -70,7 +70,7 @@ export const HP_BAR_WIDTH = 60;
 export const HP_BAR_HEIGHT = 8;
 export const BOSS_HP_BAR_WIDTH = 500;
 export const BOSS_HP_BAR_HEIGHT = 20;
-export const BOSS_HP_BAR_Y = 40;
+export const BOSS_HP_BAR_Y = 120;
 
 // ─── Colors ───
 export const COLORS = {

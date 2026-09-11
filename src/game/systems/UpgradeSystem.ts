@@ -84,7 +84,10 @@ export class UpgradeSystem {
 
         if (u.id === "star_machine_gun") {
           const nextLvl = mgLvl + 1;
-          const nextBullets = Math.min(6, nextLvl + (warRig?.stats.extraProjectiles ?? 0));
+          const nextBullets = Math.min(
+            6,
+            nextLvl + (warRig?.stats.extraProjectiles ?? 0),
+          );
           customized.name = `⭐ Lên Sao Súng Máy (Cấp ${nextLvl})`;
           customized.targetLabel = `🔫 Súng Máy (Cấp ${mgLvl} ➔ ⭐ Cấp ${nextLvl})`;
           customized.description = `Nâng cấp Cấp ${nextLvl}: Bắn thêm +1 tia đạn tập trung (Tổng: ${nextBullets} tia đạn) & tăng +15% sát thương.`;
@@ -302,7 +305,7 @@ export class UpgradeSystem {
 
       case "shield_regen":
         this.forEachModule(convoy, "defense", (m) => {
-          (m as any)._shieldRegen = effect.value;
+          m.shieldRegen = effect.value;
         });
         break;
     }
@@ -321,7 +324,9 @@ export class UpgradeSystem {
           (targetTag === "explosive" && m.getWeaponLevel("rocket") > 0) ||
           (targetTag === "laser" && m.getWeaponLevel("laser") > 0) ||
           (targetTag === "defense" && m.getWeaponLevel("shield") > 0) ||
-          (targetTag === "projectile" && (m.getWeaponLevel("machine_gun") > 0 || m.getWeaponLevel("rocket") > 0));
+          (targetTag === "projectile" &&
+            (m.getWeaponLevel("machine_gun") > 0 ||
+              m.getWeaponLevel("rocket") > 0));
         if (!hasDirectTag && !hasAttachedTag) continue;
       }
       if (

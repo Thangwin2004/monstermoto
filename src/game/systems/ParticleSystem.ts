@@ -56,7 +56,12 @@ export class ParticleSystem {
    * - High Mode: Double shockwave rings, diamond star flash, and 12 colorful debris particles.
    * - Low Mode: 1 quick minimal shockwave ring + 2 small shards (ultra-lightweight, 0 lag).
    */
-  monsterDeath(x: number, y: number, radius: number = 24, monsterColor: number = 0xef4444) {
+  monsterDeath(
+    x: number,
+    y: number,
+    radius: number = 24,
+    monsterColor: number = 0xef4444,
+  ) {
     const isLow = SaveManager.getSettings().lowParticles;
     const maxP = isLow ? 35 : MAX_PARTICLES;
 
@@ -141,12 +146,12 @@ export class ParticleSystem {
       y,
       vx: 0,
       vy: 0,
-      life: 0.20,
-      maxLife: 0.20,
+      life: 0.2,
+      maxLife: 0.2,
       size: Math.max(14, radius * 0.65),
       color: monsterColor,
       alpha: 0.85,
-      decay: 1 / 0.20,
+      decay: 1 / 0.2,
       shape: "ring",
     });
 
@@ -310,12 +315,13 @@ export class ParticleSystem {
     x: number,
     y: number,
     color: number = 0xef4444,
-    _count: number = 2,
+    count: number = 2,
   ) {
     if (SaveManager.getSettings().lowParticles) return;
-    if (this.particles.length >= MAX_PARTICLES - 2) return;
+    const particleCount = Math.max(0, Math.floor(count));
+    if (this.particles.length >= MAX_PARTICLES - particleCount) return;
 
-    for (let i = 0; i < 2; i++) {
+    for (let i = 0; i < particleCount; i++) {
       const angle = Math.random() * Math.PI * 2;
       const speed = 45 + Math.random() * 60;
       const life = 0.16 + Math.random() * 0.1;
@@ -375,7 +381,7 @@ export class ParticleSystem {
     for (let i = 0; i < 4; i++) {
       const angle = ((Math.PI * 2) / 4) * i;
       const spd = 130 + Math.random() * 50;
-      const life = 0.20;
+      const life = 0.2;
       this.particles.push({
         x,
         y,
@@ -395,7 +401,7 @@ export class ParticleSystem {
   flamePuff(x: number, y: number, vx: number, vy: number) {
     if (SaveManager.getSettings().lowParticles) return;
     if (this.particles.length >= MAX_PARTICLES - 1) return;
-    const life = 0.20;
+    const life = 0.2;
     this.particles.push({
       x,
       y,
@@ -415,7 +421,7 @@ export class ParticleSystem {
   plasmaFlamePuff(x: number, y: number, vx: number, vy: number) {
     if (SaveManager.getSettings().lowParticles) return;
     if (this.particles.length >= MAX_PARTICLES - 1) return;
-    const life = 0.20;
+    const life = 0.2;
     this.particles.push({
       x,
       y,
@@ -432,7 +438,12 @@ export class ParticleSystem {
     });
   }
 
-  empShockwave(x: number, y: number, radius: number = 60, color: number = 0x00f0ff) {
+  empShockwave(
+    x: number,
+    y: number,
+    radius: number = 60,
+    color: number = 0x00f0ff,
+  ) {
     if (this.particles.length >= MAX_PARTICLES - 1) return;
     this.particles.push({
       x,
@@ -611,9 +622,11 @@ export class ParticleSystem {
       }
 
       if (p.shape === "ring") {
-        this.gfx
-          .circle(p.x, p.y, curSize)
-          .stroke({ color: p.color, width: isLow ? 1.5 : 3, alpha: p.alpha * 0.8 });
+        this.gfx.circle(p.x, p.y, curSize).stroke({
+          color: p.color,
+          width: isLow ? 1.5 : 3,
+          alpha: p.alpha * 0.8,
+        });
       } else if (p.shape === "spark") {
         const len = Math.max(3.5, Math.sqrt(p.vx * p.vx + p.vy * p.vy) * 0.035);
         const angle = Math.atan2(p.vy, p.vx);
@@ -627,14 +640,22 @@ export class ParticleSystem {
         const sSub = s * 0.32;
         this.gfx
           .poly([
-            p.x, p.y - s,
-            p.x + sSub, p.y - sSub,
-            p.x + s, p.y,
-            p.x + sSub, p.y + sSub,
-            p.x, p.y + s,
-            p.x - sSub, p.y + sSub,
-            p.x - s, p.y,
-            p.x - sSub, p.y - sSub,
+            p.x,
+            p.y - s,
+            p.x + sSub,
+            p.y - sSub,
+            p.x + s,
+            p.y,
+            p.x + sSub,
+            p.y + sSub,
+            p.x,
+            p.y + s,
+            p.x - sSub,
+            p.y + sSub,
+            p.x - s,
+            p.y,
+            p.x - sSub,
+            p.y - sSub,
           ])
           .fill({ color: p.color, alpha: p.alpha });
       } else {

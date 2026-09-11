@@ -21,7 +21,8 @@ export class MenuScene extends Container implements Scene {
   private scrapText!: Text;
   private animTime: number = 0;
   private currentHeight: number = GAME_HEIGHT;
-  private activeModal: (Container & { resize?(w: number, h: number): void }) | null = null;
+  private activeModal:
+    (Container & { resize?(w: number, h: number): void }) | null = null;
 
   constructor() {
     super();
@@ -279,4 +280,3 @@ export class MenuScene extends Container implements Scene {
     }
   }
 }
-

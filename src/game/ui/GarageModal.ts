@@ -1,4 +1,4 @@
-import { Container, Graphics, Text } from "pixi.js";
+import { Container, FederatedPointerEvent, Graphics, Text } from "pixi.js";
 import { GAME_WIDTH, GAME_HEIGHT } from "../constants";
 import { SaveManager, GARAGE_UPGRADE_CONFIGS } from "../utils/SaveManager";
 import { AudioMixer } from "../utils/AudioMixer";
@@ -48,7 +48,12 @@ export class GarageModal extends Container {
     // 1. Full-Screen Workshop Backdrop (Oversized to guarantee zero black bars at bottom)
     const backdrop = new Graphics();
     backdrop
-      .rect(-100, -100, GAME_WIDTH + 200, Math.max(3500, this.modalHeight + 600))
+      .rect(
+        -100,
+        -100,
+        GAME_WIDTH + 200,
+        Math.max(3500, this.modalHeight + 600),
+      )
       .fill(0x070b14);
     backdrop.eventMode = "static";
     backdrop.on("pointerdown", (e) => e.stopPropagation());
@@ -56,9 +61,7 @@ export class GarageModal extends Container {
 
     // Subtle dark industrial grid vignette
     const vignette = new Graphics();
-    vignette
-      .rect(0, 0, GAME_WIDTH, 140)
-      .fill({ color: 0x000000, alpha: 0.4 });
+    vignette.rect(0, 0, GAME_WIDTH, 140).fill({ color: 0x000000, alpha: 0.4 });
     vignette
       .rect(0, this.modalHeight - 120, GAME_WIDTH, 120)
       .fill({ color: 0x000000, alpha: 0.65 });
@@ -69,15 +72,9 @@ export class GarageModal extends Container {
     this.addChild(this.headerContainer);
 
     const headerBg = new Graphics();
-    headerBg
-      .rect(0, 0, GAME_WIDTH, 124)
-      .fill({ color: 0x0f172a, alpha: 0.98 });
-    headerBg
-      .rect(0, 122, GAME_WIDTH, 2)
-      .fill(0x334155);
-    headerBg
-      .rect(GAME_WIDTH / 2 - 160, 122, 320, 2)
-      .fill(0xf59e0b);
+    headerBg.rect(0, 0, GAME_WIDTH, 124).fill({ color: 0x0f172a, alpha: 0.98 });
+    headerBg.rect(0, 122, GAME_WIDTH, 2).fill(0x334155);
+    headerBg.rect(GAME_WIDTH / 2 - 160, 122, 320, 2).fill(0xf59e0b);
     this.headerContainer.addChild(headerBg);
 
     // Row 1: Title & Close Button (y = 38)
@@ -210,7 +207,7 @@ export class GarageModal extends Container {
       this.dragStartScrollY = this.scrollY;
     });
 
-    const onPointerMove = (e: any) => {
+    const onPointerMove = (e: FederatedPointerEvent) => {
       if (!this.isDragging) return;
       const delta = e.global.y - this.dragStartY;
       if (Math.abs(delta) > 5) {
@@ -386,8 +383,7 @@ export class GarageModal extends Container {
         ? `+${Math.round(nextBonus * 100)}%`
         : `+${nextBonus} ${cfg.unit}`;
 
-      const upgradeShortDesc =
-        I18n.t(`garage.desc.${cfg.id}`) || cfg.shortDesc;
+      const upgradeShortDesc = I18n.t(`garage.desc.${cfg.id}`) || cfg.shortDesc;
       const descText = isMax
         ? I18n.t("garage.current", {
             value: curValStr,
@@ -532,4 +528,3 @@ export class GarageModal extends Container {
     }
   }
 }
-

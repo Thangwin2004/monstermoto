@@ -1,6 +1,6 @@
-import { Container, Graphics } from "pixi.js";
+import { Container } from "pixi.js";
 import { Module, ModuleData } from "./Module";
-import { MAX_MODULES, MODULE_SPACING } from "../constants";
+import { MODULE_SPACING } from "../constants";
 import { EventBus } from "../utils/EventBus";
 
 export class Convoy extends Container {

@@ -6,7 +6,7 @@ import { BossSystem } from "./BossSystem";
 import { ParticleSystem } from "./ParticleSystem";
 import { Module } from "../entities/Module";
 import { Enemy } from "../entities/Enemy";
-import { ProjectileType } from "../entities/Projectile";
+import { Projectile, ProjectileType } from "../entities/Projectile";
 import { EventBus } from "../utils/EventBus";
 import { AudioMixer } from "../utils/AudioMixer";
 import { circlesOverlap, distance, normalize } from "../utils/MathUtils";
@@ -81,7 +81,10 @@ export class CombatSystem {
       // Continuously auto-fire straight forward in travel direction
       if (module.cooldownTimer <= 0) {
         this.fireWeaponForward(module, mPos);
-        module.cooldownTimer = Math.max(0.16, module.getEffectiveCooldown() * speedBuff);
+        module.cooldownTimer = Math.max(
+          0.16,
+          module.getEffectiveCooldown() * speedBuff,
+        );
       }
 
       // ── Integrated Side Mount: Heavy Swarm Rocket Launch Pods (Bệ Phóng Tên Lửa) ──
@@ -89,7 +92,7 @@ export class CombatSystem {
       if (rocketLvl > 0) {
         module.rocketCooldownTimer -= dtSec;
         if (module.rocketCooldownTimer <= 0) {
-          module.rocketCooldownTimer = Math.max(0.70, 1.25 - rocketLvl * 0.11);
+          module.rocketCooldownTimer = Math.max(0.7, 1.25 - rocketLvl * 0.11);
           const heavyBonus = 1 + SaveManager.getStatBonus("heavyWeapon");
           const rocketDmg = Math.round(
             (28 + rocketLvl * 15) * module.stats.damageMultiplier * heavyBonus,
@@ -105,7 +108,8 @@ export class CombatSystem {
           // Level 3: 4 rockets (2 center + 2 flanking angled)
           // Level 4: 6 micro-missiles fanning out across roadway
           // Level 5: 6 Titan Nuclear Rockets with Cluster Blast
-          const rockets: { x: number; y: number; vx: number; vy: number }[] = [];
+          const rockets: { x: number; y: number; vx: number; vy: number }[] =
+            [];
           const leftX = mPos.x - 38;
           const rightX = mPos.x + 38;
           const podY = mPos.y - 6;
@@ -164,12 +168,19 @@ export class CombatSystem {
       if (laserLvl > 0) {
         module.laserCooldownTimer -= dtSec;
         if (module.laserCooldownTimer <= 0) {
-          module.laserCooldownTimer = Math.max(0.48, 0.90 - laserLvl * 0.08);
+          module.laserCooldownTimer = Math.max(0.48, 0.9 - laserLvl * 0.08);
           const heavyBonus = 1 + SaveManager.getStatBonus("heavyWeapon");
           const laserDmg = Math.round(
             (26 + laserLvl * 14) * module.stats.damageMultiplier * heavyBonus,
           );
-          const pierce = laserLvl >= 5 ? 99 : laserLvl >= 4 ? 12 : laserLvl >= 3 ? 6 : laserLvl * 2;
+          const pierce =
+            laserLvl >= 5
+              ? 99
+              : laserLvl >= 4
+                ? 12
+                : laserLvl >= 3
+                  ? 6
+                  : laserLvl * 2;
           const isHyper = laserLvl >= 5;
 
           AudioMixer.playShoot("tesla");
@@ -251,7 +262,8 @@ export class CombatSystem {
 
     // Natural, punchy bullet spacing across truck hood (không bị bó dính, không xòe rộng)
     const totalBarrelWidth = Math.min(38, 7.5 * (projCount - 1));
-    const barrelSpacing = projCount > 1 ? totalBarrelWidth / (projCount - 1) : 0;
+    const barrelSpacing =
+      projCount > 1 ? totalBarrelWidth / (projCount - 1) : 0;
     const totalSpreadAngle =
       projCount > 1 ? Math.min(0.13, 0.026 * (projCount - 1)) : 0;
 
@@ -293,7 +305,7 @@ export class CombatSystem {
           bounceCount: module.stats.bulletBounce,
         },
       );
-      if (spawnedP) (spawnedP as any).isCrit = isCrit;
+      if (spawnedP) spawnedP.isCrit = isCrit;
     }
 
     module.triggerFire();
@@ -334,7 +346,12 @@ export class CombatSystem {
     maxCount: number = 1,
   ): Enemy[] {
     const valid = this.enemySystem.enemies
-      .filter((e) => e.active && e.y >= 20 && distance(fromPos.x, fromPos.y, e.x, e.y) < range)
+      .filter(
+        (e) =>
+          e.active &&
+          e.y >= 20 &&
+          distance(fromPos.x, fromPos.y, e.x, e.y) < range,
+      )
       .sort(
         (a, b) =>
           distance(fromPos.x, fromPos.y, a.x, a.y) -
@@ -362,7 +379,7 @@ export class CombatSystem {
         if (dy > maxDist || dy < -maxDist) continue;
 
         if (dx * dx + dy * dy <= maxDist * maxDist) {
-          const isCrit = (p as any).isCrit === true;
+          const isCrit = p.isCrit;
           const killed = e.takeDamage(p.damage);
 
           // 1. Play Soft Punchy Hit Sound (Rate limited & smooth pitch variation)
@@ -371,11 +388,29 @@ export class CombatSystem {
           // 2. High-Performance Streamlined VFX on Hit
           if (isCrit) {
             this.particleSystem.critBurst(p.x, p.y);
-            this.particleSystem.hitSpark(p.x, p.y, 0xffea00, 3, p.vx * 0.1, p.vy * 0.1);
+            this.particleSystem.hitSpark(
+              p.x,
+              p.y,
+              0xffea00,
+              3,
+              p.vx * 0.1,
+              p.vy * 0.1,
+            );
           } else if (Math.random() < 0.4) {
             const sparkColor =
-              p.projType === "laser" ? 0x00f0ff : p.projType === "rocket" ? 0xf97316 : 0xffea00;
-            this.particleSystem.hitSpark(p.x, p.y, sparkColor, 1, p.vx * 0.1, p.vy * 0.1);
+              p.projType === "laser"
+                ? 0x00f0ff
+                : p.projType === "rocket"
+                  ? 0xf97316
+                  : 0xffea00;
+            this.particleSystem.hitSpark(
+              p.x,
+              p.y,
+              sparkColor,
+              1,
+              p.vx * 0.1,
+              p.vy * 0.1,
+            );
           }
 
           if (p.projType === "rocket" || p.aoeRadius > 0) {
@@ -443,7 +478,7 @@ export class CombatSystem {
     }
   }
 
-  private bounceProjectile(p: any, hitEnemy: Enemy) {
+  private bounceProjectile(p: Projectile, hitEnemy: Enemy) {
     let nearest: Enemy | null = null;
     let minDist = 300;
     for (const e of this.enemySystem.enemies) {
@@ -623,13 +658,22 @@ export class CombatSystem {
 
   private onEnemyKilled(enemy: Enemy) {
     // High-Priority Juicy Monster Death Burst (Guaranteed visual pop on every kill)
-    this.particleSystem.monsterDeath(enemy.x, enemy.y, enemy.radius, enemy.color);
+    this.particleSystem.monsterDeath(
+      enemy.x,
+      enemy.y,
+      enemy.radius,
+      enemy.color,
+    );
 
     // Sound effect (rate limited & varied)
     AudioMixer.playKill(enemy.radius >= 35);
 
     // Subtle tactile screen shake on heavy enemies (colossus, tank, bomber)
-    if (enemy.archetype === "colossus" || enemy.archetype === "tank" || enemy.archetype === "bomber") {
+    if (
+      enemy.archetype === "colossus" ||
+      enemy.archetype === "tank" ||
+      enemy.archetype === "bomber"
+    ) {
       EventBus.emit("camera:shake", { intensity: 2.2, duration: 0.1 });
     }
 

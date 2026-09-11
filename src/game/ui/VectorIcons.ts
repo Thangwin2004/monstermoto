@@ -8,24 +8,28 @@ export class VectorIcons {
   /**
    * Draw a crisp Play triangle (centered at 0, 0)
    */
-  public static drawPlay(g: Graphics, size: number = 24, color: number = 0xffffff) {
+  public static drawPlay(
+    g: Graphics,
+    size: number = 24,
+    color: number = 0xffffff,
+  ) {
     const half = size * 0.5;
     const left = -half * 0.7;
     const right = half * 0.9;
     const top = -half * 0.85;
     const bottom = half * 0.85;
 
-    g.poly([
-      left, top,
-      right, 0,
-      left, bottom,
-    ]).fill(color);
+    g.poly([left, top, right, 0, left, bottom]).fill(color);
   }
 
   /**
    * Draw a modern 6-tooth mechanical Gear / Settings icon (centered at 0, 0)
    */
-  public static drawGear(g: Graphics, size: number = 24, color: number = 0xffffff) {
+  public static drawGear(
+    g: Graphics,
+    size: number = 24,
+    color: number = 0xffffff,
+  ) {
     const r = size * 0.5;
     const innerR = r * 0.65;
     const holeR = r * 0.32;
@@ -53,7 +57,11 @@ export class VectorIcons {
   /**
    * Draw a crisp Wrench / Tool icon (centered at 0, 0)
    */
-  public static drawWrench(g: Graphics, size: number = 24, color: number = 0xffffff) {
+  public static drawWrench(
+    g: Graphics,
+    size: number = 24,
+    color: number = 0xffffff,
+  ) {
     const s = size * 0.5;
     // Angled wrench 45 deg
     g.save();
@@ -75,29 +83,47 @@ export class VectorIcons {
   /**
    * Draw Sound / SFX Speaker icon (centered at 0, 0)
    */
-  public static drawSpeaker(g: Graphics, size: number = 24, color: number = 0xffffff) {
+  public static drawSpeaker(
+    g: Graphics,
+    size: number = 24,
+    color: number = 0xffffff,
+  ) {
     const s = size * 0.5;
     // Speaker box
     g.rect(-s * 0.85, -s * 0.35, s * 0.45, s * 0.7).fill(color);
     // Speaker cone
     g.poly([
-      -s * 0.45, -s * 0.35,
-      0, -s * 0.8,
-      0, s * 0.8,
-      -s * 0.45, s * 0.35,
+      -s * 0.45,
+      -s * 0.35,
+      0,
+      -s * 0.8,
+      0,
+      s * 0.8,
+      -s * 0.45,
+      s * 0.35,
     ]).fill(color);
 
     // Sound waves
-    g.arc(s * 0.15, 0, s * 0.45, -Math.PI * 0.3, Math.PI * 0.3)
-      .stroke({ color, width: Math.max(2, size * 0.09), cap: "round" });
-    g.arc(s * 0.15, 0, s * 0.8, -Math.PI * 0.35, Math.PI * 0.35)
-      .stroke({ color, width: Math.max(2, size * 0.09), cap: "round" });
+    g.arc(s * 0.15, 0, s * 0.45, -Math.PI * 0.3, Math.PI * 0.3).stroke({
+      color,
+      width: Math.max(2, size * 0.09),
+      cap: "round",
+    });
+    g.arc(s * 0.15, 0, s * 0.8, -Math.PI * 0.35, Math.PI * 0.35).stroke({
+      color,
+      width: Math.max(2, size * 0.09),
+      cap: "round",
+    });
   }
 
   /**
    * Draw Music / BGM Notes icon (centered at 0, 0)
    */
-  public static drawMusic(g: Graphics, size: number = 24, color: number = 0xffffff) {
+  public static drawMusic(
+    g: Graphics,
+    size: number = 24,
+    color: number = 0xffffff,
+  ) {
     const s = size * 0.5;
     // Left note head
     g.ellipse(-s * 0.45, s * 0.5, s * 0.32, s * 0.24).fill(color);
@@ -111,61 +137,88 @@ export class VectorIcons {
 
     // Top beam
     g.poly([
-      -s * 0.22, -s * 0.65,
-      s * 0.68 + stemW, -s * 0.9,
-      s * 0.68 + stemW, -s * 0.55,
-      -s * 0.22, -s * 0.3,
+      -s * 0.22,
+      -s * 0.65,
+      s * 0.68 + stemW,
+      -s * 0.9,
+      s * 0.68 + stemW,
+      -s * 0.55,
+      -s * 0.22,
+      -s * 0.3,
     ]).fill(color);
   }
 
   /**
    * Draw Vibration / Screen Shake icon (centered at 0, 0)
    */
-  public static drawVibration(g: Graphics, size: number = 24, color: number = 0xffffff) {
+  public static drawVibration(
+    g: Graphics,
+    size: number = 24,
+    color: number = 0xffffff,
+  ) {
     const s = size * 0.5;
     // Phone body
-    g.roundRect(-s * 0.45, -s * 0.85, s * 0.9, s * 1.7, s * 0.18)
-      .stroke({ color, width: Math.max(2, size * 0.09) });
+    g.roundRect(-s * 0.45, -s * 0.85, s * 0.9, s * 1.7, s * 0.18).stroke({
+      color,
+      width: Math.max(2, size * 0.09),
+    });
     // Screen top notch
     g.rect(-s * 0.15, -s * 0.7, s * 0.3, s * 0.08).fill(color);
     // Screen bottom home bar
     g.rect(-s * 0.2, s * 0.65, s * 0.4, s * 0.08).fill(color);
 
     // Left vibrating wave
-    g.arc(-s * 0.45, 0, s * 0.4, Math.PI * 0.7, Math.PI * 1.3)
-      .stroke({ color, width: Math.max(2, size * 0.08), cap: "round" });
+    g.arc(-s * 0.45, 0, s * 0.4, Math.PI * 0.7, Math.PI * 1.3).stroke({
+      color,
+      width: Math.max(2, size * 0.08),
+      cap: "round",
+    });
     // Right vibrating wave
-    g.arc(s * 0.45, 0, s * 0.4, -Math.PI * 0.3, Math.PI * 0.3)
-      .stroke({ color, width: Math.max(2, size * 0.08), cap: "round" });
+    g.arc(s * 0.45, 0, s * 0.4, -Math.PI * 0.3, Math.PI * 0.3).stroke({
+      color,
+      width: Math.max(2, size * 0.08),
+      cap: "round",
+    });
   }
 
   /**
    * Draw Lightning / FX icon (centered at 0, 0)
    */
-  public static drawLightning(g: Graphics, size: number = 24, color: number = 0xffffff) {
+  public static drawLightning(
+    g: Graphics,
+    size: number = 24,
+    color: number = 0xffffff,
+  ) {
     const s = size * 0.5;
     g.poly([
-      -s * 0.1, -s * 0.95,
-      s * 0.6, -s * 0.95,
-      -s * 0.05, -s * 0.05,
-      s * 0.5, -s * 0.05,
-      -s * 0.5, s * 0.95,
-      -s * 0.15, s * 0.15,
-      -s * 0.6, s * 0.15,
+      -s * 0.1,
+      -s * 0.95,
+      s * 0.6,
+      -s * 0.95,
+      -s * 0.05,
+      -s * 0.05,
+      s * 0.5,
+      -s * 0.05,
+      -s * 0.5,
+      s * 0.95,
+      -s * 0.15,
+      s * 0.15,
+      -s * 0.6,
+      s * 0.15,
     ]).fill(color);
   }
 
   /**
    * Draw Home icon (centered at 0, 0)
    */
-  public static drawHome(g: Graphics, size: number = 24, color: number = 0xffffff) {
+  public static drawHome(
+    g: Graphics,
+    size: number = 24,
+    color: number = 0xffffff,
+  ) {
     const s = size * 0.5;
     // Roof triangle
-    g.poly([
-      0, -s * 0.9,
-      -s * 0.9, -s * 0.1,
-      s * 0.9, -s * 0.1,
-    ]).fill(color);
+    g.poly([0, -s * 0.9, -s * 0.9, -s * 0.1, s * 0.9, -s * 0.1]).fill(color);
     // House base
     g.rect(-s * 0.65, -s * 0.1, s * 1.3, s * 0.95).fill(color);
     // Door cutout
@@ -175,22 +228,36 @@ export class VectorIcons {
   /**
    * Draw Checkmark icon (centered at 0, 0)
    */
-  public static drawCheckmark(g: Graphics, size: number = 24, color: number = 0xffffff) {
+  public static drawCheckmark(
+    g: Graphics,
+    size: number = 24,
+    color: number = 0xffffff,
+  ) {
     const s = size * 0.5;
     g.poly([
-      -s * 0.8, -s * 0.05,
-      -s * 0.25, s * 0.65,
-      s * 0.85, -s * 0.7,
-      s * 0.65, -s * 0.88,
-      -s * 0.25, s * 0.28,
-      -s * 0.6, -s * 0.25,
+      -s * 0.8,
+      -s * 0.05,
+      -s * 0.25,
+      s * 0.65,
+      s * 0.85,
+      -s * 0.7,
+      s * 0.65,
+      -s * 0.88,
+      -s * 0.25,
+      s * 0.28,
+      -s * 0.6,
+      -s * 0.25,
     ]).fill(color);
   }
 
   /**
    * Draw Cross / Close icon (centered at 0, 0)
    */
-  public static drawCross(g: Graphics, size: number = 24, color: number = 0xffffff) {
+  public static drawCross(
+    g: Graphics,
+    size: number = 24,
+    color: number = 0xffffff,
+  ) {
     const s = size * 0.5;
     const w = Math.max(3, size * 0.18);
     g.save();
@@ -204,7 +271,17 @@ export class VectorIcons {
    * Create a standalone Container containing any vector icon
    */
   public static createIcon(
-    type: "play" | "gear" | "wrench" | "speaker" | "music" | "vibration" | "lightning" | "home" | "check" | "cross",
+    type:
+      | "play"
+      | "gear"
+      | "wrench"
+      | "speaker"
+      | "music"
+      | "vibration"
+      | "lightning"
+      | "home"
+      | "check"
+      | "cross",
     size: number = 24,
     color: number = 0xffffff,
   ): Container {

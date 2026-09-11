@@ -1,5 +1,5 @@
 import { Container } from "pixi.js";
-import { Pickup, PickupType, PICKUP_CONFIGS } from "../entities/Pickup";
+import { Pickup, PickupType } from "../entities/Pickup";
 import { Pool } from "../utils/Pool";
 import {
   ROAD_SPEED,
@@ -53,7 +53,11 @@ export class LootSystem {
 
     // Scrap drop reward with Garage Scrap Bonus
     const scrapBonus = 1 + SaveManager.getStatBonus("scrapBonus");
-    const baseScrap = isElite ? 10 + Math.floor(Math.random() * 8) : (Math.random() < 0.6 ? 2 : 1);
+    const baseScrap = isElite
+      ? 10 + Math.floor(Math.random() * 8)
+      : Math.random() < 0.6
+        ? 2
+        : 1;
     this.totalScrap += Math.round(baseScrap * scrapBonus);
 
     // 1. Cap active crates on screen to at most 2
@@ -144,8 +148,15 @@ export class LootSystem {
       this.supplyDropTimer = 60;
       const activeCount = this.pickups.filter((p) => p.active).length;
       if (activeCount < 1) {
-        const roadX = ROAD_LEFT + 80 + Math.random() * (ROAD_RIGHT - ROAD_LEFT - 160);
-        const types: PickupType[] = ["buff_heal", "buff_rapid", "buff_nuke", "buff_shield", "star_upgrade"];
+        const roadX =
+          ROAD_LEFT + 80 + Math.random() * (ROAD_RIGHT - ROAD_LEFT - 160);
+        const types: PickupType[] = [
+          "buff_heal",
+          "buff_rapid",
+          "buff_nuke",
+          "buff_shield",
+          "star_upgrade",
+        ];
         const chosen = types[Math.floor(Math.random() * types.length)];
         this.spawnDrop(roadX, -60, chosen);
       }
@@ -181,5 +192,3 @@ export class LootSystem {
     }
   }
 }
-
-

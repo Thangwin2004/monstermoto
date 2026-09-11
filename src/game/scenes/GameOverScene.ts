@@ -20,7 +20,8 @@ export class GameOverScene extends Container implements Scene {
   private bg!: Graphics;
   private currentHeight: number = GAME_HEIGHT;
   private animTime: number = 0;
-  private activeModal: (Container & { resize?(w: number, h: number): void }) | null = null;
+  private activeModal:
+    (Container & { resize?(w: number, h: number): void }) | null = null;
 
   constructor() {
     super();
@@ -34,7 +35,12 @@ export class GameOverScene extends Container implements Scene {
 
     // 1. Dark Backdrop (Oversized to guarantee zero gaps at bottom)
     this.bg = new Graphics();
-    this.bg.rect(-100, -100, GAME_WIDTH + 200, Math.max(3000, this.currentHeight + 400));
+    this.bg.rect(
+      -100,
+      -100,
+      GAME_WIDTH + 200,
+      Math.max(3000, this.currentHeight + 400),
+    );
     this.bg.fill({ color: 0x090a0f, alpha: 0.92 });
     this.contentLayer.addChild(this.bg);
 
@@ -226,7 +232,7 @@ export class GameOverScene extends Container implements Scene {
 
     const statTag = "__stat_item__";
     for (let i = this.modalContainer.children.length - 1; i >= 0; i--) {
-      if ((this.modalContainer.children[i] as any)[statTag]) {
+      if (this.modalContainer.children[i].label === statTag) {
         this.modalContainer.removeChildAt(i);
       }
     }
@@ -261,7 +267,7 @@ export class GameOverScene extends Container implements Scene {
 
       // Row background pill
       const rowBg = new Graphics();
-      (rowBg as any)[statTag] = true;
+      rowBg.label = statTag;
       rowBg
         .roundRect(-260, y - 20, 520, 40, 12)
         .fill(i === 3 || i === 4 ? 0xfef9c3 : i % 2 === 0 ? 0xe2e8f0 : 0xf1f5f9)
@@ -280,7 +286,7 @@ export class GameOverScene extends Container implements Scene {
           fill: i === 3 || i === 4 ? 0x854d0e : 0x475569,
         },
       });
-      (labelText as any)[statTag] = true;
+      labelText.label = statTag;
       labelText.anchor.set(0, 0.5);
       labelText.x = -240;
       labelText.y = y;
@@ -295,7 +301,7 @@ export class GameOverScene extends Container implements Scene {
           fill: i === 3 || i === 4 ? 0xb45309 : 0x0f172a,
         },
       });
-      (valText as any)[statTag] = true;
+      valText.label = statTag;
       valText.anchor.set(1, 0.5);
       valText.x = 240;
       valText.y = y;
@@ -305,7 +311,7 @@ export class GameOverScene extends Container implements Scene {
     // High score banner at bottom of card
     const scoreY = startY + stats.length * rowH + 18;
     const scoreBg = new Graphics();
-    (scoreBg as any)[statTag] = true;
+    scoreBg.label = statTag;
     scoreBg
       .roundRect(-260, scoreY - 22, 520, 44, 14)
       .fill(0x0f172a)
@@ -322,7 +328,7 @@ export class GameOverScene extends Container implements Scene {
         letterSpacing: 1,
       },
     });
-    (scoreText as any)[statTag] = true;
+    scoreText.label = statTag;
     scoreText.anchor.set(0.5);
     scoreText.y = scoreY;
     this.modalContainer.addChild(scoreText);

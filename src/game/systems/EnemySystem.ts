@@ -1,7 +1,7 @@
 import { Container } from "pixi.js";
 import { Enemy } from "../entities/Enemy";
 import { Pool } from "../utils/Pool";
-import { GAME_WIDTH, GAME_HEIGHT, ROAD_LEFT, ROAD_RIGHT } from "../constants";
+import { GAME_HEIGHT, ROAD_LEFT, ROAD_RIGHT } from "../constants";
 import { ConvoySystem } from "./ConvoySystem";
 import { EnemyDefinitions, EnemyArchetype } from "../data/enemies";
 import { WaveEntry, getEncountersForDifficulty } from "../data/encounters";
@@ -283,7 +283,10 @@ export class EnemySystem {
   spawnSwarm(count: number) {
     const isLow = SaveManager.getSettings().lowParticles;
     const maxEnemies = isLow ? 22 : 36;
-    const toSpawn = Math.min(count, Math.max(0, maxEnemies - this.enemies.length));
+    const toSpawn = Math.min(
+      count,
+      Math.max(0, maxEnemies - this.enemies.length),
+    );
     for (let i = 0; i < toSpawn; i++) {
       this.spawnEnemy("swarm");
     }

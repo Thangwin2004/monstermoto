@@ -12,8 +12,9 @@ function getShadowContext(radius: number): GraphicsContext {
   const rounded = Math.round(radius);
   if (!shadowContextCache.has(rounded)) {
     const ctx = new GraphicsContext();
-    ctx.ellipse(0, rounded * 0.7, rounded * 0.9, rounded * 0.4)
-       .fill({ color: 0x000000, alpha: 0.45 });
+    ctx
+      .ellipse(0, rounded * 0.7, rounded * 0.9, rounded * 0.4)
+      .fill({ color: 0x000000, alpha: 0.45 });
     shadowContextCache.set(rounded, ctx);
   }
   return shadowContextCache.get(rounded)!;
@@ -144,7 +145,10 @@ export class Enemy extends Container {
     this.monsterBody.context = enemyContextCache.get(def.id)!;
   }
 
-  private drawMonsterGraphicToContext(g: GraphicsContext, def: EnemyDefinition) {
+  private drawMonsterGraphicToContext(
+    g: GraphicsContext,
+    def: EnemyDefinition,
+  ) {
     const r = def.radius;
 
     switch (def.id) {

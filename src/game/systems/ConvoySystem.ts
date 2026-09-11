@@ -32,7 +32,7 @@ export class ConvoySystem {
 
   private setupInput(parent: Container) {
     parent.eventMode = "static";
-    parent.hitArea = { contains: () => true } as any;
+    parent.hitArea = { contains: () => true };
 
     parent.on("pointerdown", (e: FederatedPointerEvent) => {
       this.isDragging = true;

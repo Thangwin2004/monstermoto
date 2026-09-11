@@ -195,7 +195,12 @@ export class UpgradePanel extends Container {
   private updateLayout() {
     this.bg.clear();
     this.bg
-      .rect(-200, -200, GAME_WIDTH + 400, Math.max(3500, this.currentHeight + 600))
+      .rect(
+        -200,
+        -200,
+        GAME_WIDTH + 400,
+        Math.max(3500, this.currentHeight + 600),
+      )
       .fill({ color: 0x000000, alpha: 0.88 });
 
     this.modalContainer.x = GAME_WIDTH / 2;
@@ -223,7 +228,6 @@ export class UpgradePanel extends Container {
 
       const optBtn = new Container();
       optBtn.y = startY + i * gap;
-
 
       const content = new Container();
       optBtn.addChild(content);

@@ -1,14 +1,9 @@
 import { Container, Graphics, Text } from "pixi.js";
 import { ROAD_SPEED } from "../constants";
 import { SaveManager } from "../utils/SaveManager";
-import { VectorIcons } from "../ui/VectorIcons";
 
 export type PickupType =
-  | "buff_rapid"
-  | "buff_shield"
-  | "buff_heal"
-  | "buff_nuke"
-  | "star_upgrade";
+  "buff_rapid" | "buff_shield" | "buff_heal" | "buff_nuke" | "star_upgrade";
 
 export interface PickupConfig {
   type: PickupType;
@@ -133,9 +128,7 @@ export class Pickup extends Container {
       .fill({ color: 0x000000, alpha: 0.4 });
 
     // 2. 3D Bevel Shadow Base
-    this.crateGfx
-      .roundRect(-w / 2, -h / 2 + 3, w, h, r)
-      .fill(cfg.shadowColor);
+    this.crateGfx.roundRect(-w / 2, -h / 2 + 3, w, h, r).fill(cfg.shadowColor);
 
     // 3. Main Vibrant Body with Crisp White Stroke
     this.crateGfx

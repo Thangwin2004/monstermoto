@@ -1,4 +1,4 @@
-import { Container, Graphics, Text, BlurFilter } from "pixi.js";
+import { Container, BlurFilter } from "pixi.js";
 import { Scene, SceneManager } from "./SceneManager";
 import { RoadSystem } from "../systems/RoadSystem";
 import { ConvoySystem } from "../systems/ConvoySystem";
@@ -13,9 +13,9 @@ import { ParticleSystem } from "../systems/ParticleSystem";
 import { HUD } from "../ui/HUD";
 import { UpgradePanel } from "../ui/UpgradePanel";
 import { SettingsModal } from "../ui/SettingsModal";
-import { HyperCircleButton } from "../ui/HyperButton";
 import { SaveManager } from "../utils/SaveManager";
 import { ModuleDefinitions } from "../data/modules";
+import type { Module } from "../entities/Module";
 import { EventBus } from "../utils/EventBus";
 import { AudioMixer } from "../utils/AudioMixer";
 import { RunState } from "../utils/RunState";
@@ -25,7 +25,6 @@ import { winkGame, type WinkRound } from "../../integrations/wink/client";
 import { PICKUP_CONFIGS, type PickupType } from "../entities/Pickup";
 import {
   ROAD_SPEED,
-  HP_SCALE_PER_MINUTE,
   RUN_BOSS_TIME,
   GAME_WIDTH,
   GAME_HEIGHT,
@@ -216,56 +215,58 @@ export class RunScene extends Container implements Scene {
 
     // Run ended
     EventBus.on("run:ended", (data) => {
-       if (this.isGameOver) return;
-       this.isGameOver = true;
+      if (this.isGameOver) return;
+      this.isGameOver = true;
 
-       const totalRunScrap =
-         this.lootSystem.totalScrap +
-         Math.floor(this.distanceMeters / 6) +
-         (data.victory ? 250 : 0);
+      const totalRunScrap =
+        this.lootSystem.totalScrap +
+        Math.floor(this.distanceMeters / 6) +
+        (data.victory ? 250 : 0);
 
-       RunState.current.victory = data.victory;
-       RunState.current.distance = this.distanceMeters;
-       RunState.current.kills = this.lootSystem.totalKills;
-       RunState.current.level = this.lootSystem.level;
-       RunState.current.scrap = totalRunScrap;
-       RunState.current.runTime = this.runTime;
+      RunState.current.victory = data.victory;
+      RunState.current.distance = this.distanceMeters;
+      RunState.current.kills = this.lootSystem.totalKills;
+      RunState.current.level = this.lootSystem.level;
+      RunState.current.scrap = totalRunScrap;
+      RunState.current.runTime = this.runTime;
 
-       // Save meta-progression currency & run records
-       SaveManager.addScrap(totalRunScrap);
-       SaveManager.recordRun(this.distanceMeters, this.lootSystem.totalKills);
-       RunState.saveBestScore(RunState.current.getScore());
+      // Save meta-progression currency & run records
+      SaveManager.addScrap(totalRunScrap);
+      SaveManager.recordRun(this.distanceMeters, this.lootSystem.totalKills);
+      RunState.saveBestScore(RunState.current.getScore());
 
-       if (this.currentWinkRound) {
-         winkGame.completeRound(this.currentWinkRound, {
-           playDurationMs: Math.floor(this.runTime * 1000),
-           metadata: {
-             victory: data.victory,
-             kills: this.lootSystem.totalKills,
-             level: this.lootSystem.level,
-             distance: Math.floor(this.distanceMeters),
-           },
-         });
-         if (winkGame.canSubmitScore) {
-           void winkGame.submitFinalScore({
-             score: RunState.current.getScore(),
-             playTime: Math.max(0, Math.floor(this.runTime)),
-             gameMode: "survival",
-             counter: Math.max(0, Math.floor(this.lootSystem.level)),
-             metadata: {
-               victory: Boolean(data.victory),
-               kills: Math.max(0, Math.floor(this.lootSystem.totalKills)),
-               distance: Math.max(0, Math.floor(this.distanceMeters)),
-             },
-           }).catch(() => {});
-         }
-         this.currentWinkRound = null;
-       }
+      if (this.currentWinkRound) {
+        winkGame.completeRound(this.currentWinkRound, {
+          playDurationMs: Math.floor(this.runTime * 1000),
+          metadata: {
+            victory: data.victory,
+            kills: this.lootSystem.totalKills,
+            level: this.lootSystem.level,
+            distance: Math.floor(this.distanceMeters),
+          },
+        });
+        if (winkGame.canSubmitScore) {
+          void winkGame
+            .submitFinalScore({
+              score: RunState.current.getScore(),
+              playTime: Math.max(0, Math.floor(this.runTime)),
+              gameMode: "survival",
+              counter: Math.max(0, Math.floor(this.lootSystem.level)),
+              metadata: {
+                victory: Boolean(data.victory),
+                kills: Math.max(0, Math.floor(this.lootSystem.totalKills)),
+                distance: Math.max(0, Math.floor(this.distanceMeters)),
+              },
+            })
+            .catch(() => {});
+        }
+        this.currentWinkRound = null;
+      }
 
-       setTimeout(() => {
-         SceneManager.switchScene("GameOverScene");
-       }, 800);
-     });
+      setTimeout(() => {
+        SceneManager.switchScene("GameOverScene");
+      }, 800);
+    });
   }
 
   start() {
@@ -292,14 +293,8 @@ export class RunScene extends Container implements Scene {
       Math.pow(distKm, 1.6) * 1.2 +
       (this.runTime / 90) * 0.5;
     const speedScale = 1 + Math.min(0.75, distKm * 0.16);
-    const densityMultiplier = Math.min(
-      4.8,
-      1 + distKm * 0.85,
-    );
-    const eliteChance = Math.min(
-      0.75,
-      0.05 + distKm * 0.16,
-    );
+    const densityMultiplier = Math.min(4.8, 1 + distKm * 0.85);
+    const eliteChance = Math.min(0.75, 0.05 + distKm * 0.16);
 
     this.enemySystem.setDifficulty(
       difficultyLevel,
@@ -490,7 +485,7 @@ export class RunScene extends Container implements Scene {
       const upgradableWeapons: {
         id: string;
         name: string;
-        targetModule: any;
+        targetModule: Module;
         curLvl: number;
       }[] = [];
 
@@ -586,7 +581,10 @@ export class RunScene extends Container implements Scene {
 
   private triggerShake(intensity: number, duration: number) {
     if (!SaveManager.getSettings().screenShake) return;
-    this.shakeIntensity = Math.min(5.5, Math.max(this.shakeIntensity, intensity));
+    this.shakeIntensity = Math.min(
+      5.5,
+      Math.max(this.shakeIntensity, intensity),
+    );
     this.shakeDuration = Math.max(this.shakeDuration, duration);
     this.shakeTimer = this.shakeDuration;
   }

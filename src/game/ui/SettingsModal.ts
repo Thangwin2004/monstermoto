@@ -27,7 +27,12 @@ export class SettingsModal extends Container {
 
     // 1. Semi-Transparent Dark Blur Backdrop covering full viewport
     const backdrop = new Graphics();
-    backdrop.rect(-100, -100, GAME_WIDTH + 200, Math.max(3500, this.modalHeight + 600));
+    backdrop.rect(
+      -100,
+      -100,
+      GAME_WIDTH + 200,
+      Math.max(3500, this.modalHeight + 600),
+    );
     backdrop.fill({ color: 0x000000, alpha: 0.88 });
     backdrop.eventMode = "static";
     backdrop.on("pointerdown", (e) => e.stopPropagation());
@@ -441,8 +446,9 @@ export class SettingsModal extends Container {
       if (active) {
         // 3D Shadow Base
         const sh = new Graphics();
-        sh.roundRect(-choiceW / 2, -choiceH / 2 + 3, choiceW, choiceH, 22)
-          .fill(0x0369a1);
+        sh.roundRect(-choiceW / 2, -choiceH / 2 + 3, choiceW, choiceH, 22).fill(
+          0x0369a1,
+        );
         choice.addChild(sh);
 
         choiceBg
@@ -512,7 +518,12 @@ export class SettingsModal extends Container {
     // Dim background
     const shade = new Graphics();
     shade
-      .rect(-GAME_WIDTH, -this.modalHeight, GAME_WIDTH * 3, this.modalHeight * 3)
+      .rect(
+        -GAME_WIDTH,
+        -this.modalHeight,
+        GAME_WIDTH * 3,
+        this.modalHeight * 3,
+      )
       .fill({ color: 0x000000, alpha: 0.72 });
     shade.eventMode = "static";
     shade.on("pointerdown", (event) => event.stopPropagation());
@@ -529,9 +540,7 @@ export class SettingsModal extends Container {
     overlay.addChild(cardShadow);
 
     const card = new Graphics();
-    card
-      .roundRect(-cardW / 2, -cardH / 2 + 6, cardW, cardH, 24)
-      .fill(0x0369a1);
+    card.roundRect(-cardW / 2, -cardH / 2 + 6, cardW, cardH, 24).fill(0x0369a1);
     card
       .roundRect(-cardW / 2, -cardH / 2, cardW, cardH, 24)
       .fill(0xfbfaf5)
@@ -692,4 +701,3 @@ export class SettingsModal extends Container {
     this.modalContainer.y = this.modalHeight / 2;
   }
 }
-

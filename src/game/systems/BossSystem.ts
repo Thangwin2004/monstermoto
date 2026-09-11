@@ -1,7 +1,7 @@
 import { Container, Graphics, Text } from "pixi.js";
 import { ConvoySystem } from "./ConvoySystem";
 import { EnemySystem } from "./EnemySystem";
-import { GAME_WIDTH, GAME_HEIGHT, BOSS_HP } from "../constants";
+import { GAME_WIDTH } from "../constants";
 import { BossDefinitions, BossDefinition, BossPhase } from "../data/bosses";
 import { EventBus } from "../utils/EventBus";
 import { gameRng } from "../utils/RNG";

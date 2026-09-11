@@ -66,7 +66,7 @@ export interface SubmitScoreResponse {
 }
 
 export interface WinkIntegrationState {
-  phase: 'booting' | 'ready_anonymous' | 'ready_authenticated';
+  phase: "booting" | "ready_anonymous" | "ready_authenticated";
   status: string;
   locale: string;
   player: WinkPlayer | null;
@@ -84,10 +84,16 @@ interface WinkSdk {
   gameplayStart(): void;
   gameplayStop(): void;
   submitScore(input: number | SubmitScoreInput): Promise<SubmitScoreResponse>;
-  getLeaderboard(options?: { limit?: number; offset?: number }): Promise<LeaderboardResponse>;
+  getLeaderboard(options?: {
+    limit?: number;
+    offset?: number;
+  }): Promise<LeaderboardResponse>;
   getPersonalBest(): Promise<PersonalBestResponse>;
-  on(event: 'pause' | 'resume' | 'mute' | 'unmute', listener: () => void): () => void;
-  on(event: 'locale', listener: (locale: string) => void): () => void;
+  on(
+    event: "pause" | "resume" | "mute" | "unmute",
+    listener: () => void,
+  ): () => void;
+  on(event: "locale", listener: (locale: string) => void): () => void;
   destroy(): void;
 }
 
@@ -104,15 +110,18 @@ const EMPTY_CAPABILITIES: WinkCapabilities = Object.freeze({
 });
 
 function capabilityError(capability: string): Error & { code: string } {
-  return Object.assign(new Error(`Wink capability is unavailable: ${capability}`), {
-    code: 'CAPABILITY_DENIED',
-  });
+  return Object.assign(
+    new Error(`Wink capability is unavailable: ${capability}`),
+    {
+      code: "CAPABILITY_DENIED",
+    },
+  );
 }
 
 function errorCode(error: unknown): string {
-  return error && typeof error === 'object' && 'code' in error
+  return error && typeof error === "object" && "code" in error
     ? String(error.code)
-    : 'UNKNOWN';
+    : "UNKNOWN";
 }
 
 function newRoundId(): string {
@@ -145,9 +154,9 @@ export class WinkGameIntegration {
   #observers = new Set<(state: WinkIntegrationState) => void>();
   #cachedPersonalBest: LeaderboardEntry | null = null;
   #state: WinkIntegrationState = {
-    phase: 'booting',
-    status: 'connecting',
-    locale: 'en',
+    phase: "booting",
+    status: "connecting",
+    locale: "en",
     player: null,
     capabilities: { ...EMPTY_CAPABILITIES },
     lifecycle: { paused: false, muted: false },
@@ -157,14 +166,14 @@ export class WinkGameIntegration {
   constructor() {
     this.#ready = this.#initialize();
     void this.#ready.then((sdk) => {
-      if (sdk?.can('getLeaderboard')) void this.getPersonalBest();
+      if (sdk?.can("getLeaderboard")) void this.getPersonalBest();
     });
   }
 
   async #initialize(): Promise<WinkSdk | null> {
     const sdkLoader = globalThis.window?.Wink;
     if (!sdkLoader?.init) {
-      this.#setStandalone('SDK_UNAVAILABLE');
+      this.#setStandalone("SDK_UNAVAILABLE");
       return null;
     }
 
@@ -180,7 +189,7 @@ export class WinkGameIntegration {
       this.#notify();
       return sdk;
     } catch (error) {
-      console.warn('[Wink SDK] init failed', errorCode(error));
+      console.warn("[Wink SDK] init failed", errorCode(error));
       this.#setStandalone(errorCode(error));
       return null;
     }
@@ -188,22 +197,23 @@ export class WinkGameIntegration {
 
   #readSdkState(): WinkIntegrationState {
     const sdk = this.#sdk;
-    const status = sdk?.status || 'standalone';
+    const status = sdk?.status || "standalone";
     const capabilities: WinkCapabilities = {
-      getLeaderboard: Boolean(sdk?.can('getLeaderboard')),
-      submitScore: Boolean(sdk?.can('submitScore')),
-      complete: Boolean(sdk?.can('complete')),
+      getLeaderboard: Boolean(sdk?.can("getLeaderboard")),
+      submitScore: Boolean(sdk?.can("submitScore")),
+      complete: Boolean(sdk?.can("complete")),
     };
     const authenticated = Boolean(sdk?.player && capabilities.submitScore);
     return {
       ...this.#state,
-      phase: status === 'connecting'
-        ? 'booting'
-        : authenticated
-          ? 'ready_authenticated'
-          : 'ready_anonymous',
+      phase:
+        status === "connecting"
+          ? "booting"
+          : authenticated
+            ? "ready_authenticated"
+            : "ready_anonymous",
       status,
-      locale: sdk?.locale || this.#state.locale || 'en',
+      locale: sdk?.locale || this.#state.locale || "en",
       player: sdk?.player || null,
       capabilities,
       lifecycle: { ...this.#state.lifecycle, muted: Boolean(sdk?.muted) },
@@ -214,8 +224,8 @@ export class WinkGameIntegration {
   #setStandalone(code: string): void {
     this.#state = {
       ...this.#state,
-      phase: 'ready_anonymous',
-      status: 'standalone',
+      phase: "ready_anonymous",
+      status: "standalone",
       error: { code },
     };
     this.#notify();
@@ -224,36 +234,41 @@ export class WinkGameIntegration {
   #subscribeToSdkEvents(): void {
     const sdk = this.#sdk;
     if (!sdk) return;
-    const register = (event: 'pause' | 'resume' | 'mute' | 'unmute', listener: () => void) => {
+    const register = (
+      event: "pause" | "resume" | "mute" | "unmute",
+      listener: () => void,
+    ) => {
       try {
         this.#disposers.push(sdk.on(event, listener));
       } catch (error) {
         console.warn(`[Wink SDK] ${event} listener failed`, errorCode(error));
       }
     };
-    register('pause', () => {
+    register("pause", () => {
       this.#state.lifecycle.paused = true;
       this.#notify();
     });
-    register('resume', () => {
+    register("resume", () => {
       this.#state.lifecycle.paused = false;
       this.#notify();
     });
-    register('mute', () => {
+    register("mute", () => {
       this.#state.lifecycle.muted = true;
       this.#notify();
     });
-    register('unmute', () => {
+    register("unmute", () => {
       this.#state.lifecycle.muted = false;
       this.#notify();
     });
     try {
-      this.#disposers.push(sdk.on('locale', (locale) => {
-        this.#state.locale = String(locale || sdk.locale || 'en');
-        this.#notify();
-      }));
+      this.#disposers.push(
+        sdk.on("locale", (locale) => {
+          this.#state.locale = String(locale || sdk.locale || "en");
+          this.#notify();
+        }),
+      );
     } catch (error) {
-      console.warn('[Wink SDK] locale listener failed', errorCode(error));
+      console.warn("[Wink SDK] locale listener failed", errorCode(error));
     }
   }
 
@@ -262,13 +277,16 @@ export class WinkGameIntegration {
       try {
         observer(this.#state);
       } catch (error) {
-        console.warn('[Wink SDK] state observer failed', errorCode(error));
+        console.warn("[Wink SDK] state observer failed", errorCode(error));
       }
     }
   }
 
   startRound(): WinkRound {
-    const round = Object.freeze({ roundId: newRoundId(), startedAtMs: Date.now() });
+    const round = Object.freeze({
+      roundId: newRoundId(),
+      startedAtMs: Date.now(),
+    });
     this.#activeRoundId = round.roundId;
     void this.#ready.then((sdk) => sdk?.gameplayStart());
     return round;
@@ -276,39 +294,49 @@ export class WinkGameIntegration {
 
   completeRound(
     round: WinkRound,
-    _details: { playDurationMs?: number; metadata?: Record<string, unknown> } = {},
+    details: {
+      playDurationMs?: number;
+      metadata?: Record<string, unknown>;
+    } = {},
   ): boolean {
-    if (!round?.roundId || this.#completedRounds.has(round.roundId)) return false;
+    void details;
+    if (!round?.roundId || this.#completedRounds.has(round.roundId))
+      return false;
     this.#completedRounds.add(round.roundId);
     void this.#ready.then((sdk) => sdk?.gameplayStop());
     return true;
   }
 
-  async submitFinalScore(input: SubmitScoreInput): Promise<SubmitScoreResponse> {
+  async submitFinalScore(
+    input: SubmitScoreInput,
+  ): Promise<SubmitScoreResponse> {
     const roundId = this.#activeRoundId;
-    if (roundId && this.#scoreAttemptedRounds.has(roundId)) return { duplicate: true };
+    if (roundId && this.#scoreAttemptedRounds.has(roundId))
+      return { duplicate: true };
     if (roundId) this.#scoreAttemptedRounds.add(roundId);
     const sdk = await this.#ready;
-    if (!sdk?.can('submitScore')) throw capabilityError('submitScore');
+    if (!sdk?.can("submitScore")) throw capabilityError("submitScore");
     try {
       const result = await sdk.submitScore(normalizeScoreInput(input));
       if (result?.entry) this.#cachedPersonalBest = result.entry;
       return result;
     } catch (error) {
-      console.warn('[Wink SDK] score submission failed', errorCode(error));
+      console.warn("[Wink SDK] score submission failed", errorCode(error));
       throw error;
     }
   }
 
-  async refreshLeaderboard(options: { limit?: number; offset?: number } = {}): Promise<LeaderboardResponse> {
+  async refreshLeaderboard(
+    options: { limit?: number; offset?: number } = {},
+  ): Promise<LeaderboardResponse> {
     const sdk = await this.#ready;
-    if (!sdk?.can('getLeaderboard')) return { entries: [], me: null, total: 0 };
+    if (!sdk?.can("getLeaderboard")) return { entries: [], me: null, total: 0 };
     try {
       const result = await sdk.getLeaderboard(options);
       if (result?.me) this.#cachedPersonalBest = result.me;
       return result || { entries: [], me: null, total: 0 };
     } catch (error) {
-      console.warn('[Wink SDK] leaderboard unavailable', errorCode(error));
+      console.warn("[Wink SDK] leaderboard unavailable", errorCode(error));
       return { entries: [], me: null, total: 0 };
     }
   }
@@ -321,17 +349,29 @@ export class WinkGameIntegration {
       if (result?.me) this.#cachedPersonalBest = result.me;
       return result || { me: null };
     } catch (error) {
-      console.warn('[Wink SDK] personal best unavailable', errorCode(error));
+      console.warn("[Wink SDK] personal best unavailable", errorCode(error));
       return { me: null };
     }
   }
 
-  get personalBest(): LeaderboardEntry | null { return this.#cachedPersonalBest; }
-  get capabilities(): WinkCapabilities { return this.#state.capabilities; }
-  get state(): WinkIntegrationState { return this.#state; }
-  get canSubmitScore(): boolean { return this.capabilities.submitScore; }
-  get isReady(): boolean { return this.#state.phase !== 'booting'; }
-  get isAuthenticated(): boolean { return this.#state.phase === 'ready_authenticated'; }
+  get personalBest(): LeaderboardEntry | null {
+    return this.#cachedPersonalBest;
+  }
+  get capabilities(): WinkCapabilities {
+    return this.#state.capabilities;
+  }
+  get state(): WinkIntegrationState {
+    return this.#state;
+  }
+  get canSubmitScore(): boolean {
+    return this.capabilities.submitScore;
+  }
+  get isReady(): boolean {
+    return this.#state.phase !== "booting";
+  }
+  get isAuthenticated(): boolean {
+    return this.#state.phase === "ready_authenticated";
+  }
 
   observe(listener: (state: WinkIntegrationState) => void): () => void {
     this.#observers.add(listener);
@@ -346,11 +386,11 @@ export class WinkGameIntegration {
     const stops: Array<() => void> = [];
     void this.#ready.then((sdk) => {
       if (!active || !sdk) return;
-      if (handlers.onPause) stops.push(sdk.on('pause', handlers.onPause));
-      if (handlers.onResume) stops.push(sdk.on('resume', handlers.onResume));
-      if (handlers.onMute) stops.push(sdk.on('mute', handlers.onMute));
-      if (handlers.onUnmute) stops.push(sdk.on('unmute', handlers.onUnmute));
-      if (handlers.onLocale) stops.push(sdk.on('locale', handlers.onLocale));
+      if (handlers.onPause) stops.push(sdk.on("pause", handlers.onPause));
+      if (handlers.onResume) stops.push(sdk.on("resume", handlers.onResume));
+      if (handlers.onMute) stops.push(sdk.on("mute", handlers.onMute));
+      if (handlers.onUnmute) stops.push(sdk.on("unmute", handlers.onUnmute));
+      if (handlers.onLocale) stops.push(sdk.on("locale", handlers.onLocale));
       if (sdk.muted) handlers.onMute?.();
       else handlers.onUnmute?.();
       handlers.onLocale?.(sdk.locale);
@@ -377,7 +417,9 @@ export class WinkGameIntegration {
 
 export const winkGame = new WinkGameIntegration();
 
-const hot = (import.meta as ImportMeta & {
-  hot?: { dispose(callback: () => void): void };
-}).hot;
+const hot = (
+  import.meta as ImportMeta & {
+    hot?: { dispose(callback: () => void): void };
+  }
+).hot;
 if (hot) hot.dispose(() => winkGame.dispose());

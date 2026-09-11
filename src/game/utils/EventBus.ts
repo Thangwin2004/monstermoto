@@ -46,8 +46,8 @@ export type GameEventMap = {
   "level:up": { level: number };
   "route:chosen": { routeType: string };
   "nitro:toggle": { active: boolean };
-  "heat:overheat": {};
-  "convoy:rearranged": {};
+  "heat:overheat": Record<string, never>;
+  "convoy:rearranged": Record<string, never>;
   "camera:shake": { intensity: number; duration: number };
   "pickup:toast": {
     text: string;

@@ -95,7 +95,7 @@ export const GARAGE_UPGRADE_CONFIGS: Record<string, GarageStatConfig> = {
     maxLevel: 10,
     baseCost: 65,
     costMultiplier: 1.4,
-    valuePerLevel: 0.10,
+    valuePerLevel: 0.1,
     unit: "%",
     isMultiplier: true,
     desc: "+10% Sát thương Tên Lửa & Pháo Laser.",
@@ -191,7 +191,10 @@ export class SaveManager {
         const parsed = JSON.parse(raw);
         this.data = {
           totalScrap: parsed.totalScrap ?? 40,
-          upgrades: { ...this.getDefaultSaveData().upgrades, ...parsed.upgrades },
+          upgrades: {
+            ...this.getDefaultSaveData().upgrades,
+            ...parsed.upgrades,
+          },
           settings: { ...DEFAULT_SETTINGS, ...parsed.settings },
           bestDistance: parsed.bestDistance ?? 0,
           totalRuns: parsed.totalRuns ?? 0,
@@ -222,7 +225,10 @@ export class SaveManager {
 
   public static addScrap(amount: number) {
     this.init();
-    this.data.totalScrap = Math.max(0, this.data.totalScrap + Math.round(amount));
+    this.data.totalScrap = Math.max(
+      0,
+      this.data.totalScrap + Math.round(amount),
+    );
     this.save();
   }
 

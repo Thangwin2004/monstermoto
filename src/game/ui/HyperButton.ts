@@ -65,7 +65,9 @@ export class HyperButton extends Container {
 
     // 1. Shadow Base (placed in main container, doesn't move with content)
     this.shadowGfx = new Graphics();
-    this.shadowGfx.roundRect(-w / 2, -h / 2 + shadowOffset, w, h, r).fill(this.options.shadowColor!);
+    this.shadowGfx
+      .roundRect(-w / 2, -h / 2 + shadowOffset, w, h, r)
+      .fill(this.options.shadowColor!);
     this.addChild(this.shadowGfx);
 
     // 2. Animated Content Container (moves down when pressed)
@@ -107,14 +109,21 @@ export class HyperButton extends Container {
         fontSize: this.options.fontSize,
         fontWeight: "900",
         fill: 0xffffff,
-        stroke: { color: this.options.shadowColor, width: Math.max(3, this.options.fontSize! * 0.16) },
+        stroke: {
+          color: this.options.shadowColor,
+          width: Math.max(3, this.options.fontSize! * 0.16),
+        },
         letterSpacing: 1.5,
       },
     });
     this.labelText.anchor.set(0, 0.5);
 
     if (hasVectorIcon) {
-      this.iconGfx = VectorIcons.createIcon(this.options.vectorIcon!, iconSize, 0xffffff);
+      this.iconGfx = VectorIcons.createIcon(
+        this.options.vectorIcon!,
+        iconSize,
+        0xffffff,
+      );
       labelRow.addChild(this.iconGfx);
 
       const gap = 12;
@@ -234,14 +243,23 @@ export class HyperCircleButton extends Container {
 
     // 3. Body
     const body = new Graphics();
-    body.circle(0, 0, r).fill(color).stroke({ color: 0xffffff, width: strokeWidth });
+    body
+      .circle(0, 0, r)
+      .fill(color)
+      .stroke({ color: 0xffffff, width: strokeWidth });
     // Glossy Sheen
-    body.ellipse(0, -r * 0.35, r * 0.7, r * 0.3).fill({ color: 0xffffff, alpha: 0.38 });
+    body
+      .ellipse(0, -r * 0.35, r * 0.7, r * 0.3)
+      .fill({ color: 0xffffff, alpha: 0.38 });
     this.content.addChild(body);
 
     // 4. Crisp Vector Icon or Text Icon
     if (options.vectorIcon) {
-      const icon = VectorIcons.createIcon(options.vectorIcon, iconSize, 0xffffff);
+      const icon = VectorIcons.createIcon(
+        options.vectorIcon,
+        iconSize,
+        0xffffff,
+      );
       icon.y = -1;
       this.content.addChild(icon);
     } else if (options.icon) {

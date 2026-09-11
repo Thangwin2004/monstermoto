@@ -1,5 +1,5 @@
-import { Container, Graphics, Text } from "pixi.js";
-import { COLORS, MODULE_SIZE, HP_BAR_WIDTH, HP_BAR_HEIGHT } from "../constants";
+import { Container, Graphics } from "pixi.js";
+import { MODULE_SIZE, HP_BAR_WIDTH, HP_BAR_HEIGHT } from "../constants";
 import { SaveManager } from "../utils/SaveManager";
 
 // ─── Data types ───
@@ -76,17 +76,6 @@ function defaultStats(): ModuleStats {
   };
 }
 
-const RARITY_GRADIENTS: Record<
-  string,
-  { top: number; bot: number; shadow: number }
-> = {
-  common: { top: 0x5a6075, bot: 0x333745, shadow: 0x1d1f27 },
-  rare: { top: 0x33ccff, bot: 0x0088cc, shadow: 0x004466 },
-  epic: { top: 0xd946ef, bot: 0x9333ea, shadow: 0x581c87 },
-  legendary: { top: 0xfacc15, bot: 0xeab308, shadow: 0x854d0e },
-  corrupted: { top: 0xef4444, bot: 0x991b1b, shadow: 0x450a0a },
-};
-
 export class Module extends Container {
   public data: ModuleData;
   public hp: number;
@@ -94,6 +83,7 @@ export class Module extends Container {
   public rocketCooldownTimer: number = 0;
   public laserCooldownTimer: number = 0;
   public stats: ModuleStats;
+  public shieldRegen: number = 0;
   public slotIndex: number = 0;
   public isDead: boolean = false;
 
@@ -217,7 +207,9 @@ export class Module extends Container {
     if (shieldBonus < 0) shieldBonus = 0;
     const hullBonus = SaveManager.getStatBonus("hull");
     return (
-      Math.round(this.data.maxHp * (1 + (this.level - 1) * 0.4)) + shieldBonus + hullBonus
+      Math.round(this.data.maxHp * (1 + (this.level - 1) * 0.4)) +
+      shieldBonus +
+      hullBonus
     );
   }
 
@@ -519,7 +511,12 @@ export class Module extends Container {
         .stroke({ color: 0x000000, width: 2 });
       // Glowing Energy Core Strip
       this.attachmentsLayer
-        .rect(-offset - barrelW + 2, -barrelLen + 12, barrelW - 4, barrelLen - 6)
+        .rect(
+          -offset - barrelW + 2,
+          -barrelLen + 12,
+          barrelW - 4,
+          barrelLen - 6,
+        )
         .fill(glowCol);
       // Accelerator Magnetic Rings
       for (let ry = -barrelLen + 16; ry < 0; ry += 8) {
@@ -766,8 +763,6 @@ export class Module extends Container {
     return finalDamage;
   }
 
-
-
   heal(amount: number) {
     if (this.isDead) return;
     this.hp = Math.min(this.hp + amount, this.getMaxHp());
@@ -782,11 +777,14 @@ export class Module extends Container {
     if (!this.data.attack) return 1;
     const mgLvl = this.getWeaponLevel("machine_gun");
     const levelBonus = 1 + (mgLvl - 1) * 0.05;
-    let batteryBonus = this.attachments.has("battery") ? 1.15 : 1.0;
+    const batteryBonus = this.attachments.has("battery") ? 1.15 : 1.0;
     const garageSpeedBonus = 1 + SaveManager.getStatBonus("attackSpeed");
     const rawCooldown =
       this.data.attack.cooldown /
-      (levelBonus * batteryBonus * this.stats.attackSpeedMultiplier * garageSpeedBonus);
+      (levelBonus *
+        batteryBonus *
+        this.stats.attackSpeedMultiplier *
+        garageSpeedBonus);
     // Measured rhythm: ensure clear space between bullet rows (never becomes a solid wall)
     return Math.max(0.18, rawCooldown);
   }
@@ -797,7 +795,10 @@ export class Module extends Container {
     const levelMultiplier = 1 + (mgLvl - 1) * 0.15;
     const garageDmgBonus = 1 + SaveManager.getStatBonus("damage");
     return Math.round(
-      this.data.attack.damage * levelMultiplier * this.stats.damageMultiplier * garageDmgBonus,
+      this.data.attack.damage *
+        levelMultiplier *
+        this.stats.damageMultiplier *
+        garageDmgBonus,
     );
   }
 

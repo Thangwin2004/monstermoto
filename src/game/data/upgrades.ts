@@ -65,9 +65,7 @@ export const UpgradeDefinitions: UpgradeDefinition[] = [
     description:
       "Nâng cấp +1 Sao ⭐ cho Tên Lửa: Tăng +40% Sát thương nổ AOE & thêm ống phóng.",
     maxPicks: 4,
-    effects: [
-      { type: "upgrade_module_star", value: 1, moduleId: "rocket" },
-    ],
+    effects: [{ type: "upgrade_module_star", value: 1, moduleId: "rocket" }],
   },
   {
     id: "star_laser",
@@ -294,11 +292,10 @@ export const UpgradeDefinitions: UpgradeDefinition[] = [
     actionType: "stat_boost",
     targetLabel: "⚡ Pháo Laser & Năng Lượng",
     requireTags: ["laser", "energy"],
-    description: "Pháo Laser tăng +60% sát thương và xuyên thấu toàn bộ hàng quái.",
+    description:
+      "Pháo Laser tăng +60% sát thương và xuyên thấu toàn bộ hàng quái.",
     maxPicks: 1,
-    effects: [
-      { type: "multiply_damage", value: 1.6, targetTag: "laser" },
-    ],
+    effects: [{ type: "multiply_damage", value: 1.6, targetTag: "laser" }],
   },
 
   // ── Bị Nguyền (Chỉ xuất hiện đúng 1 lần) ──

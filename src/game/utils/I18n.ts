@@ -225,13 +225,20 @@ const upgradeNamesEnglish: Record<string, string> = {
 
 /** All 24 Upgrade Cards Mapped to English Descriptions */
 const upgradeDescEnglish: Record<string, string> = {
-  star_machine_gun: "Upgrade +1 Star ⭐ for Machine Gun: +15% Damage & extra focused bullet stream.",
-  star_rocket: "Upgrade +1 Star ⭐ for Rocket: +40% AOE Blast Damage & extra pod.",
-  star_laser: "Upgrade +1 Star ⭐ for Laser: +45% Damage, range & beam piercing.",
-  star_shield: "Upgrade +1 Star ⭐ for Shield: +120 Max HP & reinforced deflection.",
-  card_get_rocket: "Equip Rocket Pod Tier 1: Fires explosive homing missiles at distant swarms.",
-  card_get_laser: "Equip Laser Cannon Tier 1: Fires continuous energy beam piercing enemies.",
-  card_get_shield: "Equip Shield Module Tier 1: Grants +150 HP and absorbs collisions.",
+  star_machine_gun:
+    "Upgrade +1 Star ⭐ for Machine Gun: +15% Damage & extra focused bullet stream.",
+  star_rocket:
+    "Upgrade +1 Star ⭐ for Rocket: +40% AOE Blast Damage & extra pod.",
+  star_laser:
+    "Upgrade +1 Star ⭐ for Laser: +45% Damage, range & beam piercing.",
+  star_shield:
+    "Upgrade +1 Star ⭐ for Shield: +120 Max HP & reinforced deflection.",
+  card_get_rocket:
+    "Equip Rocket Pod Tier 1: Fires explosive homing missiles at distant swarms.",
+  card_get_laser:
+    "Equip Laser Cannon Tier 1: Fires continuous energy beam piercing enemies.",
+  card_get_shield:
+    "Equip Shield Module Tier 1: Grants +150 HP and absorbs collisions.",
   card_get_battery: "+35% Attack speed for all Energy weapons.",
   extra_bullet: "Fires +1 extra bullet per shot.",
   sharp_ammo: "Permanently increases all weapons base damage by +4.",
@@ -242,11 +249,13 @@ const upgradeDescEnglish: Record<string, string> = {
   ignite_bullets: "Bullets have a 35% chance to continuously burn enemies.",
   shock_bullets: "Bullets have a 30% chance to shock and slow monsters.",
   critical_hits: "+20% Critical hit chance dealing 2x damage.",
-  explosion_on_kill: "Defeated monsters explode, dealing AOE damage to nearby foes.",
+  explosion_on_kill:
+    "Defeated monsters explode, dealing AOE damage to nearby foes.",
   damage_surge: "Permanently increases entire convoy damage by +50%.",
   shield_regen: "Shield regenerates 6 HP/sec when not taking damage.",
   double_fire: "Machine Gun fires +1 additional focused projectile.",
-  laser_overcharge_master: "Laser Cannon deals +60% damage and pierces through all enemies.",
+  laser_overcharge_master:
+    "Laser Cannon deals +60% damage and pierces through all enemies.",
   berserk_engine: "+80% Attack speed, +40% damage, but costs -30 Max HP.",
 };
 
@@ -298,7 +307,9 @@ export const I18n = {
     return language === "en" ? (garageEnglish[id]?.name ?? fallback) : fallback;
   },
   garageShortDesc(id: string, fallback: string) {
-    return language === "en" ? (garageEnglish[id]?.shortDesc ?? fallback) : fallback;
+    return language === "en"
+      ? (garageEnglish[id]?.shortDesc ?? fallback)
+      : fallback;
   },
   upgradeName(id: string, defaultName: string) {
     if (language !== "en") return defaultName;
@@ -310,7 +321,7 @@ export const I18n = {
         "Súng Máy": "Machine Gun",
         "Tên Lửa": "Rocket Launcher",
         "Pháo Laser": "Laser Cannon",
-        "Khiên": "Energy Shield",
+        Khiên: "Energy Shield",
       };
       const wName = weaponMap[starMatch[1]] || starMatch[1];
       return `⭐ Star Up ${wName} (Tier ${starMatch[2]})`;

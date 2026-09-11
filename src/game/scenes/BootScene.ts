@@ -109,5 +109,7 @@ export class BootScene extends Container implements Scene {
     this.progressFill.fill(0xf59e0b);
   }
 
-  resize(width: number, height: number) {}
+  resize() {
+    // Boot scene uses the fixed virtual canvas dimensions.
+  }
 }

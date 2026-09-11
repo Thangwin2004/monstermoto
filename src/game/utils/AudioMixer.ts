@@ -24,7 +24,13 @@ export class AudioMixer {
     if (this.ctx) return;
     try {
       const AudioCtx =
-        window.AudioContext || (window as any).webkitAudioContext;
+        window.AudioContext ||
+        (
+          window as typeof window & {
+            webkitAudioContext?: typeof AudioContext;
+          }
+        ).webkitAudioContext;
+      if (!AudioCtx) throw new Error("Web Audio API is unavailable");
       this.ctx = new AudioCtx();
 
       this.masterGain = this.ctx.createGain();
@@ -57,17 +63,30 @@ export class AudioMixer {
           this.setVolumes(settings);
         }
       }
-    } catch {}
+    } catch {
+      // Invalid or inaccessible saved settings should not prevent audio startup.
+    }
   }
 
-  static setVolumes(settings: { sfxVolume?: number; bgmVolume?: number; sfxMuted?: boolean; bgmMuted?: boolean }) {
+  static setVolumes(settings: {
+    sfxVolume?: number;
+    bgmVolume?: number;
+    sfxMuted?: boolean;
+    bgmMuted?: boolean;
+  }) {
     if (!this.ctx) return;
-    if (this.bgmGain && (settings.bgmVolume !== undefined || settings.bgmMuted !== undefined)) {
+    if (
+      this.bgmGain &&
+      (settings.bgmVolume !== undefined || settings.bgmMuted !== undefined)
+    ) {
       const isMuted = settings.bgmMuted ?? false;
       const vol = settings.bgmVolume ?? 0.7;
       this.bgmGain.gain.value = isMuted ? 0 : 0.25 * vol;
     }
-    if (this.sfxGain && (settings.sfxVolume !== undefined || settings.sfxMuted !== undefined)) {
+    if (
+      this.sfxGain &&
+      (settings.sfxVolume !== undefined || settings.sfxMuted !== undefined)
+    ) {
       const isMuted = settings.sfxMuted ?? false;
       const vol = settings.sfxVolume ?? 0.8;
       this.sfxGain.gain.value = isMuted ? 0 : 0.85 * vol;
@@ -96,7 +115,9 @@ export class AudioMixer {
       try {
         this.currentBgmSource.stop();
         this.currentBgmSource.disconnect();
-      } catch {}
+      } catch {
+        // The previous source may already have stopped or disconnected.
+      }
     }
 
     try {
@@ -567,7 +588,13 @@ export class AudioMixer {
 
   /** 🎁 Universal Item Pickup Sound Dispatcher */
   static playPickupBuff(
-    type: "buff_rapid" | "buff_shield" | "buff_heal" | "buff_nuke" | "star_upgrade" | string,
+    type:
+      | "buff_rapid"
+      | "buff_shield"
+      | "buff_heal"
+      | "buff_nuke"
+      | "star_upgrade"
+      | string,
   ) {
     if (!this.ctx) this.init();
     switch (type) {
@@ -700,9 +727,11 @@ export class AudioMixer {
   /** Universal SFX Router -> Routes any key to high-fidelity procedural synth */
   static playSFX(
     key: string,
-    _playbackRate: number = 1.0,
-    _volume: number = 1.0,
+    playbackRate: number = 1.0,
+    volume: number = 1.0,
   ) {
+    void playbackRate;
+    void volume;
     if (!this.ctx) this.init();
     switch (key) {
       case "sfx_button":
@@ -774,12 +803,14 @@ export class AudioMixer {
 
   static setMasterVolume(val: number) {
     this.masterVolume = Math.max(0, Math.min(1, val));
-    if (this.masterGain) this.masterGain.gain.value = this.hostMuted ? 0 : this.masterVolume;
+    if (this.masterGain)
+      this.masterGain.gain.value = this.hostMuted ? 0 : this.masterVolume;
   }
 
   static setHostMuted(muted: boolean) {
     this.hostMuted = muted;
-    if (this.masterGain) this.masterGain.gain.value = muted ? 0 : this.masterVolume;
+    if (this.masterGain)
+      this.masterGain.gain.value = muted ? 0 : this.masterVolume;
   }
 
   static resume() {

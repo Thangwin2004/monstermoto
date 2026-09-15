@@ -1,4 +1,27 @@
 import { Container, Graphics } from "pixi.js";
+ 
+export type VectorIconType =
+  | "play"
+  | "gear"
+  | "wrench"
+  | "speaker"
+  | "music"
+  | "vibration"
+  | "lightning"
+  | "home"
+  | "check"
+  | "cross"
+  | "globe"
+  | "flag"
+  | "arrowLeft"
+  | "trash"
+  | "star"
+  | "crosshair"
+  | "road"
+  | "bolt"
+  | "coin"
+  | "clock"
+  | "trophy";
 
 /**
  * VectorIcons: Procedurally renders crisp, scalable, high-resolution vector icons
@@ -362,6 +385,189 @@ export class VectorIcons {
   }
 
   /**
+   * Draw 5-pointed Star icon (centered at 0, 0)
+   */
+  public static drawStar(
+    g: Graphics,
+    size: number = 24,
+    color: number = 0xffffff,
+  ) {
+    const r = size * 0.5;
+    const innerR = r * 0.42;
+    const points: number[] = [];
+    for (let i = 0; i < 10; i++) {
+      const a = (i * Math.PI) / 5 - Math.PI / 2;
+      const rad = i % 2 === 0 ? r : innerR;
+      points.push(Math.cos(a) * rad, Math.sin(a) * rad);
+    }
+    g.poly(points).fill(color);
+  }
+
+  /**
+   * Draw Crosshair / Combat Target icon (centered at 0, 0)
+   */
+  public static drawCrosshair(
+    g: Graphics,
+    size: number = 24,
+    color: number = 0xffffff,
+  ) {
+    const r = size * 0.44;
+    const lineW = Math.max(2, size * 0.1);
+    g.circle(0, 0, r).stroke({ color, width: lineW });
+    g.circle(0, 0, r * 0.22).fill(color);
+    g.moveTo(-size * 0.5, 0)
+      .lineTo(-r * 0.45, 0)
+      .stroke({ color, width: lineW });
+    g.moveTo(r * 0.45, 0)
+      .lineTo(size * 0.5, 0)
+      .stroke({ color, width: lineW });
+    g.moveTo(0, -size * 0.5)
+      .lineTo(0, -r * 0.45)
+      .stroke({ color, width: lineW });
+    g.moveTo(0, r * 0.45)
+      .lineTo(0, size * 0.5)
+      .stroke({ color, width: lineW });
+  }
+
+  /**
+   * Draw Road / Distance Highway icon (centered at 0, 0)
+   */
+  public static drawRoad(
+    g: Graphics,
+    size: number = 24,
+    color: number = 0xffffff,
+  ) {
+    const s = size * 0.5;
+    const lineW = Math.max(2, size * 0.12);
+    // Left border
+    g.poly([-s * 0.25, -s * 0.85, -s * 0.8, s * 0.85]).stroke({
+      color,
+      width: lineW,
+      cap: "round",
+    });
+    // Right border
+    g.poly([s * 0.25, -s * 0.85, s * 0.8, s * 0.85]).stroke({
+      color,
+      width: lineW,
+      cap: "round",
+    });
+    // Center dashes
+    g.poly([0, -s * 0.65, 0, -s * 0.22]).stroke({
+      color,
+      width: lineW,
+      cap: "round",
+    });
+    g.poly([0, 0.12 * s, 0, s * 0.65]).stroke({
+      color,
+      width: lineW,
+      cap: "round",
+    });
+  }
+
+  /**
+   * Draw Hexagonal Scrap Bolt icon (centered at 0, 0)
+   */
+  public static drawBolt(
+    g: Graphics,
+    size: number = 24,
+    color: number = 0xffffff,
+    holeColor: number = 0x059669,
+  ) {
+    const r = size * 0.5;
+    const points: number[] = [];
+    for (let i = 0; i < 6; i++) {
+      const a = (i * Math.PI) / 3;
+      points.push(Math.cos(a) * r, Math.sin(a) * r);
+    }
+    g.poly(points).fill(color);
+    g.circle(0, 0, r * 0.45).fill(holeColor);
+  }
+
+  /**
+   * Draw Coin / Scrap Currency icon (centered at 0, 0)
+   */
+  public static drawCoin(
+    g: Graphics,
+    size: number = 24,
+    color: number = 0xffffff,
+    innerColor: number = 0xb45309,
+  ) {
+    const r = size * 0.48;
+    g.circle(0, 0, r).fill(color);
+    g.circle(0, 0, r * 0.72).stroke({
+      color: innerColor,
+      width: Math.max(1.8, size * 0.09),
+    });
+    g.circle(0, 0, r * 0.25).fill(innerColor);
+  }
+
+  /**
+   * Draw Analog Clock / Timer icon (centered at 0, 0)
+   */
+  public static drawClock(
+    g: Graphics,
+    size: number = 24,
+    color: number = 0xffffff,
+  ) {
+    const r = size * 0.46;
+    const lineW = Math.max(2, size * 0.1);
+    g.circle(0, 0, r).stroke({ color, width: lineW });
+    g.circle(0, 0, r * 0.2).fill(color);
+    // Hour hand
+    g.poly([0, 0, 0, -r * 0.55]).stroke({
+      color,
+      width: lineW,
+      cap: "round",
+    });
+    // Minute hand
+    g.poly([0, 0, r * 0.48, -r * 0.1]).stroke({
+      color,
+      width: lineW,
+      cap: "round",
+    });
+  }
+
+  /**
+   * Draw Trophy / Championship Cup icon (centered at 0, 0)
+   */
+  public static drawTrophy(
+    g: Graphics,
+    size: number = 24,
+    color: number = 0xffffff,
+  ) {
+    const s = size * 0.5;
+    // Cup bowl
+    g.poly([
+      -s * 0.65,
+      -s * 0.75,
+      s * 0.65,
+      -s * 0.75,
+      s * 0.5,
+      s * 0.05,
+      0,
+      s * 0.35,
+      -s * 0.5,
+      s * 0.05,
+    ]).fill(color);
+    // Stem
+    g.rect(-s * 0.16, s * 0.3, s * 0.32, s * 0.3).fill(color);
+    // Base
+    g.roundRect(-s * 0.55, s * 0.6, s * 1.1, s * 0.25, 2).fill(color);
+    // Left handle
+    g.arc(-s * 0.5, -s * 0.35, s * 0.26, Math.PI * 0.6, Math.PI * 1.5).stroke({
+      color,
+      width: Math.max(2, size * 0.09),
+      cap: "round",
+    });
+    // Right handle
+    g.arc(s * 0.5, -s * 0.35, s * 0.26, -Math.PI * 0.5, Math.PI * 0.4).stroke({
+      color,
+      width: Math.max(2, size * 0.09),
+      cap: "round",
+    });
+  }
+
+  /**
    * Create a standalone Container containing any vector icon
    */
   public static createIcon(
@@ -379,7 +585,14 @@ export class VectorIcons {
       | "globe"
       | "flag"
       | "arrowLeft"
-      | "trash",
+      | "trash"
+      | "star"
+      | "crosshair"
+      | "road"
+      | "bolt"
+      | "coin"
+      | "clock"
+      | "trophy",
     size: number = 24,
     color: number = 0xffffff,
   ): Container {
@@ -427,6 +640,27 @@ export class VectorIcons {
         break;
       case "trash":
         this.drawTrash(g, size, color);
+        break;
+      case "star":
+        this.drawStar(g, size, color);
+        break;
+      case "crosshair":
+        this.drawCrosshair(g, size, color);
+        break;
+      case "road":
+        this.drawRoad(g, size, color);
+        break;
+      case "bolt":
+        this.drawBolt(g, size, color);
+        break;
+      case "coin":
+        this.drawCoin(g, size, color);
+        break;
+      case "clock":
+        this.drawClock(g, size, color);
+        break;
+      case "trophy":
+        this.drawTrophy(g, size, color);
         break;
     }
     cont.addChild(g);

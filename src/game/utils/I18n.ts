@@ -98,7 +98,9 @@ const messages: Record<Language, Record<string, string>> = {
     "stats.scrapTotal": "Tổng phế liệu ví",
     "stats.time": "Thời gian sinh tồn",
     "stats.score": "ĐIỂM",
+    "stats.scoreTitle": "ĐIỂM CHIẾN DỊCH",
     "stats.best": "KỶ LỤC",
+    "stats.newRecord": "KỶ LỤC MỚI!",
   },
   en: {
     "menu.title": "MONSTER\nCONVOY",
@@ -193,7 +195,9 @@ const messages: Record<Language, Record<string, string>> = {
     "stats.scrapTotal": "Wallet scrap",
     "stats.time": "Survival time",
     "stats.score": "SCORE",
+    "stats.scoreTitle": "CAMPAIGN SCORE",
     "stats.best": "BEST",
+    "stats.newRecord": "NEW RECORD!",
   },
 };
 

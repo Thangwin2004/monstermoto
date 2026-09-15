@@ -1,22 +1,7 @@
 import { Container, Graphics, Text } from "pixi.js";
 import { AudioMixer } from "../utils/AudioMixer";
-import { VectorIcons } from "./VectorIcons";
-
-export type VectorIconType =
-  | "play"
-  | "gear"
-  | "wrench"
-  | "speaker"
-  | "music"
-  | "vibration"
-  | "lightning"
-  | "home"
-  | "check"
-  | "cross"
-  | "globe"
-  | "flag"
-  | "arrowLeft"
-  | "trash";
+import { VectorIcons, type VectorIconType } from "./VectorIcons";
+export type { VectorIconType };
 
 export interface HyperButtonOptions {
   label: string;

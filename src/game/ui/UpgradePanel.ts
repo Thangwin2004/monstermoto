@@ -105,8 +105,8 @@ export class UpgradePanel extends Container {
   }
 
   private initDialogBase() {
-    const cardW = 630;
-    const cardH = 880; // Compact, perfectly proportioned to eliminate bottom dead space
+    const cardW = 636;
+    const cardH = 840; // Harmoniously proportioned to eliminate bottom dead space and prevent crowding
 
     // 1. Soft Card Shadow
     this.cardShadow = new Graphics();
@@ -172,18 +172,18 @@ export class UpgradePanel extends Container {
     this.titleText.y = ribbonY + ribbonH / 2 - 2;
     this.modalContainer.addChild(this.titleText);
 
-    // Subtitle
+    // Subtitle (Generously cleared below ribbon, not overlapping!)
     this.subText = new Text({
       text: I18n.t("upgrade.subtitle"),
       style: {
         fontFamily: "Be Vietnam Pro, sans-serif",
-        fontSize: 18,
+        fontSize: 16,
         fontWeight: "700",
         fill: 0x64748b,
       },
     });
     this.subText.anchor.set(0.5);
-    this.subText.y = -cardH / 2 + 64;
+    this.subText.y = -cardH / 2 + 82;
     this.modalContainer.addChild(this.subText);
   }
 
@@ -215,10 +215,10 @@ export class UpgradePanel extends Container {
 
     this.updateLayout();
 
-    const cardW = 580;
-    const cardH = 224;
-    const startY = -240;
-    const gap = 240;
+    const cardW = 576;
+    const cardH = 216;
+    const startY = -199;
+    const gap = 238;
 
     for (let i = 0; i < upgrades.length; i++) {
       const upgrade = upgrades[i];
@@ -235,21 +235,21 @@ export class UpgradePanel extends Container {
       // 1. 3D Card Shadow Base
       const shadow = new Graphics();
       shadow
-        .roundRect(-cardW / 2, -cardH / 2 + 6, cardW, cardH, 20)
+        .roundRect(-cardW / 2, -cardH / 2 + 5, cardW, cardH, 18)
         .fill(theme.shadow);
       optBtn.addChildAt(shadow, 0);
 
       // 2. Bright Card Body (Vibrant Tinted Face)
       const body = new Graphics();
       body
-        .roundRect(-cardW / 2, -cardH / 2, cardW, cardH, 20)
+        .roundRect(-cardW / 2, -cardH / 2, cardW, cardH, 18)
         .fill(theme.cardFace)
         .stroke({ color: theme.border, width: 3.5 });
 
-      // Gloss sheen on top
+      // Subtle top highlight (thin glossy rim, NOT a giant opaque box!)
       body
-        .roundRect(-cardW / 2 + 8, -cardH / 2 + 6, cardW - 16, 44, 14)
-        .fill({ color: 0xffffff, alpha: 0.65 });
+        .roundRect(-cardW / 2 + 6, -cardH / 2 + 4, cardW - 12, 24, 10)
+        .fill({ color: 0xffffff, alpha: 0.25 });
       content.addChild(body);
 
       // 3. Row 1: Rarity Badge + Action Type Badge side-by-side
@@ -258,44 +258,44 @@ export class UpgradePanel extends Container {
         text: rarityStr,
         style: {
           fontFamily: "Be Vietnam Pro, sans-serif",
-          fontSize: 15,
+          fontSize: 14,
           fontWeight: "900",
           fill: 0xffffff,
         },
       });
-      const rarityW = Math.max(94, rarityText.width + 24);
-      const badgeH = 30;
+      const rarityW = Math.max(84, rarityText.width + 18);
+      const badgeH = 26;
       const row1Y = -cardH / 2 + 14;
 
       const rarityBadge = new Graphics();
       rarityBadge
-        .roundRect(-cardW / 2 + 16, row1Y, rarityW, badgeH, 15)
+        .roundRect(-cardW / 2 + 18, row1Y, rarityW, badgeH, 13)
         .fill(theme.bg)
         .stroke({ color: 0xffffff, width: 1.5 });
       content.addChild(rarityBadge);
 
       rarityText.anchor.set(0.5);
-      rarityText.x = -cardW / 2 + 16 + rarityW / 2;
+      rarityText.x = -cardW / 2 + 18 + rarityW / 2;
       rarityText.y = row1Y + badgeH / 2;
       content.addChild(rarityText);
 
-      // Action Badge (Lên Sao / Nâng Chỉ Số / Vũ Khí Mới)
+      // Action Badge (Lên Sao / Nâng Cấp / Vũ Khí Mới)
       const actionStr = I18n.action(upgrade.actionType, actionInfo.text);
       const actionText = new Text({
         text: actionStr,
         style: {
           fontFamily: "Be Vietnam Pro, sans-serif",
-          fontSize: 15,
+          fontSize: 14,
           fontWeight: "900",
           fill: actionInfo.color,
         },
       });
-      const actionW = Math.max(126, actionText.width + 24);
-      const actionX = -cardW / 2 + 16 + rarityW + 10;
+      const actionW = Math.max(104, actionText.width + 18);
+      const actionX = -cardW / 2 + 18 + rarityW + 10;
 
       const actionBadge = new Graphics();
       actionBadge
-        .roundRect(actionX, row1Y, actionW, badgeH, 15)
+        .roundRect(actionX, row1Y, actionW, badgeH, 13)
         .fill(actionInfo.bg)
         .stroke({ color: theme.border, width: 1.5 });
       content.addChild(actionBadge);
@@ -305,30 +305,12 @@ export class UpgradePanel extends Container {
       actionText.y = row1Y + badgeH / 2;
       content.addChild(actionText);
 
-      // 4. Row 2: Target Scope on its OWN independent line (No overlap possible!)
-      const targetStr = I18n.upgradeTarget(upgrade.targetLabel);
-      const scopeText = new Text({
-        text: I18n.t("upgrade.scope", { value: targetStr }),
-        style: {
-          fontFamily: "Be Vietnam Pro, sans-serif",
-          fontSize: 17,
-          fontWeight: "900",
-          fill: theme.textCol,
-          wordWrap: true,
-          wordWrapWidth: cardW - 36,
-        },
-      });
-      scopeText.anchor.set(0, 0.5);
-      scopeText.x = -cardW / 2 + 18;
-      scopeText.y = -cardH / 2 + 60;
-      content.addChild(scopeText);
-
-      // 5. Row 3: Upgrade Name
+      // 4. Row 2: Upgrade Name (Card Title - large, bold, spacious)
       const nameText = new Text({
         text: I18n.upgradeName(upgrade.id, upgrade.name),
         style: {
           fontFamily: "Be Vietnam Pro, sans-serif",
-          fontSize: 27,
+          fontSize: 23,
           fontWeight: "900",
           fill: 0x0f172a,
           wordWrap: true,
@@ -337,40 +319,65 @@ export class UpgradePanel extends Container {
       });
       nameText.anchor.set(0, 0.5);
       nameText.x = -cardW / 2 + 18;
-      nameText.y = -cardH / 2 + 96;
+      nameText.y = -cardH / 2 + 66;
       content.addChild(nameText);
 
-      // 6. Row 4: Description Text
+      // 5. Row 3: Target Scope
+      const targetStr = I18n.upgradeTarget(upgrade.targetLabel);
+      const scopeText = new Text({
+        text: I18n.t("upgrade.scope", { value: targetStr }),
+        style: {
+          fontFamily: "Be Vietnam Pro, sans-serif",
+          fontSize: 15,
+          fontWeight: "800",
+          fill: theme.textCol,
+          wordWrap: true,
+          wordWrapWidth: cardW - 36,
+        },
+      });
+      scopeText.anchor.set(0, 0.5);
+      scopeText.x = -cardW / 2 + 18;
+      scopeText.y = -cardH / 2 + 96;
+      content.addChild(scopeText);
+
+      // Subtle horizontal divider line between header and description
+      const divider = new Graphics();
+      divider
+        .roundRect(-cardW / 2 + 18, -cardH / 2 + 114, cardW - 36, 1.5, 1)
+        .fill({ color: theme.border, alpha: 0.35 });
+      content.addChild(divider);
+
+      // 6. Row 4: Description Text (Comfortable reading with generous line height and margins)
       const descText = new Text({
         text: I18n.upgradeDesc(upgrade.id, upgrade.description),
         style: {
           fontFamily: "Be Vietnam Pro, sans-serif",
-          fontSize: 19,
+          fontSize: 16,
           fontWeight: "600",
           fill: 0x334155,
           wordWrap: true,
           wordWrapWidth: cardW - 36,
-          lineHeight: 26,
+          lineHeight: 23,
         },
       });
       descText.anchor.set(0, 0);
       descText.x = -cardW / 2 + 18;
-      descText.y = -cardH / 2 + 128;
+      descText.y = -cardH / 2 + 126;
       content.addChild(descText);
 
-      // 7. Interactive Hover & Touch (The entire card acts as a juicy button)
+      // 7. Interactive Hover & Touch (Tactile micro-interaction without clipping neighboring cards)
       optBtn.eventMode = "static";
       optBtn.cursor = "pointer";
 
       optBtn.on("pointerover", () => {
-        optBtn.scale.set(1.03);
+        optBtn.scale.set(1.015);
       });
       optBtn.on("pointerout", () => {
         optBtn.scale.set(1);
         content.y = 0;
       });
       optBtn.on("pointerdown", () => {
-        content.y = 4;
+        content.y = 3;
         AudioMixer.playSFX("sfx_button");
       });
       optBtn.on("pointerup", () => {

@@ -28,14 +28,29 @@ installInteractionGuard();
 
   const app = new Application();
 
+  const isMobileDevice =
+    /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+      navigator.userAgent,
+    ) || (window.matchMedia && window.matchMedia("(pointer: coarse)").matches);
+
+  // Resolution policy:
+  // Desktop: minimum 2x supersampling, up to 2.5x
+  // Mobile: maximum 2x (never 3x, to prevent massive 40MB framebuffers that trigger mobile browser watchdog kills)
+  const appResolution = isMobileDevice
+    ? Math.min(window.devicePixelRatio || 1, 2)
+    : Math.min(Math.max(window.devicePixelRatio || 1, 2), 2.5);
+
   await app.init({
     width: GAME_WIDTH,
     height: GAME_HEIGHT,
     backgroundColor: "#111111",
-    resolution: Math.min(Math.max(window.devicePixelRatio || 1, 2), 3),
+    resolution: appResolution,
     autoDensity: true,
     antialias: true,
     roundPixels: true,
+    gcActive: true,
+    gcFrequency: 5000,
+    gcMaxUnusedTime: 10000,
   });
 
   const container = document.getElementById("pixi-container")!;

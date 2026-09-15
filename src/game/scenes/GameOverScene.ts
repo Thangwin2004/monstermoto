@@ -23,8 +23,8 @@ export class GameOverScene extends Container implements Scene {
   private activeModal:
     (Container & { resize?(w: number, h: number): void }) | null = null;
 
-  private readonly cardW = 600;
-  private readonly cardH = 580;
+  private readonly cardW = 636;
+  private readonly cardH = 750;
 
   constructor() {
     super();
@@ -140,10 +140,10 @@ export class GameOverScene extends Container implements Scene {
       .fill({ color: 0xffffff, alpha: 0.22 });
     this.modalContainer.addChild(glossRim);
 
-    // Floating 3D Title Ribbon
-    const ribbonW = 420;
-    const ribbonH = 76;
-    const ribbonY = -this.cardH / 2;
+    // Floating 3D Title Ribbon (Stretched out, majestic)
+    const ribbonW = 460;
+    const ribbonH = 86;
+    const ribbonY = -this.cardH / 2 - 12;
     const ribbonColor = isVictory ? 0x22c55e : 0xef4444;
     const ribbonShadow = isVictory ? 0x15803d : 0x991b1b;
 
@@ -172,7 +172,7 @@ export class GameOverScene extends Container implements Scene {
       roundPixels: true,
       style: {
         fontFamily: "Be Vietnam Pro, sans-serif",
-        fontSize: 34,
+        fontSize: 36,
         fontWeight: "900",
         fill: 0xffffff,
         dropShadow: {
@@ -196,9 +196,9 @@ export class GameOverScene extends Container implements Scene {
     this.playAgainBtn = new HyperButton({
       label: I18n.t("gameover.replay"),
       vectorIcon: "play",
-      width: 420,
-      height: 78,
-      fontSize: 26,
+      width: 480,
+      height: 86,
+      fontSize: 28,
       color: 0xf59e0b,
       shadowColor: 0xb45309,
       pulse: true,
@@ -211,8 +211,8 @@ export class GameOverScene extends Container implements Scene {
     this.garageBtn = new HyperButton({
       label: I18n.t("gameover.upgrade"),
       vectorIcon: "wrench",
-      width: 210,
-      height: 66,
+      width: 236,
+      height: 72,
       fontSize: 20,
       color: 0x10b981,
       shadowColor: 0x047857,
@@ -234,8 +234,8 @@ export class GameOverScene extends Container implements Scene {
     this.menuBtn = new HyperButton({
       label: I18n.t("gameover.home"),
       vectorIcon: "home",
-      width: 210,
-      height: 66,
+      width: 236,
+      height: 72,
       fontSize: 20,
       color: 0x0ea5e9,
       shadowColor: 0x0369a1,
@@ -274,10 +274,10 @@ export class GameOverScene extends Container implements Scene {
       }
     }
 
-    // ─── Deluxe Hero Score Showcase (Completely below ribbon: ribbon ends at -214, score starts at -190) ───
-    const scoreBoxY = -144;
-    const scoreBoxW = 552;
-    const scoreBoxH = 92;
+    // ─── Deluxe Hero Score Showcase (Spacious, prominent 118px box) ───
+    const scoreBoxY = -211;
+    const scoreBoxW = 580;
+    const scoreBoxH = 118;
 
     const scoreBoxBg = new Graphics();
     scoreBoxBg.label = statTag;
@@ -287,7 +287,7 @@ export class GameOverScene extends Container implements Scene {
         scoreBoxY - scoreBoxH / 2,
         scoreBoxW,
         scoreBoxH,
-        16,
+        18,
       )
       .fill(0x0f172a)
       .stroke({
@@ -297,9 +297,9 @@ export class GameOverScene extends Container implements Scene {
     this.modalContainer.addChild(scoreBoxBg);
 
     // Score Header Row (Icon + Label on left, Record Badge on right)
-    const scoreHeaderY = scoreBoxY - 22;
+    const scoreHeaderY = scoreBoxY - 26;
 
-    const trophyIcon = VectorIcons.createIcon("trophy", 16, 0xfacc15);
+    const trophyIcon = VectorIcons.createIcon("trophy", 18, 0xfacc15);
     trophyIcon.label = statTag;
     trophyIcon.x = -scoreBoxW / 2 + 24;
     trophyIcon.y = scoreHeaderY;
@@ -311,7 +311,7 @@ export class GameOverScene extends Container implements Scene {
       roundPixels: true,
       style: {
         fontFamily: "Be Vietnam Pro, sans-serif",
-        fontSize: 15,
+        fontSize: 16,
         fontWeight: "800",
         fill: 0x94a3b8,
         letterSpacing: 1.2,
@@ -319,7 +319,7 @@ export class GameOverScene extends Container implements Scene {
     });
     scoreTitleText.label = statTag;
     scoreTitleText.anchor.set(0, 0.5);
-    scoreTitleText.x = -scoreBoxW / 2 + 40;
+    scoreTitleText.x = -scoreBoxW / 2 + 46;
     scoreTitleText.y = scoreHeaderY;
     this.modalContainer.addChild(scoreTitleText);
 
@@ -327,7 +327,7 @@ export class GameOverScene extends Container implements Scene {
       const recordPill = new Graphics();
       recordPill.label = statTag;
       recordPill
-        .roundRect(scoreBoxW / 2 - 160, scoreHeaderY - 13, 144, 26, 13)
+        .roundRect(scoreBoxW / 2 - 170, scoreHeaderY - 14, 154, 28, 14)
         .fill(0xfef08a)
         .stroke({ color: 0xf59e0b, width: 1.5 });
       this.modalContainer.addChild(recordPill);
@@ -338,14 +338,14 @@ export class GameOverScene extends Container implements Scene {
         roundPixels: true,
         style: {
           fontFamily: "Be Vietnam Pro, sans-serif",
-          fontSize: 13,
+          fontSize: 14,
           fontWeight: "900",
           fill: 0xb45309,
         },
       });
       recordText.label = statTag;
       recordText.anchor.set(0.5);
-      recordText.x = scoreBoxW / 2 - 88;
+      recordText.x = scoreBoxW / 2 - 93;
       recordText.y = scoreHeaderY;
       this.modalContainer.addChild(recordText);
     } else {
@@ -355,7 +355,7 @@ export class GameOverScene extends Container implements Scene {
         roundPixels: true,
         style: {
           fontFamily: "Be Vietnam Pro, sans-serif",
-          fontSize: 14,
+          fontSize: 15,
           fontWeight: "800",
           fill: 0x38bdf8,
         },
@@ -374,13 +374,13 @@ export class GameOverScene extends Container implements Scene {
       roundPixels: true,
       style: {
         fontFamily: "Be Vietnam Pro, sans-serif",
-        fontSize: 42,
+        fontSize: 54,
         fontWeight: "900",
         fill: 0xfacc15,
         dropShadow: {
           color: 0x78350f,
           blur: 0,
-          distance: 3,
+          distance: 3.5,
           angle: Math.PI / 2,
         },
         stroke: { color: 0x78350f, width: 2 },
@@ -390,7 +390,7 @@ export class GameOverScene extends Container implements Scene {
     scoreValText.label = statTag;
     scoreValText.anchor.set(0.5);
     scoreValText.x = 0;
-    scoreValText.y = scoreBoxY + 17;
+    scoreValText.y = scoreBoxY + 20;
     this.modalContainer.addChild(scoreValText);
 
     // ─── 6 Enlarged Stats Rows with Crisp Vector Icon Pills ───
@@ -441,11 +441,11 @@ export class GameOverScene extends Container implements Scene {
       },
     ];
 
-    // Starts at -53 (22px below scoreBox bottom which is at -98)
-    const startY = -53;
-    const rowStep = 56;
-    const rowW = 552;
-    const rowH = 46;
+    // Starts at -96 with spacious 74px row steps
+    const startY = -96;
+    const rowStep = 74;
+    const rowW = 580;
+    const rowH = 60;
 
     for (let i = 0; i < stats.length; i++) {
       const s = stats[i];
@@ -455,7 +455,7 @@ export class GameOverScene extends Container implements Scene {
       const rowBg = new Graphics();
       rowBg.label = statTag;
       rowBg
-        .roundRect(-rowW / 2, y - rowH / 2, rowW, rowH, 13)
+        .roundRect(-rowW / 2, y - rowH / 2, rowW, rowH, 16)
         .fill(s.isHighlight ? 0xfef9c3 : i % 2 === 0 ? 0xffffff : 0xf1f5f9)
         .stroke({
           color: s.isHighlight ? 0xfacc15 : 0xe2e8f0,
@@ -467,13 +467,13 @@ export class GameOverScene extends Container implements Scene {
       const iconPill = new Graphics();
       iconPill.label = statTag;
       iconPill
-        .roundRect(-rowW / 2 + 10, y - 17, 34, 34, 9)
+        .roundRect(-rowW / 2 + 10, y - 19, 38, 38, 11)
         .fill(s.pillColor);
       this.modalContainer.addChild(iconPill);
 
-      const icon = VectorIcons.createIcon(s.vectorIcon, 18, 0xffffff);
+      const icon = VectorIcons.createIcon(s.vectorIcon, 22, 0xffffff);
       icon.label = statTag;
-      icon.x = -rowW / 2 + 27;
+      icon.x = -rowW / 2 + 29;
       icon.y = y;
       this.modalContainer.addChild(icon);
 
@@ -484,14 +484,14 @@ export class GameOverScene extends Container implements Scene {
         roundPixels: true,
         style: {
           fontFamily: "Be Vietnam Pro, sans-serif",
-          fontSize: 19,
+          fontSize: 21,
           fontWeight: "800",
           fill: s.isHighlight ? 0x78350f : 0x334155,
         },
       });
       labelText.label = statTag;
       labelText.anchor.set(0, 0.5);
-      labelText.x = -rowW / 2 + 56;
+      labelText.x = -rowW / 2 + 60;
       labelText.y = y;
       this.modalContainer.addChild(labelText);
 
@@ -502,14 +502,14 @@ export class GameOverScene extends Container implements Scene {
         roundPixels: true,
         style: {
           fontFamily: "Be Vietnam Pro, sans-serif",
-          fontSize: 22,
+          fontSize: 25,
           fontWeight: "900",
           fill: s.isHighlight ? 0xb45309 : 0x0f172a,
         },
       });
       valText.label = statTag;
       valText.anchor.set(1, 0.5);
-      valText.x = rowW / 2 - 18;
+      valText.x = rowW / 2 - 20;
       valText.y = y;
       this.modalContainer.addChild(valText);
     }
@@ -518,31 +518,39 @@ export class GameOverScene extends Container implements Scene {
   private applyLayout(height: number) {
     this.currentHeight = height;
 
-    // Fixed 1.0 scale: Never downscale the container to avoid raster blur / jagged artifacts
+    // Fixed 1.0 scale: 100% native vector crispness
     this.modalContainer.scale.set(1.0);
     this.playAgainBtn.scale.set(1.0);
     this.garageBtn.scale.set(1.0);
     this.menuBtn.scale.set(1.0);
 
-    // Card 580 + gap 36 + playAgain 78 + gap 30 + secondary 66 = 790
-    const totalBlockH = 790;
-    const topSafe = 80;
+    const playAgainH = 86;
+    const secondaryH = 72;
+
+    // Dynamically stretch gaps when screen is tall to utilize generous screen area
+    const extraH = Math.max(0, height - 1280);
+    const gap1 = Math.round(44 + Math.min(26, extraH * 0.12)); // 44px -> 70px
+    const gap2 = Math.round(32 + Math.min(20, extraH * 0.08)); // 32px -> 52px
+
+    const totalBlockH = this.cardH + gap1 + playAgainH + gap2 + secondaryH;
+    const topSafe = 76;
     const startGroupY = Math.max(topSafe + 16, Math.round((height - totalBlockH) / 2));
 
     // Card center Y
     this.modalContainer.y = startGroupY + Math.round(this.cardH / 2);
 
-    // Button Row 1 (Play Again): 36px gap below card bottom
+    // Button Row 1 (Play Again): gap1 below card bottom
     this.playAgainBtn.x = GAME_WIDTH / 2;
     this.playAgainBtn.y =
-      this.modalContainer.y + Math.round(this.cardH / 2 + 36 + 39);
+      this.modalContainer.y + Math.round(this.cardH / 2 + gap1 + playAgainH / 2);
 
-    // Button Row 2 (Garage & Home side-by-side): 30px gap below Play Again
-    const secondaryY = this.playAgainBtn.y + (39 + 30 + 33);
-    this.garageBtn.x = GAME_WIDTH / 2 - 120;
+    // Button Row 2 (Garage & Home side-by-side): gap2 below Play Again
+    const secondaryY =
+      this.playAgainBtn.y + Math.round(playAgainH / 2 + gap2 + secondaryH / 2);
+    this.garageBtn.x = GAME_WIDTH / 2 - 132;
     this.garageBtn.y = secondaryY;
 
-    this.menuBtn.x = GAME_WIDTH / 2 + 120;
+    this.menuBtn.x = GAME_WIDTH / 2 + 132;
     this.menuBtn.y = secondaryY;
   }
 

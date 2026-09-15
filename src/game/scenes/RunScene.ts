@@ -132,6 +132,18 @@ export class RunScene extends Container implements Scene {
         },
         true,
         this.currentHeight,
+        () => {
+          this.activeSettingsModal = null;
+          this.gameLayer.filters = [];
+          this.hud.filters = [];
+          this.isPaused = false;
+          EventBus.emit("run:ended", {
+            victory: false,
+            distance: this.distanceMeters,
+            kills: this.lootSystem.totalKills,
+            score: RunState.current.getScore(),
+          });
+        },
       );
       this.activeSettingsModal = modal;
       this.uiLayer.addChild(modal);

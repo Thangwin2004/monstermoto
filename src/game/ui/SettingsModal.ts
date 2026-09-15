@@ -16,12 +16,20 @@ export class SettingsModal extends Container {
   private onCloseCallback: () => void;
   private isInGame: boolean;
   private resetConfirm?: Container;
+  private giveUpConfirm?: Container;
+  private onGiveUpCallback?: () => void;
   private modalHeight: number;
 
-  constructor(onClose: () => void, isInGame = false, customHeight?: number) {
+  constructor(
+    onClose: () => void,
+    isInGame = false,
+    customHeight?: number,
+    onGiveUp?: () => void,
+  ) {
     super();
     this.onCloseCallback = onClose;
     this.isInGame = isInGame;
+    this.onGiveUpCallback = onGiveUp;
     const virtualH = SceneManager.getVirtualSize?.()?.height ?? GAME_HEIGHT;
     this.modalHeight = Math.max(GAME_HEIGHT, virtualH, customHeight ?? 0);
 
@@ -45,7 +53,7 @@ export class SettingsModal extends Container {
     this.addChild(this.modalContainer);
 
     const cardW = 636;
-    const cardH = this.isInGame ? 520 : 700;
+    const cardH = 650;
 
     // Soft Card Shadow
     const cardShadow = new Graphics();
@@ -136,7 +144,7 @@ export class SettingsModal extends Container {
 
     // 5. Settings Content Rows Container
     this.contentContainer = new Container();
-    this.contentContainer.y = -cardH / 2 + 82;
+    this.contentContainer.y = -cardH / 2 + 76;
     this.modalContainer.addChild(this.contentContainer);
 
     this.renderSettings();
@@ -195,20 +203,6 @@ export class SettingsModal extends Container {
         },
       },
       {
-        id: "shake",
-        label: I18n.t("settings.shake"),
-        iconType: "vibration",
-        iconColor: 0xf97316,
-        pillColor: 0xffedd5,
-        enabled: settings.screenShake,
-        onToggle: () => {
-          const next = !settings.screenShake;
-          SaveManager.updateSettings({ screenShake: next });
-          EventBus.emit("settings:changed", { screenShake: next });
-          this.renderSettings();
-        },
-      },
-      {
         id: "particles",
         label: I18n.t("settings.particles"),
         iconType: "lightning",
@@ -222,15 +216,28 @@ export class SettingsModal extends Container {
           this.renderSettings();
         },
       },
+      {
+        id: "shake",
+        label: I18n.t("settings.shake"),
+        iconType: "vibration",
+        iconColor: 0xf97316,
+        pillColor: 0xffedd5,
+        enabled: settings.screenShake,
+        onToggle: () => {
+          const next = !settings.screenShake;
+          SaveManager.updateSettings({ screenShake: next });
+          EventBus.emit("settings:changed", { screenShake: next });
+          this.renderSettings();
+        },
+      },
     ];
 
-    const rows = allRows.filter(
-      (row) => !this.isInGame || row.id !== "particles",
-    );
+    // Always show all settings rows (both in menu and in-game)
+    const rows = allRows;
 
     const rowCardW = 560;
-    const rowCardH = 80;
-    const rowGap = 20;
+    const rowCardH = 74;
+    const rowGap = 14;
     const rowH = rowCardH + rowGap;
 
     for (let i = 0; i < rows.length; i++) {
@@ -248,31 +255,31 @@ export class SettingsModal extends Container {
       // Icon Pill with Vector Icon
       const iconPill = new Graphics();
       iconPill
-        .circle(-rowCardW / 2 + 44, rowY + rowCardH / 2, 27)
+        .circle(-rowCardW / 2 + 42, rowY + rowCardH / 2, 25)
         .fill(r.enabled ? r.pillColor : 0xf1f5f9);
       this.contentContainer.addChild(iconPill);
 
       const vectorIcon = VectorIcons.createIcon(
         r.iconType,
-        30,
+        28,
         r.enabled ? r.iconColor : 0x94a3b8,
       );
-      vectorIcon.x = -rowCardW / 2 + 44;
+      vectorIcon.x = -rowCardW / 2 + 42;
       vectorIcon.y = rowY + rowCardH / 2;
       this.contentContainer.addChild(vectorIcon);
 
-      // Main Label Text (Enlarged to 25px, vertically centered, bold & clean)
+      // Main Label Text (Enlarged to 24px, vertically centered, bold & clean)
       const label = new Text({
         text: r.label,
         style: {
           fontFamily: "Be Vietnam Pro, sans-serif",
-          fontSize: 25,
+          fontSize: 24,
           fontWeight: "800",
           fill: 0x1e293b,
         },
       });
       label.anchor.set(0, 0.5);
-      label.x = -rowCardW / 2 + 86;
+      label.x = -rowCardW / 2 + 82;
       label.y = rowY + rowCardH / 2;
       this.contentContainer.addChild(label);
 
@@ -286,77 +293,88 @@ export class SettingsModal extends Container {
     // Language Selector Row (Spaced out matching rowH)
     this.addLanguageSelector(rows.length * rowH, rowCardW, rowCardH);
 
-    if (!this.isInGame) {
-      // Reset progress button (Generously spaced 32px below Language row, NO cramping)
-      const btnW = 260;
-      const btnH = 54;
-      const langBottomY = rows.length * rowH + rowCardH;
-      const gapAboveReset = 32;
-      const resetY = langBottomY + gapAboveReset + btnH / 2;
+    // Action Buttons at bottom
+    const btnW = 240;
+    const btnH = 54;
+    const langBottomY = rows.length * rowH + rowCardH;
+    const gapAboveButtons = 24;
+    const actionY = langBottomY + gapAboveButtons + btnH / 2;
 
-      const resetBtn = new Container();
-      resetBtn.y = resetY;
-
-      const btnContent = new Container();
-      resetBtn.addChild(btnContent);
-
-      // 3D Shadow Base
-      const resetShadow = new Graphics();
-      resetShadow
-        .roundRect(-btnW / 2, -btnH / 2 + 4, btnW, btnH, 16)
-        .fill(0x991b1b);
-      resetBtn.addChildAt(resetShadow, 0);
-
-      // Ruby Red Button Body
-      const resetBg = new Graphics();
-      resetBg
-        .roundRect(-btnW / 2, -btnH / 2, btnW, btnH, 16)
-        .fill(0xef4444)
-        .stroke({ color: 0xffffff, width: 2.5 });
-      resetBg
-        .roundRect(-btnW / 2 + 4, -btnH / 2 + 2, btnW - 8, btnH * 0.38, 8)
-        .fill({ color: 0xffffff, alpha: 0.3 });
-      btnContent.addChild(resetBg);
-
-      const resetText = new Text({
-        text: `🗑️ ${I18n.t("settings.reset")}`,
-        style: {
-          fontFamily: "Be Vietnam Pro, sans-serif",
-          fontSize: 19,
-          fontWeight: "900",
-          fill: 0xffffff,
-          stroke: { color: 0x991b1b, width: 2 },
-          letterSpacing: 0.5,
+    if (this.isInGame) {
+      // In-Game: BỎ CUỘC (Give Up) + QUAY LẠI (Resume)
+      const giveUpBtn = this.create3DActionButton(
+        `🏳️ ${I18n.t("settings.giveUp")}`,
+        -btnW / 2 - 12,
+        actionY,
+        btnW,
+        btnH,
+        0xef4444,
+        0x991b1b,
+        0x991b1b,
+        () => {
+          AudioMixer.playSFX("sfx_button");
+          this.showGiveUpConfirm();
         },
-      });
-      resetText.anchor.set(0.5);
-      btnContent.addChild(resetText);
+      );
+      this.contentContainer.addChild(giveUpBtn);
 
-      resetBtn.eventMode = "static";
-      resetBtn.cursor = "pointer";
-      resetBtn.on("pointerover", () => resetBtn.scale.set(1.05));
-      resetBtn.on("pointerout", () => {
-        resetBtn.scale.set(1.0);
-        btnContent.y = 0;
-      });
-      resetBtn.on("pointerdown", () => {
-        btnContent.y = 3;
-        resetBtn.scale.set(0.95);
-      });
-      resetBtn.on("pointerup", () => {
-        btnContent.y = 0;
-        resetBtn.scale.set(1.0);
-        AudioMixer.playSFX("sfx_button");
-        this.showResetConfirm();
-      });
+      const resumeBtn = this.create3DActionButton(
+        `▶️ ${I18n.t("settings.resume")}`,
+        btnW / 2 + 12,
+        actionY,
+        btnW,
+        btnH,
+        0x10b981,
+        0x047857,
+        0x047857,
+        () => {
+          AudioMixer.playSFX("sfx_button");
+          this.destroy();
+          this.onCloseCallback();
+        },
+      );
+      this.contentContainer.addChild(resumeBtn);
+    } else {
+      // In-Menu: XÓA DỮ LIỆU (Reset) + QUAY LẠI (Back)
+      const resetBtn = this.create3DActionButton(
+        `🗑️ ${I18n.t("settings.reset")}`,
+        -btnW / 2 - 12,
+        actionY,
+        btnW,
+        btnH,
+        0xef4444,
+        0x991b1b,
+        0x991b1b,
+        () => {
+          AudioMixer.playSFX("sfx_button");
+          this.showResetConfirm();
+        },
+      );
       this.contentContainer.addChild(resetBtn);
+
+      const backBtn = this.create3DActionButton(
+        `↩️ ${I18n.t("settings.back")}`,
+        btnW / 2 + 12,
+        actionY,
+        btnW,
+        btnH,
+        0x0284c7,
+        0x0369a1,
+        0x0369a1,
+        () => {
+          AudioMixer.playSFX("sfx_button");
+          this.destroy();
+          this.onCloseCallback();
+        },
+      );
+      this.contentContainer.addChild(backBtn);
     }
   }
 
   private addLanguageSelector(
     y: number,
     rowCardW = 560,
-    rowCardH = 80,
+    rowCardH = 74,
   ) {
     const row = new Container();
     row.y = y;
@@ -371,7 +389,7 @@ export class SettingsModal extends Container {
       text: `🌐 ${I18n.t("settings.language")}`,
       style: {
         fontFamily: "Be Vietnam Pro, sans-serif",
-        fontSize: 24,
+        fontSize: 23,
         fontWeight: "800",
         fill: 0x1e293b,
       },
@@ -386,19 +404,19 @@ export class SettingsModal extends Container {
       const active = I18n.language === lang;
 
       const choiceW = 120;
-      const choiceH = 48;
+      const choiceH = 46;
 
       const choiceBg = new Graphics();
       if (active) {
         // 3D Shadow Base
         const sh = new Graphics();
-        sh.roundRect(-choiceW / 2, -choiceH / 2 + 3, choiceW, choiceH, 24).fill(
+        sh.roundRect(-choiceW / 2, -choiceH / 2 + 3, choiceW, choiceH, 23).fill(
           0x0369a1,
         );
         choice.addChild(sh);
 
         choiceBg
-          .roundRect(-choiceW / 2, -choiceH / 2, choiceW, choiceH, 24)
+          .roundRect(-choiceW / 2, -choiceH / 2, choiceW, choiceH, 23)
           .fill(0x0284c7)
           .stroke({ color: 0xffffff, width: 2.5 });
         choiceBg
@@ -412,7 +430,7 @@ export class SettingsModal extends Container {
           .fill({ color: 0xffffff, alpha: 0.28 });
       } else {
         choiceBg
-          .roundRect(-choiceW / 2, -choiceH / 2, choiceW, choiceH, 24)
+          .roundRect(-choiceW / 2, -choiceH / 2, choiceW, choiceH, 23)
           .fill(0xf1f5f9)
           .stroke({ color: 0xcbd5e1, width: 1.8 });
       }
@@ -449,7 +467,7 @@ export class SettingsModal extends Container {
   }
 
   /**
-   * Custom in-game confirmation dialog (Zero native browser alerts/confirms!)
+   * Custom in-game confirmation dialog for Reset Progress
    */
   private showResetConfirm() {
     if (this.resetConfirm) return;
@@ -581,6 +599,222 @@ export class SettingsModal extends Container {
       this.resetConfirm.destroy({ children: true });
       this.resetConfirm = undefined;
     }
+  }
+
+  /**
+   * Custom in-game confirmation dialog for Give Up / Abandon Run
+   */
+  private showGiveUpConfirm() {
+    if (this.giveUpConfirm) return;
+
+    const overlay = new Container();
+    overlay.x = 0;
+    overlay.y = 0;
+
+    // Dim background
+    const shade = new Graphics();
+    shade
+      .rect(
+        -GAME_WIDTH,
+        -this.modalHeight,
+        GAME_WIDTH * 3,
+        this.modalHeight * 3,
+      )
+      .fill({ color: 0x000000, alpha: 0.72 });
+    shade.eventMode = "static";
+    shade.on("pointerdown", (event) => event.stopPropagation());
+    overlay.addChild(shade);
+
+    // 3D Dialog Card Base
+    const cardW = 540;
+    const cardH = 320;
+
+    const cardShadow = new Graphics();
+    cardShadow
+      .roundRect(-cardW / 2 + 6, -cardH / 2 + 12, cardW, cardH, 24)
+      .fill({ color: 0x000000, alpha: 0.5 });
+    overlay.addChild(cardShadow);
+
+    const card = new Graphics();
+    card.roundRect(-cardW / 2, -cardH / 2 + 6, cardW, cardH, 24).fill(0x0369a1);
+    card
+      .roundRect(-cardW / 2, -cardH / 2, cardW, cardH, 24)
+      .fill(0xfbfaf5)
+      .stroke({ color: 0x0284c7, width: 5 });
+    overlay.addChild(card);
+
+    // Title
+    const title = new Text({
+      text: I18n.t("settings.giveUpTitle"),
+      style: {
+        fontFamily: "Be Vietnam Pro, sans-serif",
+        fontSize: 26,
+        fontWeight: "900",
+        fill: 0xdc2626,
+        align: "center",
+      },
+    });
+    title.anchor.set(0.5);
+    title.y = -95;
+    overlay.addChild(title);
+
+    // Body
+    const body = new Text({
+      text: I18n.t("settings.giveUpBody"),
+      style: {
+        fontFamily: "Be Vietnam Pro, sans-serif",
+        fontSize: 18,
+        fontWeight: "700",
+        fill: 0x334155,
+        align: "center",
+        wordWrap: true,
+        wordWrapWidth: 460,
+        lineHeight: 27,
+      },
+    });
+    body.anchor.set(0.5);
+    body.y = -20;
+    overlay.addChild(body);
+
+    // 2 Action Buttons
+    const makeButton = (
+      label: string,
+      x: number,
+      color: number,
+      shadow: number,
+      onClick: () => void,
+    ) => {
+      const button = new Container();
+      button.x = x;
+      button.y = 85;
+
+      const buttonBg = new Graphics();
+      buttonBg.roundRect(-95, -28 + 4, 190, 56, 28).fill(shadow);
+      buttonBg
+        .roundRect(-95, -28, 190, 56, 28)
+        .fill(color)
+        .stroke({ color: 0xffffff, width: 3 });
+      button.addChild(buttonBg);
+
+      const text = new Text({
+        text: label,
+        style: {
+          fontFamily: "Be Vietnam Pro, sans-serif",
+          fontSize: 19,
+          fontWeight: "900",
+          fill: 0xffffff,
+        },
+      });
+      text.anchor.set(0.5);
+      button.addChild(text);
+
+      button.eventMode = "static";
+      button.cursor = "pointer";
+      button.on("pointerdown", onClick);
+      overlay.addChild(button);
+    };
+
+    makeButton(I18n.t("settings.cancel"), -110, 0x64748b, 0x334155, () =>
+      this.closeGiveUpConfirm(),
+    );
+    makeButton(I18n.t("settings.confirm"), 110, 0xdc2626, 0x991b1b, () => {
+      AudioMixer.playSFX("sfx_button");
+      this.closeGiveUpConfirm();
+      this.destroy();
+      if (this.onGiveUpCallback) {
+        this.onGiveUpCallback();
+      } else {
+        EventBus.emit("run:ended", {
+          victory: false,
+          distance: 0,
+          kills: 0,
+          score: 0,
+        });
+      }
+    });
+
+    this.giveUpConfirm = overlay;
+    this.modalContainer.addChild(overlay);
+  }
+
+  private closeGiveUpConfirm() {
+    if (this.giveUpConfirm) {
+      this.modalContainer.removeChild(this.giveUpConfirm);
+      this.giveUpConfirm.destroy({ children: true });
+      this.giveUpConfirm = undefined;
+    }
+  }
+
+  /**
+   * Helper to create juicy 3D tactile action buttons
+   */
+  private create3DActionButton(
+    label: string,
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+    faceColor: number,
+    shadowColor: number,
+    strokeColor: number,
+    onClick: () => void,
+  ): Container {
+    const btn = new Container();
+    btn.x = x;
+    btn.y = y;
+
+    const btnContent = new Container();
+    btn.addChild(btnContent);
+
+    // 3D Shadow Base
+    const shadow = new Graphics();
+    shadow.roundRect(-w / 2, -h / 2 + 4, w, h, 16).fill(shadowColor);
+    btn.addChildAt(shadow, 0);
+
+    // Button Face
+    const face = new Graphics();
+    face
+      .roundRect(-w / 2, -h / 2, w, h, 16)
+      .fill(faceColor)
+      .stroke({ color: 0xffffff, width: 2.5 });
+    // Glossy Top Highlight
+    face
+      .roundRect(-w / 2 + 4, -h / 2 + 2, w - 8, h * 0.38, 8)
+      .fill({ color: 0xffffff, alpha: 0.28 });
+    btnContent.addChild(face);
+
+    const text = new Text({
+      text: label,
+      style: {
+        fontFamily: "Be Vietnam Pro, sans-serif",
+        fontSize: 18,
+        fontWeight: "900",
+        fill: 0xffffff,
+        stroke: { color: strokeColor, width: 2 },
+        letterSpacing: 0.5,
+      },
+    });
+    text.anchor.set(0.5);
+    btnContent.addChild(text);
+
+    btn.eventMode = "static";
+    btn.cursor = "pointer";
+    btn.on("pointerover", () => btn.scale.set(1.04));
+    btn.on("pointerout", () => {
+      btn.scale.set(1.0);
+      btnContent.y = 0;
+    });
+    btn.on("pointerdown", () => {
+      btnContent.y = 3;
+      btn.scale.set(0.96);
+    });
+    btn.on("pointerup", () => {
+      btnContent.y = 0;
+      btn.scale.set(1.0);
+      onClick();
+    });
+
+    return btn;
   }
 
   /**

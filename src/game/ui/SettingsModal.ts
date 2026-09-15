@@ -3,7 +3,7 @@ import { GAME_WIDTH, GAME_HEIGHT } from "../constants";
 import { SaveManager } from "../utils/SaveManager";
 import { AudioMixer } from "../utils/AudioMixer";
 import { EventBus } from "../utils/EventBus";
-import { HyperCircleButton } from "./HyperButton";
+import { HyperCircleButton, type VectorIconType } from "./HyperButton";
 import { VectorIcons } from "./VectorIcons";
 import { I18n, type Language } from "../utils/I18n";
 import { SceneManager } from "../scenes/SceneManager";
@@ -301,9 +301,9 @@ export class SettingsModal extends Container {
     const actionY = langBottomY + gapAboveButtons + btnH / 2;
 
     if (this.isInGame) {
-      // In-Game: BỎ CUỘC (Give Up) + QUAY LẠI (Resume)
+      // In-Game: BỎ CUỘC (Give Up) + QUAY LẠI (Resume) with crisp vector icons
       const giveUpBtn = this.create3DActionButton(
-        `🏳️ ${I18n.t("settings.giveUp")}`,
+        I18n.t("settings.giveUp"),
         -btnW / 2 - 12,
         actionY,
         btnW,
@@ -311,6 +311,7 @@ export class SettingsModal extends Container {
         0xef4444,
         0x991b1b,
         0x991b1b,
+        "flag",
         () => {
           AudioMixer.playSFX("sfx_button");
           this.showGiveUpConfirm();
@@ -319,7 +320,7 @@ export class SettingsModal extends Container {
       this.contentContainer.addChild(giveUpBtn);
 
       const resumeBtn = this.create3DActionButton(
-        `▶️ ${I18n.t("settings.resume")}`,
+        I18n.t("settings.resume"),
         btnW / 2 + 12,
         actionY,
         btnW,
@@ -327,6 +328,7 @@ export class SettingsModal extends Container {
         0x10b981,
         0x047857,
         0x047857,
+        "play",
         () => {
           AudioMixer.playSFX("sfx_button");
           this.destroy();
@@ -335,9 +337,9 @@ export class SettingsModal extends Container {
       );
       this.contentContainer.addChild(resumeBtn);
     } else {
-      // In-Menu: XÓA DỮ LIỆU (Reset) + QUAY LẠI (Back)
+      // In-Menu: XÓA DỮ LIỆU (Reset) + QUAY LẠI (Back) with crisp vector icons
       const resetBtn = this.create3DActionButton(
-        `🗑️ ${I18n.t("settings.reset")}`,
+        I18n.t("settings.reset"),
         -btnW / 2 - 12,
         actionY,
         btnW,
@@ -345,6 +347,7 @@ export class SettingsModal extends Container {
         0xef4444,
         0x991b1b,
         0x991b1b,
+        "trash",
         () => {
           AudioMixer.playSFX("sfx_button");
           this.showResetConfirm();
@@ -353,7 +356,7 @@ export class SettingsModal extends Container {
       this.contentContainer.addChild(resetBtn);
 
       const backBtn = this.create3DActionButton(
-        `↩️ ${I18n.t("settings.back")}`,
+        I18n.t("settings.back"),
         btnW / 2 + 12,
         actionY,
         btnW,
@@ -361,6 +364,7 @@ export class SettingsModal extends Container {
         0x0284c7,
         0x0369a1,
         0x0369a1,
+        "arrowLeft",
         () => {
           AudioMixer.playSFX("sfx_button");
           this.destroy();
@@ -385,17 +389,29 @@ export class SettingsModal extends Container {
       .stroke({ color: 0xe2e8f0, width: 2 });
     row.addChild(bg);
 
+    // Icon Pill with Vector Globe Icon
+    const iconPill = new Graphics();
+    iconPill
+      .circle(-rowCardW / 2 + 42, rowCardH / 2, 25)
+      .fill(0xe0f2fe);
+    row.addChild(iconPill);
+
+    const vectorIcon = VectorIcons.createIcon("globe", 28, 0x0284c7);
+    vectorIcon.x = -rowCardW / 2 + 42;
+    vectorIcon.y = rowCardH / 2;
+    row.addChild(vectorIcon);
+
     const label = new Text({
-      text: `🌐 ${I18n.t("settings.language")}`,
+      text: I18n.t("settings.language"),
       style: {
         fontFamily: "Be Vietnam Pro, sans-serif",
-        fontSize: 23,
+        fontSize: 24,
         fontWeight: "800",
         fill: 0x1e293b,
       },
     });
     label.anchor.set(0, 0.5);
-    label.x = -rowCardW / 2 + 25;
+    label.x = -rowCardW / 2 + 82;
     label.y = rowCardH / 2;
     row.addChild(label);
 
@@ -746,7 +762,7 @@ export class SettingsModal extends Container {
   }
 
   /**
-   * Helper to create juicy 3D tactile action buttons
+   * Helper to create juicy 3D tactile action buttons with crisp vector icons
    */
   private create3DActionButton(
     label: string,
@@ -757,6 +773,7 @@ export class SettingsModal extends Container {
     faceColor: number,
     shadowColor: number,
     strokeColor: number,
+    vectorIconType: VectorIconType | undefined,
     onClick: () => void,
   ): Container {
     const btn = new Container();
@@ -783,6 +800,10 @@ export class SettingsModal extends Container {
       .fill({ color: 0xffffff, alpha: 0.28 });
     btnContent.addChild(face);
 
+    // Label & Vector Icon Row
+    const labelRow = new Container();
+    btnContent.addChild(labelRow);
+
     const text = new Text({
       text: label,
       style: {
@@ -791,11 +812,29 @@ export class SettingsModal extends Container {
         fontWeight: "900",
         fill: 0xffffff,
         stroke: { color: strokeColor, width: 2 },
-        letterSpacing: 0.5,
+        letterSpacing: 0.8,
       },
     });
-    text.anchor.set(0.5);
-    btnContent.addChild(text);
+    text.anchor.set(0, 0.5);
+
+    if (vectorIconType) {
+      const iconSize = 22;
+      const icon = VectorIcons.createIcon(vectorIconType, iconSize, 0xffffff);
+      labelRow.addChild(icon);
+
+      const gap = 10;
+      const totalW = iconSize + gap + text.width;
+      icon.x = -totalW / 2 + iconSize / 2;
+      icon.y = 0;
+      text.x = -totalW / 2 + iconSize + gap;
+      text.y = 0;
+      labelRow.addChild(text);
+    } else {
+      text.anchor.set(0.5);
+      text.x = 0;
+      text.y = 0;
+      labelRow.addChild(text);
+    }
 
     btn.eventMode = "static";
     btn.cursor = "pointer";

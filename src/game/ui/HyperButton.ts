@@ -12,7 +12,11 @@ export type VectorIconType =
   | "lightning"
   | "home"
   | "check"
-  | "cross";
+  | "cross"
+  | "globe"
+  | "flag"
+  | "arrowLeft"
+  | "trash";
 
 export interface HyperButtonOptions {
   label: string;

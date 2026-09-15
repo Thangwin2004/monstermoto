@@ -268,6 +268,100 @@ export class VectorIcons {
   }
 
   /**
+   * Draw Globe / Language icon (centered at 0, 0)
+   */
+  public static drawGlobe(
+    g: Graphics,
+    size: number = 24,
+    color: number = 0xffffff,
+  ) {
+    const r = size * 0.44;
+    const lineW = Math.max(1.8, size * 0.08);
+    // Outer circle
+    g.circle(0, 0, r).stroke({ color, width: lineW });
+    // Equator line
+    g.moveTo(-r, 0).lineTo(r, 0).stroke({ color, width: lineW });
+    // Prime meridian ellipse
+    g.ellipse(0, 0, r * 0.52, r).stroke({ color, width: lineW });
+    // Vertical axis line
+    g.moveTo(0, -r).lineTo(0, r).stroke({ color, width: lineW });
+  }
+
+  /**
+   * Draw Flag / Give Up icon (centered at 0, 0)
+   */
+  public static drawFlag(
+    g: Graphics,
+    size: number = 24,
+    color: number = 0xffffff,
+  ) {
+    const s = size * 0.5;
+    const poleW = Math.max(2.2, size * 0.1);
+    const poleX = -s * 0.55;
+    // Pole
+    g.roundRect(poleX - poleW / 2, -s * 0.9, poleW, s * 1.8, poleW / 2).fill(
+      color,
+    );
+    // Flag pennant
+    g.poly([
+      poleX + poleW / 2,
+      -s * 0.85,
+      s * 0.75,
+      -s * 0.45,
+      poleX + poleW / 2,
+      -s * 0.05,
+    ]).fill(color);
+  }
+
+  /**
+   * Draw Left Arrow / Back / Return icon (centered at 0, 0)
+   */
+  public static drawArrowLeft(
+    g: Graphics,
+    size: number = 24,
+    color: number = 0xffffff,
+  ) {
+    const s = size * 0.5;
+    const stemH = Math.max(2.6, size * 0.16);
+    // Arrow head pointing left + stem to the right
+    g.poly([
+      -s * 0.8,
+      0,
+      -s * 0.15,
+      -s * 0.65,
+      -s * 0.15,
+      -stemH / 2,
+      s * 0.75,
+      -stemH / 2,
+      s * 0.75,
+      stemH / 2,
+      -s * 0.15,
+      stemH / 2,
+      -s * 0.15,
+      s * 0.65,
+    ]).fill(color);
+  }
+
+  /**
+   * Draw Trash / Delete icon (centered at 0, 0)
+   */
+  public static drawTrash(
+    g: Graphics,
+    size: number = 24,
+    color: number = 0xffffff,
+  ) {
+    const s = size * 0.5;
+    const binW = s * 1.0;
+    const binH = s * 1.05;
+    // Bin container
+    g.roundRect(-binW / 2, -s * 0.2, binW, binH, 2.5).fill(color);
+    // Lid rim
+    g.roundRect(-s * 0.7, -s * 0.48, s * 1.4, s * 0.22, 2).fill(color);
+    // Lid handle
+    g.roundRect(-s * 0.28, -s * 0.78, s * 0.56, s * 0.25, 2).fill(color);
+  }
+
+  /**
    * Create a standalone Container containing any vector icon
    */
   public static createIcon(
@@ -281,7 +375,11 @@ export class VectorIcons {
       | "lightning"
       | "home"
       | "check"
-      | "cross",
+      | "cross"
+      | "globe"
+      | "flag"
+      | "arrowLeft"
+      | "trash",
     size: number = 24,
     color: number = 0xffffff,
   ): Container {
@@ -317,6 +415,18 @@ export class VectorIcons {
         break;
       case "cross":
         this.drawCross(g, size, color);
+        break;
+      case "globe":
+        this.drawGlobe(g, size, color);
+        break;
+      case "flag":
+        this.drawFlag(g, size, color);
+        break;
+      case "arrowLeft":
+        this.drawArrowLeft(g, size, color);
+        break;
+      case "trash":
+        this.drawTrash(g, size, color);
         break;
     }
     cont.addChild(g);

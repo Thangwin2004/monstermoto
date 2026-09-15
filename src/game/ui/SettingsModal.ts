@@ -3,7 +3,7 @@ import { GAME_WIDTH, GAME_HEIGHT } from "../constants";
 import { SaveManager } from "../utils/SaveManager";
 import { AudioMixer } from "../utils/AudioMixer";
 import { EventBus } from "../utils/EventBus";
-import { HyperCircleButton } from "./HyperButton";
+import { HyperCircleButton, type VectorIconType } from "./HyperButton";
 import { VectorIcons } from "./VectorIcons";
 import { I18n, type Language } from "../utils/I18n";
 import { SceneManager } from "../scenes/SceneManager";
@@ -16,12 +16,20 @@ export class SettingsModal extends Container {
   private onCloseCallback: () => void;
   private isInGame: boolean;
   private resetConfirm?: Container;
+  private giveUpConfirm?: Container;
+  private onGiveUpCallback?: () => void;
   private modalHeight: number;
 
-  constructor(onClose: () => void, isInGame = false, customHeight?: number) {
+  constructor(
+    onClose: () => void,
+    isInGame = false,
+    customHeight?: number,
+    onGiveUp?: () => void,
+  ) {
     super();
     this.onCloseCallback = onClose;
     this.isInGame = isInGame;
+    this.onGiveUpCallback = onGiveUp;
     const virtualH = SceneManager.getVirtualSize?.()?.height ?? GAME_HEIGHT;
     this.modalHeight = Math.max(GAME_HEIGHT, virtualH, customHeight ?? 0);
 
@@ -35,17 +43,25 @@ export class SettingsModal extends Container {
     );
     backdrop.fill({ color: 0x000000, alpha: 0.88 });
     backdrop.eventMode = "static";
-    backdrop.on("pointerdown", (e) => e.stopPropagation());
+    backdrop.cursor = "pointer";
+    backdrop.on("pointertap", () => {
+      AudioMixer.playSFX("sfx_button");
+      this.destroy();
+      this.onCloseCallback();
+    });
     this.addChild(backdrop);
 
     // 2. Central 3D Modal Window
     this.modalContainer = new Container();
+    this.modalContainer.eventMode = "static";
+    this.modalContainer.on("pointerdown", (e) => e.stopPropagation());
+    this.modalContainer.on("pointertap", (e) => e.stopPropagation());
     this.modalContainer.x = GAME_WIDTH / 2;
     this.modalContainer.y = this.modalHeight / 2;
     this.addChild(this.modalContainer);
 
-    const cardW = 620;
-    const cardH = this.isInGame ? 580 : 1060;
+    const cardW = 636;
+    const cardH = 650;
 
     // Soft Card Shadow
     const cardShadow = new Graphics();
@@ -73,8 +89,8 @@ export class SettingsModal extends Container {
     this.modalContainer.addChild(cardFace);
 
     // 3. Floating 3D Title Ribbon (Cyan / Sky Blue)
-    const ribbonW = 340;
-    const ribbonH = 68;
+    const ribbonW = 350;
+    const ribbonH = 70;
     const ribbonY = -cardH / 2 - 14;
 
     const ribbon = new Graphics();
@@ -100,17 +116,17 @@ export class SettingsModal extends Container {
     const titleRow = new Container();
     titleRow.y = ribbonY + ribbonH / 2 - 2;
 
-    this.gearIcon = VectorIcons.createIcon("gear", 26, 0xffffff);
+    this.gearIcon = VectorIcons.createIcon("gear", 30, 0xffffff);
     titleRow.addChild(this.gearIcon);
 
     this.titleText = new Text({
       text: this.isInGame ? I18n.t("settings.run") : I18n.t("settings.game"),
       style: {
         fontFamily: "Be Vietnam Pro, sans-serif",
-        fontSize: 24,
+        fontSize: 27,
         fontWeight: "900",
         fill: 0xffffff,
-        stroke: { color: 0x0369a1, width: 4 },
+        stroke: { color: 0x0369a1, width: 4.5 },
         letterSpacing: 1.5,
       },
     });
@@ -121,7 +137,7 @@ export class SettingsModal extends Container {
     // 4. Top-Right Circular Close Button (HyperCircleButton ❌ with crisp vector cross)
     const closeCornerBtn = new HyperCircleButton({
       vectorIcon: "cross",
-      radius: 25,
+      radius: 26,
       color: 0xef4444,
       shadowColor: 0x991b1b,
       strokeWidth: 3.5,
@@ -150,19 +166,18 @@ export class SettingsModal extends Container {
 
     // Optical centering for gear icon + title text
     const spacing = 12;
-    const totalW = 26 + spacing + this.titleText.width;
+    const totalW = 30 + spacing + this.titleText.width;
     if (this.gearIcon) {
-      this.gearIcon.x = -totalW / 2 + 13;
-      this.titleText.x = -totalW / 2 + 26 + spacing;
+      this.gearIcon.x = -totalW / 2 + 15;
+      this.titleText.x = -totalW / 2 + 30 + spacing;
     }
 
     const settings = SaveManager.getSettings();
 
-    // Clean labels: no (SFX), no (BGM)
+    // Clean labels, NO blue subtitle notes
     const allRows: {
       id: string;
       label: string;
-      subLabel?: string;
       iconType: "speaker" | "music" | "vibration" | "lightning";
       iconColor: number;
       pillColor: number;
@@ -196,28 +211,8 @@ export class SettingsModal extends Container {
         },
       },
       {
-        id: "shake",
-        label: I18n.t("settings.shake"),
-        subLabel: settings.screenShake
-          ? I18n.t("settings.shakeSubOn")
-          : I18n.t("settings.shakeSubOff"),
-        iconType: "vibration",
-        iconColor: 0xf97316,
-        pillColor: 0xffedd5,
-        enabled: settings.screenShake,
-        onToggle: () => {
-          const next = !settings.screenShake;
-          SaveManager.updateSettings({ screenShake: next });
-          EventBus.emit("settings:changed", { screenShake: next });
-          this.renderSettings();
-        },
-      },
-      {
         id: "particles",
         label: I18n.t("settings.particles"),
-        subLabel: !settings.lowParticles
-          ? I18n.t("settings.particlesSubOn")
-          : I18n.t("settings.particlesSubOff"),
         iconType: "lightning",
         iconColor: 0xeab308,
         pillColor: 0xfef9c3,
@@ -229,21 +224,38 @@ export class SettingsModal extends Container {
           this.renderSettings();
         },
       },
+      {
+        id: "shake",
+        label: I18n.t("settings.shake"),
+        iconType: "vibration",
+        iconColor: 0xf97316,
+        pillColor: 0xffedd5,
+        enabled: settings.screenShake,
+        onToggle: () => {
+          const next = !settings.screenShake;
+          SaveManager.updateSettings({ screenShake: next });
+          EventBus.emit("settings:changed", { screenShake: next });
+          this.renderSettings();
+        },
+      },
     ];
 
-    const rows = allRows.filter(
-      (row) => !this.isInGame || row.id !== "particles",
-    );
+    // Always show all settings rows (both in menu and in-game)
+    const rows = allRows;
 
-    const rowH = 80;
+    const rowCardW = 560;
+    const rowCardH = 74;
+    const rowGap = 14;
+    const rowH = rowCardH + rowGap;
+
     for (let i = 0; i < rows.length; i++) {
       const r = rows[i];
       const rowY = i * rowH;
 
-      // Pure White Row Card with Light Blue Stroke
+      // Pure White Row Card with Soft Border
       const rowBg = new Graphics();
       rowBg
-        .roundRect(-270, rowY, 540, 68, 18)
+        .roundRect(-rowCardW / 2, rowY, rowCardW, rowCardH, 20)
         .fill(0xffffff)
         .stroke({ color: 0xe2e8f0, width: 2 });
       this.contentContainer.addChild(rowBg);
@@ -251,7 +263,7 @@ export class SettingsModal extends Container {
       // Icon Pill with Vector Icon
       const iconPill = new Graphics();
       iconPill
-        .circle(-232, rowY + 34, 24)
+        .circle(-rowCardW / 2 + 42, rowY + rowCardH / 2, 25)
         .fill(r.enabled ? r.pillColor : 0xf1f5f9);
       this.contentContainer.addChild(iconPill);
 
@@ -260,201 +272,141 @@ export class SettingsModal extends Container {
         28,
         r.enabled ? r.iconColor : 0x94a3b8,
       );
-      vectorIcon.x = -232;
-      vectorIcon.y = rowY + 34;
+      vectorIcon.x = -rowCardW / 2 + 42;
+      vectorIcon.y = rowY + rowCardH / 2;
       this.contentContainer.addChild(vectorIcon);
 
-      // Label & Subtitle Text (Increased sizes)
-      const textGroup = new Container();
-      textGroup.x = -195;
-      textGroup.y = rowY + 11;
-
+      // Main Label Text (Enlarged to 24px, vertically centered, bold & clean)
       const label = new Text({
         text: r.label,
         style: {
           fontFamily: "Be Vietnam Pro, sans-serif",
-          fontSize: 22,
+          fontSize: 24,
           fontWeight: "800",
           fill: 0x1e293b,
         },
       });
-      textGroup.addChild(label);
-
-      if (r.subLabel) {
-        const sub = new Text({
-          text: r.subLabel,
-          style: {
-            fontFamily: "Be Vietnam Pro, sans-serif",
-            fontSize: 16,
-            fontWeight: "700",
-            fill: r.enabled ? 0x0284c7 : 0x64748b,
-          },
-        });
-        sub.y = 26;
-        textGroup.addChild(sub);
-      } else {
-        label.y = 9;
-      }
-
-      this.contentContainer.addChild(textGroup);
+      label.anchor.set(0, 0.5);
+      label.x = -rowCardW / 2 + 82;
+      label.y = rowY + rowCardH / 2;
+      this.contentContainer.addChild(label);
 
       // Cute 3D Toggle Switch (Knob + Track)
       const toggleSwitch = this.create3DToggleSwitch(r.enabled, r.onToggle);
-      toggleSwitch.x = 205;
-      toggleSwitch.y = rowY + 34;
+      toggleSwitch.x = rowCardW / 2 - 64;
+      toggleSwitch.y = rowY + rowCardH / 2;
       this.contentContainer.addChild(toggleSwitch);
     }
 
-    // Language Selector Row
-    this.addLanguageSelector(rows.length * rowH + 6);
+    // Language Selector Row (Spaced out matching rowH)
+    this.addLanguageSelector(rows.length * rowH, rowCardW, rowCardH);
 
-    if (!this.isInGame) {
-      // Main-menu-only content: help guide and reset progress
-      const infoY = rows.length * rowH + 98;
-      const infoBg = new Graphics();
-      infoBg
-        .roundRect(-270, infoY, 540, 142, 18)
-        .fill(0xfefce8)
-        .stroke({ color: 0xfacc15, width: 2.5 });
-      this.contentContainer.addChild(infoBg);
+    // Action Button at bottom (Single centered button, modal closes via top-right ❌ button or backdrop tap)
+    const btnW = 320;
+    const btnH = 56;
+    const langBottomY = rows.length * rowH + rowCardH;
+    const gapAboveButtons = 24;
+    const actionY = langBottomY + gapAboveButtons + btnH / 2;
 
-      const infoTitle = new Text({
-        text: I18n.t("settings.helpTitle"),
-        style: {
-          fontFamily: "Be Vietnam Pro, sans-serif",
-          fontSize: 20,
-          fontWeight: "900",
-          fill: 0xb45309,
-          letterSpacing: 1,
+    if (this.isInGame) {
+      // In-Game: BỎ CUỘC (Give Up) with crisp vector flag icon (Centered)
+      const giveUpBtn = this.create3DActionButton(
+        I18n.t("settings.giveUp"),
+        0,
+        actionY,
+        btnW,
+        btnH,
+        0xef4444,
+        0x991b1b,
+        0x991b1b,
+        "flag",
+        () => {
+          AudioMixer.playSFX("sfx_button");
+          this.showGiveUpConfirm();
         },
-      });
-      infoTitle.x = -248;
-      infoTitle.y = infoY + 12;
-      this.contentContainer.addChild(infoTitle);
-
-      const infoBody = new Text({
-        text: I18n.t("settings.helpBody"),
-        style: {
-          fontFamily: "Be Vietnam Pro, sans-serif",
-          fontSize: 17,
-          fontWeight: "600",
-          fill: 0x78350f,
-          lineHeight: 25,
-          wordWrap: true,
-          wordWrapWidth: 500,
+      );
+      this.contentContainer.addChild(giveUpBtn);
+    } else {
+      // In-Menu: XÓA DỮ LIỆU (Reset) with crisp vector trash icon (Centered)
+      const resetBtn = this.create3DActionButton(
+        I18n.t("settings.reset"),
+        0,
+        actionY,
+        btnW,
+        btnH,
+        0xef4444,
+        0x991b1b,
+        0x991b1b,
+        "trash",
+        () => {
+          AudioMixer.playSFX("sfx_button");
+          this.showResetConfirm();
         },
-      });
-      infoBody.x = -248;
-      infoBody.y = infoY + 40;
-      this.contentContainer.addChild(infoBody);
-
-      // Reset progress button (Compact, polished 3D danger button)
-      const resetY = infoY + 172;
-      const resetBtn = new Container();
-      resetBtn.y = resetY;
-
-      const btnW = 230;
-      const btnH = 46;
-
-      const btnContent = new Container();
-      resetBtn.addChild(btnContent);
-
-      // 3D Shadow Base
-      const resetShadow = new Graphics();
-      resetShadow
-        .roundRect(-btnW / 2, -btnH / 2 + 4, btnW, btnH, 14)
-        .fill(0x991b1b);
-      resetBtn.addChildAt(resetShadow, 0);
-
-      // Ruby Red Button Body
-      const resetBg = new Graphics();
-      resetBg
-        .roundRect(-btnW / 2, -btnH / 2, btnW, btnH, 14)
-        .fill(0xef4444)
-        .stroke({ color: 0xffffff, width: 2.2 });
-      resetBg
-        .roundRect(-btnW / 2 + 4, -btnH / 2 + 2, btnW - 8, btnH * 0.38, 6)
-        .fill({ color: 0xffffff, alpha: 0.3 });
-      btnContent.addChild(resetBg);
-
-      const resetText = new Text({
-        text: `🗑️ ${I18n.t("settings.reset")}`,
-        style: {
-          fontFamily: "Be Vietnam Pro, sans-serif",
-          fontSize: 16,
-          fontWeight: "900",
-          fill: 0xffffff,
-          stroke: { color: 0x991b1b, width: 2 },
-          letterSpacing: 0.5,
-        },
-      });
-      resetText.anchor.set(0.5);
-      btnContent.addChild(resetText);
-
-      resetBtn.eventMode = "static";
-      resetBtn.cursor = "pointer";
-      resetBtn.on("pointerover", () => resetBtn.scale.set(1.05));
-      resetBtn.on("pointerout", () => {
-        resetBtn.scale.set(1.0);
-        btnContent.y = 0;
-      });
-      resetBtn.on("pointerdown", () => {
-        btnContent.y = 3;
-        resetBtn.scale.set(0.95);
-      });
-      resetBtn.on("pointerup", () => {
-        btnContent.y = 0;
-        resetBtn.scale.set(1.0);
-        AudioMixer.playSFX("sfx_button");
-        this.showResetConfirm();
-      });
+      );
       this.contentContainer.addChild(resetBtn);
     }
   }
 
-  private addLanguageSelector(y: number) {
+  private addLanguageSelector(
+    y: number,
+    rowCardW = 560,
+    rowCardH = 74,
+  ) {
     const row = new Container();
     row.y = y;
 
     const bg = new Graphics();
-    bg.roundRect(-270, 0, 540, 68, 18)
+    bg.roundRect(-rowCardW / 2, 0, rowCardW, rowCardH, 20)
       .fill(0xffffff)
       .stroke({ color: 0xe2e8f0, width: 2 });
     row.addChild(bg);
 
+    // Icon Pill with Vector Globe Icon
+    const iconPill = new Graphics();
+    iconPill
+      .circle(-rowCardW / 2 + 42, rowCardH / 2, 25)
+      .fill(0xe0f2fe);
+    row.addChild(iconPill);
+
+    const vectorIcon = VectorIcons.createIcon("globe", 28, 0x0284c7);
+    vectorIcon.x = -rowCardW / 2 + 42;
+    vectorIcon.y = rowCardH / 2;
+    row.addChild(vectorIcon);
+
     const label = new Text({
-      text: `🌐 ${I18n.t("settings.language")}`,
+      text: I18n.t("settings.language"),
       style: {
         fontFamily: "Be Vietnam Pro, sans-serif",
-        fontSize: 21,
+        fontSize: 24,
         fontWeight: "800",
         fill: 0x1e293b,
       },
     });
-    label.x = -245;
-    label.y = 20;
+    label.anchor.set(0, 0.5);
+    label.x = -rowCardW / 2 + 82;
+    label.y = rowCardH / 2;
     row.addChild(label);
 
     const makeChoice = (lang: Language, text: string, x: number) => {
       const choice = new Container();
       const active = I18n.language === lang;
 
-      const choiceW = 108;
-      const choiceH = 44;
+      const choiceW = 120;
+      const choiceH = 46;
 
       const choiceBg = new Graphics();
       if (active) {
         // 3D Shadow Base
         const sh = new Graphics();
-        sh.roundRect(-choiceW / 2, -choiceH / 2 + 3, choiceW, choiceH, 22).fill(
+        sh.roundRect(-choiceW / 2, -choiceH / 2 + 3, choiceW, choiceH, 23).fill(
           0x0369a1,
         );
         choice.addChild(sh);
 
         choiceBg
-          .roundRect(-choiceW / 2, -choiceH / 2, choiceW, choiceH, 22)
+          .roundRect(-choiceW / 2, -choiceH / 2, choiceW, choiceH, 23)
           .fill(0x0284c7)
-          .stroke({ color: 0xffffff, width: 2.2 });
+          .stroke({ color: 0xffffff, width: 2.5 });
         choiceBg
           .roundRect(
             -choiceW / 2 + 4,
@@ -466,7 +418,7 @@ export class SettingsModal extends Container {
           .fill({ color: 0xffffff, alpha: 0.28 });
       } else {
         choiceBg
-          .roundRect(-choiceW / 2, -choiceH / 2, choiceW, choiceH, 22)
+          .roundRect(-choiceW / 2, -choiceH / 2, choiceW, choiceH, 23)
           .fill(0xf1f5f9)
           .stroke({ color: 0xcbd5e1, width: 1.8 });
       }
@@ -476,7 +428,7 @@ export class SettingsModal extends Container {
         text,
         style: {
           fontFamily: "Be Vietnam Pro, sans-serif",
-          fontSize: 15,
+          fontSize: 17,
           fontWeight: "900",
           fill: active ? 0xffffff : 0x475569,
           stroke: active ? { color: 0x0369a1, width: 2 } : undefined,
@@ -485,7 +437,7 @@ export class SettingsModal extends Container {
       choiceText.anchor.set(0.5);
       choice.addChild(choiceText);
       choice.x = x;
-      choice.y = 34;
+      choice.y = rowCardH / 2;
       choice.eventMode = "static";
       choice.cursor = "pointer";
       choice.on("pointerdown", () => {
@@ -497,16 +449,13 @@ export class SettingsModal extends Container {
       row.addChild(choice);
     };
 
-    // Bounds [-270, 270]. Margin from right edge is 16px (rightmost at 254).
-    // Button 2 (English) center at 200 (bounds [146, 254]).
-    // Button 1 (Tiếng Việt) center at 82 (bounds [28, 136]).
-    makeChoice("vi", "Tiếng Việt", 82);
-    makeChoice("en", "English", 200);
+    makeChoice("vi", "Tiếng Việt", rowCardW / 2 - 192);
+    makeChoice("en", "English", rowCardW / 2 - 68);
     this.contentContainer.addChild(row);
   }
 
   /**
-   * Custom in-game confirmation dialog (Zero native browser alerts/confirms!)
+   * Custom in-game confirmation dialog for Reset Progress
    */
   private showResetConfirm() {
     if (this.resetConfirm) return;
@@ -641,6 +590,245 @@ export class SettingsModal extends Container {
   }
 
   /**
+   * Custom in-game confirmation dialog for Give Up / Abandon Run
+   */
+  private showGiveUpConfirm() {
+    if (this.giveUpConfirm) return;
+
+    const overlay = new Container();
+    overlay.x = 0;
+    overlay.y = 0;
+
+    // Dim background
+    const shade = new Graphics();
+    shade
+      .rect(
+        -GAME_WIDTH,
+        -this.modalHeight,
+        GAME_WIDTH * 3,
+        this.modalHeight * 3,
+      )
+      .fill({ color: 0x000000, alpha: 0.72 });
+    shade.eventMode = "static";
+    shade.on("pointerdown", (event) => event.stopPropagation());
+    overlay.addChild(shade);
+
+    // 3D Dialog Card Base
+    const cardW = 540;
+    const cardH = 320;
+
+    const cardShadow = new Graphics();
+    cardShadow
+      .roundRect(-cardW / 2 + 6, -cardH / 2 + 12, cardW, cardH, 24)
+      .fill({ color: 0x000000, alpha: 0.5 });
+    overlay.addChild(cardShadow);
+
+    const card = new Graphics();
+    card.roundRect(-cardW / 2, -cardH / 2 + 6, cardW, cardH, 24).fill(0x0369a1);
+    card
+      .roundRect(-cardW / 2, -cardH / 2, cardW, cardH, 24)
+      .fill(0xfbfaf5)
+      .stroke({ color: 0x0284c7, width: 5 });
+    overlay.addChild(card);
+
+    // Title
+    const title = new Text({
+      text: I18n.t("settings.giveUpTitle"),
+      style: {
+        fontFamily: "Be Vietnam Pro, sans-serif",
+        fontSize: 26,
+        fontWeight: "900",
+        fill: 0xdc2626,
+        align: "center",
+      },
+    });
+    title.anchor.set(0.5);
+    title.y = -95;
+    overlay.addChild(title);
+
+    // Body
+    const body = new Text({
+      text: I18n.t("settings.giveUpBody"),
+      style: {
+        fontFamily: "Be Vietnam Pro, sans-serif",
+        fontSize: 18,
+        fontWeight: "700",
+        fill: 0x334155,
+        align: "center",
+        wordWrap: true,
+        wordWrapWidth: 460,
+        lineHeight: 27,
+      },
+    });
+    body.anchor.set(0.5);
+    body.y = -20;
+    overlay.addChild(body);
+
+    // 2 Action Buttons
+    const makeButton = (
+      label: string,
+      x: number,
+      color: number,
+      shadow: number,
+      onClick: () => void,
+    ) => {
+      const button = new Container();
+      button.x = x;
+      button.y = 85;
+
+      const buttonBg = new Graphics();
+      buttonBg.roundRect(-95, -28 + 4, 190, 56, 28).fill(shadow);
+      buttonBg
+        .roundRect(-95, -28, 190, 56, 28)
+        .fill(color)
+        .stroke({ color: 0xffffff, width: 3 });
+      button.addChild(buttonBg);
+
+      const text = new Text({
+        text: label,
+        style: {
+          fontFamily: "Be Vietnam Pro, sans-serif",
+          fontSize: 19,
+          fontWeight: "900",
+          fill: 0xffffff,
+        },
+      });
+      text.anchor.set(0.5);
+      button.addChild(text);
+
+      button.eventMode = "static";
+      button.cursor = "pointer";
+      button.on("pointerdown", onClick);
+      overlay.addChild(button);
+    };
+
+    makeButton(I18n.t("settings.cancel"), -110, 0x64748b, 0x334155, () =>
+      this.closeGiveUpConfirm(),
+    );
+    makeButton(I18n.t("settings.confirm"), 110, 0xdc2626, 0x991b1b, () => {
+      AudioMixer.playSFX("sfx_button");
+      this.closeGiveUpConfirm();
+      this.destroy();
+      if (this.onGiveUpCallback) {
+        this.onGiveUpCallback();
+      } else {
+        EventBus.emit("run:ended", {
+          victory: false,
+          distance: 0,
+          kills: 0,
+          score: 0,
+        });
+      }
+    });
+
+    this.giveUpConfirm = overlay;
+    this.modalContainer.addChild(overlay);
+  }
+
+  private closeGiveUpConfirm() {
+    if (this.giveUpConfirm) {
+      this.modalContainer.removeChild(this.giveUpConfirm);
+      this.giveUpConfirm.destroy({ children: true });
+      this.giveUpConfirm = undefined;
+    }
+  }
+
+  /**
+   * Helper to create juicy 3D tactile action buttons with crisp vector icons
+   */
+  private create3DActionButton(
+    label: string,
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+    faceColor: number,
+    shadowColor: number,
+    strokeColor: number,
+    vectorIconType: VectorIconType | undefined,
+    onClick: () => void,
+  ): Container {
+    const btn = new Container();
+    btn.x = x;
+    btn.y = y;
+
+    const btnContent = new Container();
+    btn.addChild(btnContent);
+
+    // 3D Shadow Base
+    const shadow = new Graphics();
+    shadow.roundRect(-w / 2, -h / 2 + 4, w, h, 16).fill(shadowColor);
+    btn.addChildAt(shadow, 0);
+
+    // Button Face
+    const face = new Graphics();
+    face
+      .roundRect(-w / 2, -h / 2, w, h, 16)
+      .fill(faceColor)
+      .stroke({ color: 0xffffff, width: 2.5 });
+    // Glossy Top Highlight
+    face
+      .roundRect(-w / 2 + 4, -h / 2 + 2, w - 8, h * 0.38, 8)
+      .fill({ color: 0xffffff, alpha: 0.28 });
+    btnContent.addChild(face);
+
+    // Label & Vector Icon Row
+    const labelRow = new Container();
+    btnContent.addChild(labelRow);
+
+    const text = new Text({
+      text: label,
+      style: {
+        fontFamily: "Be Vietnam Pro, sans-serif",
+        fontSize: 18,
+        fontWeight: "900",
+        fill: 0xffffff,
+        stroke: { color: strokeColor, width: 2 },
+        letterSpacing: 0.8,
+      },
+    });
+    text.anchor.set(0, 0.5);
+
+    if (vectorIconType) {
+      const iconSize = 22;
+      const icon = VectorIcons.createIcon(vectorIconType, iconSize, 0xffffff);
+      labelRow.addChild(icon);
+
+      const gap = 10;
+      const totalW = iconSize + gap + text.width;
+      icon.x = -totalW / 2 + iconSize / 2;
+      icon.y = 0;
+      text.x = -totalW / 2 + iconSize + gap;
+      text.y = 0;
+      labelRow.addChild(text);
+    } else {
+      text.anchor.set(0.5);
+      text.x = 0;
+      text.y = 0;
+      labelRow.addChild(text);
+    }
+
+    btn.eventMode = "static";
+    btn.cursor = "pointer";
+    btn.on("pointerover", () => btn.scale.set(1.04));
+    btn.on("pointerout", () => {
+      btn.scale.set(1.0);
+      btnContent.y = 0;
+    });
+    btn.on("pointerdown", () => {
+      btnContent.y = 3;
+      btn.scale.set(0.96);
+    });
+    btn.on("pointerup", () => {
+      btnContent.y = 0;
+      btn.scale.set(1.0);
+      onClick();
+    });
+
+    return btn;
+  }
+
+  /**
    * 3D Toggle Switch Component
    */
   private create3DToggleSwitch(
@@ -651,9 +839,9 @@ export class SettingsModal extends Container {
     sw.eventMode = "static";
     sw.cursor = "pointer";
 
-    const width = 84;
-    const height = 44;
-    const radius = 22;
+    const width = 88;
+    const height = 46;
+    const radius = 23;
 
     const track = new Graphics();
     track
@@ -666,10 +854,10 @@ export class SettingsModal extends Container {
     sw.addChild(track);
 
     const knob = new Graphics();
-    const knobX = enabled ? width / 2 - 22 : -width / 2 + 22;
-    knob.circle(knobX, 2, 17).fill(0x94a3b8);
+    const knobX = enabled ? width / 2 - 23 : -width / 2 + 23;
+    knob.circle(knobX, 2, 18).fill(0x94a3b8);
     knob
-      .circle(knobX, 0, 17)
+      .circle(knobX, 0, 18)
       .fill(0xffffff)
       .stroke({ color: enabled ? 0x16a34a : 0x94a3b8, width: 2 });
     sw.addChild(knob);
@@ -678,13 +866,13 @@ export class SettingsModal extends Container {
       text: enabled ? I18n.t("settings.on") : I18n.t("settings.off"),
       style: {
         fontFamily: "Be Vietnam Pro, sans-serif",
-        fontSize: 13,
+        fontSize: 15,
         fontWeight: "900",
         fill: enabled ? 0xffffff : 0x64748b,
       },
     });
     stateText.anchor.set(0.5);
-    stateText.x = enabled ? -12 : 12;
+    stateText.x = enabled ? -13 : 13;
     stateText.y = 0;
     sw.addChild(stateText);
 

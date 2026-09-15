@@ -61,6 +61,7 @@ export class RunScene extends Container implements Scene {
   private bossSpawned: boolean = false;
   private isGameOver: boolean = false;
   private currentHeight: number = GAME_HEIGHT;
+  private cachedModulePositions: { x: number; y: number }[] = [];
 
   // Camera shake
   private shakeTimer: number = 0;
@@ -132,6 +133,18 @@ export class RunScene extends Container implements Scene {
         },
         true,
         this.currentHeight,
+        () => {
+          this.activeSettingsModal = null;
+          this.gameLayer.filters = [];
+          this.hud.filters = [];
+          this.isPaused = false;
+          EventBus.emit("run:ended", {
+            victory: false,
+            distance: this.distanceMeters,
+            kills: this.lootSystem.totalKills,
+            score: RunState.current.getScore(),
+          });
+        },
       );
       this.activeSettingsModal = modal;
       this.uiLayer.addChild(modal);
@@ -333,18 +346,30 @@ export class RunScene extends Container implements Scene {
     // Update all systems
     this.roadSystem.update(dt);
 
-    const modulePositions = this.convoySystem.convoy.modules
-      .filter((m) => !m.isDead)
-      .map((m) => ({
-        x: this.convoySystem.convoy.x + m.x,
-        y: this.convoySystem.convoy.y + m.y,
-      }));
+    const convoyX = this.convoySystem.convoy.x;
+    const convoyY = this.convoySystem.convoy.y;
+    let posIndex = 0;
+    for (const m of this.convoySystem.convoy.modules) {
+      if (!m.isDead) {
+        if (posIndex < this.cachedModulePositions.length) {
+          this.cachedModulePositions[posIndex].x = convoyX + m.x;
+          this.cachedModulePositions[posIndex].y = convoyY + m.y;
+        } else {
+          this.cachedModulePositions.push({
+            x: convoyX + m.x,
+            y: convoyY + m.y,
+          });
+        }
+        posIndex++;
+      }
+    }
+    this.cachedModulePositions.length = posIndex;
 
     this.lootSystem.update(
       dt,
-      this.convoySystem.convoy.x,
-      this.convoySystem.convoy.y,
-      modulePositions,
+      convoyX,
+      convoyY,
+      this.cachedModulePositions,
       (type) => {
         this.handlePickupCollected(type);
       },

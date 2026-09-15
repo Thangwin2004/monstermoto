@@ -11,6 +11,16 @@ import { VectorIcons } from "./VectorIcons";
 import { SaveManager } from "../utils/SaveManager";
 import { I18n } from "../utils/I18n";
 
+interface WeaponSlotUI {
+  id: string;
+  card: Container;
+  bg: Graphics;
+  iconGfx: Graphics;
+  badge: Text;
+  strokeColor: number;
+  lastLvl: number;
+}
+
 export class HUD extends Container {
   // Top Unified Header Bar
   private headerBg: Graphics;
@@ -19,22 +29,30 @@ export class HUD extends Container {
   private distanceText: Text;
   private scrapText: Text;
   private scrapPill: Container;
-  private lastScrap: number = 0;
+  private lastScrap: number = -1;
   private currentDistance: number = 0;
+  private lastIntDistance: number = -1;
 
   // Right Stats (Kills & Settings)
   private killText: Text;
   private killPill: Container;
-  private lastKills: number = 0;
+  private lastKills: number = -1;
   private currentKills: number = 0;
   private settingsBtn: HyperCircleButton;
 
-  // Center Weapons Dock
+  // Center Weapons Dock (Zero Allocation)
   private weaponsContainer: Container;
+  private weaponSlots: WeaponSlotUI[] = [];
   private lastWeaponLevels: Record<string, number> = {};
 
-  // Active Buffs Dock (Floating cleanly below header)
+  // Active Buffs Dock (Zero Allocation)
   private buffsContainer: Container;
+  private rapidBadge!: Container;
+  private rapidText!: Text;
+  private lastRapidSec: string = "";
+  private invincibleBadge!: Container;
+  private invincibleText!: Text;
+  private lastInvincibleSec: string = "";
 
   // Boss HP Bar
   private bossHpContainer: Container;
@@ -50,6 +68,8 @@ export class HUD extends Container {
   private levelBadge: Container;
   private currentLevel: number = 1;
   private currentXpRatio: number = 0;
+  private lastLevel: number = -1;
+  private lastXpWidth: number = -1;
 
   // Damage Numbers (Pooled)
   private damageNumbersContainer: Container;
@@ -66,6 +86,14 @@ export class HUD extends Container {
     this.damageNumbersContainer = new Container();
     this.damageNumbersContainer.eventMode = "none";
     this.addChild(this.damageNumbersContainer);
+
+    // Pre-populate pool with 24 items to avoid runtime allocations
+    for (let i = 0; i < 24; i++) {
+      const dn = new DamageNumber();
+      dn.visible = false;
+      this.damageNumbersContainer.addChild(dn);
+      this.damageNumberPool.push(dn);
+    }
 
     // React immediately when graphics setting is changed
     EventBus.on("settings:changed", (data) => {
@@ -193,11 +221,13 @@ export class HUD extends Container {
     this.weaponsContainer = new Container();
     this.weaponsContainer.y = 54;
     this.addChild(this.weaponsContainer);
+    this.initWeaponsTray();
 
     // ── 6. Active Buffs Notification Strip (Floating cleanly below header at y = 122) ──
     this.buffsContainer = new Container();
     this.buffsContainer.y = 122;
     this.addChild(this.buffsContainer);
+    this.initBuffsDock();
 
     // ── 7. Boss HP Bar (Top Center Overlay) ──
     this.bossHpContainer = new Container();
@@ -318,130 +348,7 @@ export class HUD extends Container {
     this.bottomBarContainer.y = height - 46;
   }
 
-  /** Display active buff badges with dynamic width sizing so text never overflows */
-  updateBuffs(rapidTimer: number, invincibleTimer: number) {
-    this.buffsContainer.removeChildren();
-
-    const activeBuffs: {
-      label: string;
-      color: number;
-      strokeColor: number;
-    }[] = [];
-
-    if (rapidTimer > 0) {
-      activeBuffs.push({
-        label: I18n.t("buff.rapid", { sec: rapidTimer.toFixed(1) }),
-        color: 0xd97706,
-        strokeColor: 0xfbbf24,
-      });
-    }
-    if (invincibleTimer > 0) {
-      activeBuffs.push({
-        label: I18n.t("buff.invincible", { sec: invincibleTimer.toFixed(1) }),
-        color: 0x0284c7,
-        strokeColor: 0x38bdf8,
-      });
-    }
-
-    if (activeBuffs.length === 0) return;
-
-    // Dynamically calculate badge width based on label text
-    const buffData = activeBuffs.map((b) => {
-      const txt = new Text({
-        text: b.label,
-        style: {
-          fontFamily: "Be Vietnam Pro, sans-serif",
-          fontSize: 16,
-          fontWeight: "900",
-          fill: b.strokeColor,
-        },
-      });
-      const badgeW = Math.max(220, txt.width + 38);
-      const badgeH = 42;
-      return { b, txt, badgeW, badgeH };
-    });
-
-    const gap = 12;
-    const totalW =
-      buffData.reduce((sum, item) => sum + item.badgeW, 0) +
-      (buffData.length - 1) * gap;
-    let curX = (GAME_WIDTH - totalW) / 2;
-
-    for (const item of buffData) {
-      const cont = new Container();
-      cont.x = curX;
-      curX += item.badgeW + gap;
-
-      const gfx = new Graphics();
-      gfx
-        .roundRect(0, 0, item.badgeW, item.badgeH, 18)
-        .fill(0x0f172a)
-        .stroke({ color: item.b.strokeColor, width: 2.5 });
-      gfx
-        .roundRect(4, 2, item.badgeW - 8, 14, 7)
-        .fill({ color: item.b.color, alpha: 0.4 });
-      cont.addChild(gfx);
-
-      item.txt.anchor.set(0.5);
-      item.txt.x = item.badgeW / 2;
-      item.txt.y = item.badgeH / 2;
-      cont.addChild(item.txt);
-
-      this.buffsContainer.addChild(cont);
-    }
-  }
-
-  showPickupToast(text: string, color: number = 0xf59e0b, icon: string = "🎁") {
-    const toast = new PickupToast(GAME_WIDTH / 2, 140, text, color, icon);
-    this.addChild(toast);
-    this.pickupToasts.push(toast);
-  }
-
-  updateDistance(distanceMeters: number) {
-    this.currentDistance = distanceMeters;
-    this.distanceText.text = I18n.t("hud.distance", {
-      value: Math.floor(distanceMeters),
-    });
-  }
-
-  updateKills(kills: number) {
-    this.currentKills = kills;
-    if (kills > this.lastKills) {
-      this.killPill.scale.set(1.2);
-      this.lastKills = kills;
-    }
-    this.killText.text = I18n.t("hud.kills", { value: kills });
-  }
-
-  updateScrap(scrap: number) {
-    if (scrap > this.lastScrap) {
-      this.scrapPill.scale.set(1.22);
-      this.lastScrap = scrap;
-    }
-    this.scrapText.text = I18n.t("hud.scrap", { value: scrap });
-  }
-
-  updateXp(ratio: number, level: number) {
-    this.currentLevel = level;
-    this.currentXpRatio = ratio;
-    this.xpBarFill.clear();
-    const maxW = GAME_WIDTH - 162 - 4;
-    const w = maxW * Math.min(1, Math.max(0, ratio));
-
-    // Smooth Neon Blue Fill inside bottomBarContainer
-    this.xpBarFill.roundRect(120, 2, w, 24, 12).fill(0x0284c7);
-    this.xpBarFill
-      .roundRect(120, 2, w, 8, 4)
-      .fill({ color: 0xffffff, alpha: 0.45 });
-
-    this.levelText.text = I18n.t("hud.level", { value: level });
-  }
-
-  /** Update equipped weapons dock tray (Large, clear icons with high-contrast level stars) */
-  updateWeapons(weaponLevels: Record<string, number>) {
-    this.lastWeaponLevels = weaponLevels;
-    this.weaponsContainer.removeChildren();
-
+  private initWeaponsTray() {
     const slotTypes: {
       id: string;
       label: string;
@@ -455,7 +362,6 @@ export class HUD extends Container {
         color: 0xf59e0b,
         strokeColor: 0xfbbf24,
         drawIcon: (g, s) => {
-          // Machine gun barrel
           g.roundRect(-s * 0.4, -s * 0.12, s * 0.8, s * 0.24, 2).fill(0xffffff);
           g.rect(-s * 0.1, -s * 0.22, s * 0.25, s * 0.44).fill(0xd97706);
         },
@@ -466,7 +372,6 @@ export class HUD extends Container {
         color: 0xf97316,
         strokeColor: 0xfb923c,
         drawIcon: (g, s) => {
-          // Rocket silhouette
           g.poly([
             0,
             -s * 0.42,
@@ -491,7 +396,6 @@ export class HUD extends Container {
         color: 0x0284c7,
         strokeColor: 0x38bdf8,
         drawIcon: (g, s) => {
-          // Laser lightning bolt
           VectorIcons.drawLightning(g, s * 0.9, 0xffffff);
         },
       },
@@ -501,7 +405,6 @@ export class HUD extends Container {
         color: 0x10b981,
         strokeColor: 0x34d399,
         drawIcon: (g, s) => {
-          // Shield polygon
           g.poly([
             0,
             -s * 0.38,
@@ -526,49 +429,29 @@ export class HUD extends Container {
     const totalW = slotTypes.length * slotW + (slotTypes.length - 1) * gap;
     const startX = (GAME_WIDTH - totalW) / 2;
 
-    for (let i = 0; i < slotTypes.length; i++) {
-      const slot = slotTypes[i];
-      const lvl = weaponLevels[slot.id] || 0;
-      const isOwned = lvl > 0;
+    this.weaponSlots = [];
 
+    for (let i = 0; i < slotTypes.length; i++) {
+      const slotDef = slotTypes[i];
       const card = new Container();
       card.x = startX + i * (slotW + gap);
 
-      // Card Background
       const bg = new Graphics();
-      if (isOwned) {
-        bg.roundRect(0, 0, slotW, slotH, 10)
-          .fill(0x1e293b)
-          .stroke({ color: slot.strokeColor, width: 2.2 });
-        bg.roundRect(3, 2, slotW - 6, slotH * 0.36, 5).fill({
-          color: 0xffffff,
-          alpha: 0.18,
-        });
-      } else {
-        // Empty Slot (Clear outline with high contrast)
-        bg.roundRect(0, 0, slotW, slotH, 10)
-          .fill({ color: 0x0f172a, alpha: 0.75 })
-          .stroke({ color: 0x475569, width: 1.8 });
-      }
       card.addChild(bg);
 
-      // Vector Icon (Size 24px, clear visibility)
       const iconGfx = new Graphics();
       iconGfx.x = 24;
       iconGfx.y = slotH / 2;
-      iconGfx.alpha = isOwned ? 1 : 0.55;
-      slot.drawIcon(iconGfx, 24);
+      slotDef.drawIcon(iconGfx, 24);
       card.addChild(iconGfx);
 
-      // Star Badge / Level Text
       const badge = new Text({
-        text: isOwned ? `★${lvl}` : "—",
+        text: "—",
         style: {
           fontFamily: "Be Vietnam Pro, sans-serif",
-          fontSize: isOwned ? 18 : 17,
-          fill: isOwned ? 0xfacc15 : 0x64748b,
+          fontSize: 17,
+          fill: 0x64748b,
           fontWeight: "900",
-          stroke: isOwned ? { color: 0x000000, width: 2 } : undefined,
         },
       });
       badge.anchor.set(1, 0.5);
@@ -577,6 +460,225 @@ export class HUD extends Container {
       card.addChild(badge);
 
       this.weaponsContainer.addChild(card);
+
+      const slotUI: WeaponSlotUI = {
+        id: slotDef.id,
+        card,
+        bg,
+        iconGfx,
+        badge,
+        strokeColor: slotDef.strokeColor,
+        lastLvl: -1,
+      };
+      this.weaponSlots.push(slotUI);
+      this.drawSlotBg(slotUI, false);
+    }
+  }
+
+  private drawSlotBg(slot: WeaponSlotUI, isOwned: boolean) {
+    const slotW = 88;
+    const slotH = 48;
+    slot.bg.clear();
+    if (isOwned) {
+      slot.bg
+        .roundRect(0, 0, slotW, slotH, 10)
+        .fill(0x1e293b)
+        .stroke({ color: slot.strokeColor, width: 2.2 });
+      slot.bg
+        .roundRect(3, 2, slotW - 6, slotH * 0.36, 5)
+        .fill({ color: 0xffffff, alpha: 0.18 });
+    } else {
+      slot.bg
+        .roundRect(0, 0, slotW, slotH, 10)
+        .fill({ color: 0x0f172a, alpha: 0.75 })
+        .stroke({ color: 0x475569, width: 1.8 });
+    }
+  }
+
+  private initBuffsDock() {
+    // Rapid Fire Badge
+    this.rapidBadge = new Container();
+    this.rapidBadge.visible = false;
+    const rapidBg = new Graphics();
+    rapidBg
+      .roundRect(0, 0, 240, 42, 18)
+      .fill(0x0f172a)
+      .stroke({ color: 0xfbbf24, width: 2.5 });
+    rapidBg
+      .roundRect(4, 2, 232, 14, 7)
+      .fill({ color: 0xd97706, alpha: 0.4 });
+    this.rapidBadge.addChild(rapidBg);
+
+    this.rapidText = new Text({
+      text: "",
+      style: {
+        fontFamily: "Be Vietnam Pro, sans-serif",
+        fontSize: 16,
+        fontWeight: "900",
+        fill: 0xfbbf24,
+      },
+    });
+    this.rapidText.anchor.set(0.5);
+    this.rapidText.x = 120;
+    this.rapidText.y = 21;
+    this.rapidBadge.addChild(this.rapidText);
+    this.buffsContainer.addChild(this.rapidBadge);
+
+    // Invincible Badge
+    this.invincibleBadge = new Container();
+    this.invincibleBadge.visible = false;
+    const invBg = new Graphics();
+    invBg
+      .roundRect(0, 0, 240, 42, 18)
+      .fill(0x0f172a)
+      .stroke({ color: 0x38bdf8, width: 2.5 });
+    invBg
+      .roundRect(4, 2, 232, 14, 7)
+      .fill({ color: 0x0284c7, alpha: 0.4 });
+    this.invincibleBadge.addChild(invBg);
+
+    this.invincibleText = new Text({
+      text: "",
+      style: {
+        fontFamily: "Be Vietnam Pro, sans-serif",
+        fontSize: 16,
+        fontWeight: "900",
+        fill: 0x38bdf8,
+      },
+    });
+    this.invincibleText.anchor.set(0.5);
+    this.invincibleText.x = 120;
+    this.invincibleText.y = 21;
+    this.invincibleBadge.addChild(this.invincibleText);
+    this.buffsContainer.addChild(this.invincibleBadge);
+  }
+
+  /** Zero-allocation active buff badges with cached string diffing */
+  updateBuffs(rapidTimer: number, invincibleTimer: number) {
+    const hasRapid = rapidTimer > 0;
+    const hasInv = invincibleTimer > 0;
+
+    if (!hasRapid && !hasInv) {
+      if (this.rapidBadge.visible) this.rapidBadge.visible = false;
+      if (this.invincibleBadge.visible) this.invincibleBadge.visible = false;
+      this.lastRapidSec = "";
+      this.lastInvincibleSec = "";
+      return;
+    }
+
+    const badgeW = 240;
+    const gap = 12;
+    const activeCount = (hasRapid ? 1 : 0) + (hasInv ? 1 : 0);
+    const totalW = activeCount * badgeW + (activeCount - 1) * gap;
+    let curX = (GAME_WIDTH - totalW) / 2;
+
+    if (hasRapid) {
+      this.rapidBadge.visible = true;
+      this.rapidBadge.x = curX;
+      curX += badgeW + gap;
+
+      const secStr = rapidTimer.toFixed(1);
+      if (secStr !== this.lastRapidSec) {
+        this.lastRapidSec = secStr;
+        this.rapidText.text = I18n.t("buff.rapid", { sec: secStr });
+      }
+    } else {
+      this.rapidBadge.visible = false;
+      this.lastRapidSec = "";
+    }
+
+    if (hasInv) {
+      this.invincibleBadge.visible = true;
+      this.invincibleBadge.x = curX;
+
+      const secStr = invincibleTimer.toFixed(1);
+      if (secStr !== this.lastInvincibleSec) {
+        this.lastInvincibleSec = secStr;
+        this.invincibleText.text = I18n.t("buff.invincible", { sec: secStr });
+      }
+    } else {
+      this.invincibleBadge.visible = false;
+      this.lastInvincibleSec = "";
+    }
+  }
+
+  showPickupToast(text: string, color: number = 0xf59e0b, icon: string = "🎁") {
+    const toast = new PickupToast(GAME_WIDTH / 2, 140, text, color, icon);
+    this.addChild(toast);
+    this.pickupToasts.push(toast);
+  }
+
+  updateDistance(distanceMeters: number) {
+    this.currentDistance = distanceMeters;
+    const intDist = Math.floor(distanceMeters);
+    if (intDist !== this.lastIntDistance) {
+      this.lastIntDistance = intDist;
+      this.distanceText.text = I18n.t("hud.distance", { value: intDist });
+    }
+  }
+
+  updateKills(kills: number) {
+    this.currentKills = kills;
+    if (kills !== this.lastKills) {
+      if (kills > this.lastKills && this.lastKills !== -1) {
+        this.killPill.scale.set(1.2);
+      }
+      this.lastKills = kills;
+      this.killText.text = I18n.t("hud.kills", { value: kills });
+    }
+  }
+
+  updateScrap(scrap: number) {
+    if (scrap !== this.lastScrap) {
+      if (scrap > this.lastScrap && this.lastScrap !== -1) {
+        this.scrapPill.scale.set(1.22);
+      }
+      this.lastScrap = scrap;
+      this.scrapText.text = I18n.t("hud.scrap", { value: scrap });
+    }
+  }
+
+  updateXp(ratio: number, level: number) {
+    this.currentLevel = level;
+    this.currentXpRatio = ratio;
+
+    const maxW = GAME_WIDTH - 162 - 4;
+    const w = Math.round(maxW * Math.min(1, Math.max(0, ratio)));
+
+    if (w !== this.lastXpWidth) {
+      this.lastXpWidth = w;
+      this.xpBarFill.clear();
+      this.xpBarFill.roundRect(120, 2, w, 24, 12).fill(0x0284c7);
+      this.xpBarFill
+        .roundRect(120, 2, w, 8, 4)
+        .fill({ color: 0xffffff, alpha: 0.45 });
+    }
+
+    if (level !== this.lastLevel) {
+      this.lastLevel = level;
+      this.levelText.text = I18n.t("hud.level", { value: level });
+    }
+  }
+
+  /** Zero-allocation equipped weapons tray with level diff checking */
+  updateWeapons(weaponLevels: Record<string, number>) {
+    this.lastWeaponLevels = weaponLevels;
+
+    for (const slot of this.weaponSlots) {
+      const lvl = weaponLevels[slot.id] || 0;
+      if (lvl === slot.lastLvl) continue;
+
+      const wasOwned = slot.lastLvl > 0;
+      const isOwned = lvl > 0;
+      slot.lastLvl = lvl;
+
+      if (wasOwned !== isOwned) {
+        this.drawSlotBg(slot, isOwned);
+        slot.iconGfx.alpha = isOwned ? 1 : 0.55;
+      }
+
+      slot.badge.text = isOwned ? `★${lvl}` : "—";
+      slot.badge.style.fill = isOwned ? 0xfacc15 : 0x64748b;
     }
   }
 
@@ -618,6 +720,15 @@ export class HUD extends Container {
     status?: "burn" | "shock" | "crit",
   ) {
     if (SaveManager.getSettings().lowParticles) return;
+
+    // Hard limit: max 24 concurrent damage numbers to prevent runaway texture allocations
+    if (this.damageNumbers.length >= 24) {
+      const oldest = this.damageNumbers.shift();
+      if (oldest) {
+        oldest.visible = false;
+        this.damageNumberPool.push(oldest);
+      }
+    }
 
     let dn = this.damageNumberPool.pop();
     if (!dn) {
@@ -680,7 +791,7 @@ export class HUD extends Container {
 
       if (toast.life <= 0) {
         this.removeChild(toast);
-        toast.destroy();
+        toast.destroy({ children: true });
         this.pickupToasts.splice(i, 1);
       }
     }
@@ -771,32 +882,32 @@ class DamageNumber extends Text {
   ) {
     let color = 0xffffff;
     let prefix = "";
-    let size = 20;
+    let baseScale = 1.0;
 
     if (status === "burn") {
       color = 0xff5500;
       prefix = "🔥 ";
-      size = 18;
+      baseScale = 0.85;
     } else if (status === "shock") {
       color = 0x00e5ff;
       prefix = "⚡ ";
-      size = 20;
+      baseScale = 0.95;
     } else if (crit || status === "crit") {
       color = 0xfacc15;
       prefix = "💥 ";
-      size = 26;
+      baseScale = 1.25;
     } else if (heal) {
       color = 0x22c55e;
       prefix = "+";
-      size = 20;
+      baseScale = 0.95;
     }
 
     this.text = `${prefix}${Math.round(amount)}`;
     this.style.fill = color;
-    this.style.fontSize = size;
+    // Scale on GPU vertex transform instead of mutating style.fontSize (prevents canvas backing store churning)
     this.x = x + (Math.random() - 0.5) * 16;
     this.y = y;
-    this.scale.set(crit ? 1.2 : 1.0);
+    this.scale.set(crit ? baseScale * 1.2 : baseScale);
     this.alpha = 1;
     this.life = 0.42;
     this.maxLife = 0.42;

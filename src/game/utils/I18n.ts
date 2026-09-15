@@ -40,7 +40,7 @@ const messages: Record<Language, Record<string, string>> = {
     "settings.shake": "Rung màn hình",
     "settings.shakeSubOn": "Bật cảm giác rung lực chiến đấu",
     "settings.shakeSubOff": "Tắt hiệu ứng rung màn hình",
-    "settings.particles": "Hiệu ứng đồ họa",
+    "settings.particles": "Hiệu ứng",
     "settings.particlesSubOn": "Rực rỡ: Hạt & số sát thương",
     "settings.particlesSubOff": "Tiết kiệm: Tối ưu 60 FPS mượt mà",
     "settings.on": "BẬT",
@@ -52,11 +52,17 @@ const messages: Record<Language, Record<string, string>> = {
     "settings.helpBody":
       "• Vuốt kéo để lái xe tránh đâm quái vật trực diện.\n• Thu thập Phế liệu để nâng cấp vĩnh viễn trong Xưởng Xe.\n• Trang bị Tên Lửa và Laser để quét sạch quái cự ly xa!",
     "settings.reset": "XÓA DỮ LIỆU",
-    "settings.resetTitle": "⚠️ ĐẶT LẠI TIẾN TRÌNH?",
+    "settings.resetTitle": "ĐẶT LẠI TIẾN TRÌNH?",
     "settings.resetBody":
       "Bạn có chắc muốn xóa toàn bộ tiến trình nâng cấp và số phế liệu đã tích lũy không?",
     "settings.cancel": "HỦY BỎ",
     "settings.confirm": "ĐỒNG Ý",
+    "settings.back": "QUAY LẠI",
+    "settings.resume": "QUAY LẠI",
+    "settings.giveUp": "BỎ CUỘC",
+    "settings.giveUpTitle": "XÁC NHẬN BỎ CUỘC?",
+    "settings.giveUpBody":
+      "Bạn có chắc muốn kết thúc chuyến đi này không? Toàn bộ phế liệu thu thập được vẫn sẽ được bảo lưu.",
     "settings.version": "Monster Convoy",
     "upgrade.title": "LÊN CẤP ĐOÀN XE!",
     "upgrade.subtitle": "Chạm vào thẻ bài để gia tăng hỏa lực chiến xa",
@@ -92,7 +98,9 @@ const messages: Record<Language, Record<string, string>> = {
     "stats.scrapTotal": "Tổng phế liệu ví",
     "stats.time": "Thời gian sinh tồn",
     "stats.score": "ĐIỂM",
+    "stats.scoreTitle": "ĐIỂM CHIẾN DỊCH",
     "stats.best": "KỶ LỤC",
+    "stats.newRecord": "KỶ LỤC MỚI!",
   },
   en: {
     "menu.title": "MONSTER\nCONVOY",
@@ -141,11 +149,17 @@ const messages: Record<Language, Record<string, string>> = {
     "settings.helpBody":
       "• Drag to steer convoy and dodge incoming monsters.\n• Collect Scrap to permanently upgrade your war rig.\n• Equip Rockets and Lasers to snipe distant foes!",
     "settings.reset": "CLEAR DATA",
-    "settings.resetTitle": "⚠️ RESET PROGRESS?",
+    "settings.resetTitle": "RESET PROGRESS?",
     "settings.resetBody":
       "Are you sure you want to erase all garage upgrades and stored scrap?",
     "settings.cancel": "CANCEL",
     "settings.confirm": "CONFIRM",
+    "settings.back": "BACK",
+    "settings.resume": "RESUME",
+    "settings.giveUp": "GIVE UP",
+    "settings.giveUpTitle": "ABANDON RUN?",
+    "settings.giveUpBody":
+      "Are you sure you want to end this run? All collected scrap will be saved.",
     "settings.version": "Monster Convoy",
     "upgrade.title": "CONVOY LEVEL UP!",
     "upgrade.subtitle": "Tap a card to increase your battle firepower",
@@ -181,7 +195,9 @@ const messages: Record<Language, Record<string, string>> = {
     "stats.scrapTotal": "Wallet scrap",
     "stats.time": "Survival time",
     "stats.score": "SCORE",
+    "stats.scoreTitle": "CAMPAIGN SCORE",
     "stats.best": "BEST",
+    "stats.newRecord": "NEW RECORD!",
   },
 };
 

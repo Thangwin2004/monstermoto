@@ -6,6 +6,7 @@ export class AudioMixer {
   private static buffers: Map<string, AudioBuffer> = new Map();
 
   private static currentBgmSource: AudioBufferSourceNode | null = null;
+  private static pendingBgmKey: string | null = null;
   private static wasContextRunningBeforeFocus = false;
   private static hostMuted = false;
   private static masterVolume = 1;
@@ -102,12 +103,16 @@ export class AudioMixer {
       const arrayBuffer = await response.arrayBuffer();
       const audioBuffer = await this.ctx!.decodeAudioData(arrayBuffer);
       this.buffers.set(key, audioBuffer);
+      if (this.pendingBgmKey === key) {
+        this.playBGM(key);
+      }
     } catch {
       // Procedural audio is used as primary/fallback engine
     }
   }
 
   static playBGM(key: string) {
+    this.pendingBgmKey = key;
     if (!this.ctx || !this.buffers.has(key)) return;
     this.resume();
 

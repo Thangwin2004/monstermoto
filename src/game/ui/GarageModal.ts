@@ -67,32 +67,33 @@ export class GarageModal extends Container {
       .fill({ color: 0x000000, alpha: 0.65 });
     this.addChild(vignette);
 
-    // 2. Fixed Top Header Bar (Height: 124px, zero overlap)
+    // 2. Fixed Top Header Bar (Height: 146px, zero overlap)
+    const headerH = 146;
     this.headerContainer = new Container();
     this.addChild(this.headerContainer);
 
     const headerBg = new Graphics();
-    headerBg.rect(0, 0, GAME_WIDTH, 124).fill({ color: 0x0f172a, alpha: 0.98 });
-    headerBg.rect(0, 122, GAME_WIDTH, 2).fill(0x334155);
-    headerBg.rect(GAME_WIDTH / 2 - 160, 122, 320, 2).fill(0xf59e0b);
+    headerBg.rect(0, 0, GAME_WIDTH, headerH).fill({ color: 0x0f172a, alpha: 0.98 });
+    headerBg.rect(0, headerH - 2, GAME_WIDTH, 2).fill(0x334155);
+    headerBg.rect(GAME_WIDTH / 2 - 180, headerH - 2, 360, 2).fill(0xf59e0b);
     this.headerContainer.addChild(headerBg);
 
-    // Row 1: Title & Close Button (y = 38)
+    // Row 1: Title & Close Button (y = 42)
     const titleRow = new Container();
-    titleRow.y = 38;
+    titleRow.y = 42;
     this.headerContainer.addChild(titleRow);
 
-    this.wrenchIcon = VectorIcons.createIcon("wrench", 26, 0xf59e0b);
+    this.wrenchIcon = VectorIcons.createIcon("wrench", 34, 0xf59e0b);
     titleRow.addChild(this.wrenchIcon);
 
     this.titleText = new Text({
       text: I18n.t("garage.title"),
       style: {
         fontFamily: "Be Vietnam Pro, sans-serif",
-        fontSize: 24,
+        fontSize: 30,
         fontWeight: "900",
         fill: 0xffffff,
-        stroke: { color: 0x78350f, width: 4 },
+        stroke: { color: 0x78350f, width: 5 },
         letterSpacing: 1.2,
       },
     });
@@ -104,7 +105,7 @@ export class GarageModal extends Container {
     // Close Button (Top-Right, easily clickable)
     const closeBtn = new HyperCircleButton({
       vectorIcon: "cross",
-      radius: 24,
+      radius: 27,
       color: 0xef4444,
       shadowColor: 0x991b1b,
       strokeWidth: 3.5,
@@ -113,14 +114,14 @@ export class GarageModal extends Container {
         this.onCloseCallback();
       },
     });
-    closeBtn.x = GAME_WIDTH - 44;
-    closeBtn.y = 38;
+    closeBtn.x = GAME_WIDTH - 46;
+    closeBtn.y = 42;
     this.headerContainer.addChild(closeBtn);
 
-    // Row 2: Scrap Balance Pill (y = 86, plenty of breathing room from title row)
-    const scrapPillW = 280;
-    const scrapPillH = 38;
-    const scrapPillY = 86;
+    // Row 2: Scrap Balance Pill (y = 100, plenty of breathing room from title row)
+    const scrapPillW = 360;
+    const scrapPillH = 48;
+    const scrapPillY = 100;
 
     const scrapPill = new Graphics();
     scrapPill
@@ -132,17 +133,17 @@ export class GarageModal extends Container {
         scrapPillH / 2,
       )
       .fill(0x1e293b)
-      .stroke({ color: 0xfacc15, width: 2.2 });
+      .stroke({ color: 0xfacc15, width: 2.5 });
     this.headerContainer.addChild(scrapPill);
 
     this.scrapText = new Text({
       text: I18n.t("garage.scrap", { value: SaveManager.getScrap() }),
       style: {
         fontFamily: "Be Vietnam Pro, sans-serif",
-        fontSize: 17,
+        fontSize: 24,
         fontWeight: "900",
         fill: 0xfacc15,
-        letterSpacing: 0.8,
+        letterSpacing: 1.0,
       },
     });
     this.scrapText.anchor.set(0.5);
@@ -151,7 +152,7 @@ export class GarageModal extends Container {
     this.headerContainer.addChild(this.scrapText);
 
     // 3. Scrollable Cards List Area
-    const listTopY = 132;
+    const listTopY = 154;
     const listBottomY = this.modalHeight - 16;
     const listH = Math.max(300, listBottomY - listTopY);
     const listW = GAME_WIDTH;
@@ -190,11 +191,11 @@ export class GarageModal extends Container {
   }
 
   private updateTitlePosition() {
-    const spacing = 12;
-    const totalW = 26 + spacing + this.titleText.width;
+    const spacing = 14;
+    const totalW = 34 + spacing + this.titleText.width;
     const startX = (GAME_WIDTH - totalW) / 2;
-    this.wrenchIcon.x = startX + 13;
-    this.titleText.x = startX + 26 + spacing;
+    this.wrenchIcon.x = startX + 17;
+    this.titleText.x = startX + 34 + spacing;
   }
 
   private setupScrollInteraction(scrollWrapper: Container, listH: number) {
@@ -272,11 +273,11 @@ export class GarageModal extends Container {
     }
 
     const configs = Object.values(GARAGE_UPGRADE_CONFIGS);
-    const cardW = 660; // Centered with generous 30px side margins
-    const cardH = 138; // Scaled up from 104px (+34px taller) for maximum readability & prominence
+    const cardW = 684; // Maximized width for mobile (18px side margins on 720px width)
+    const cardH = 166; // Substantially taller to host bold, large mobile fonts without any crowding
     const gap = 16;
     const rowH = cardH + gap;
-    const startY = 12 + cardH / 2;
+    const startY = 16 + cardH / 2;
     const currentScrap = SaveManager.getScrap();
 
     for (let i = 0; i < configs.length; i++) {
@@ -295,37 +296,37 @@ export class GarageModal extends Container {
       // 1. 3D Card Shadow Base
       const shadow = new Graphics();
       shadow
-        .roundRect(-cardW / 2, -cardH / 2 + 5, cardW, cardH, 20)
+        .roundRect(-cardW / 2, -cardH / 2 + 5, cardW, cardH, 22)
         .fill(0x04070e);
       row.addChild(shadow);
 
       // 2. Card Body
       const body = new Graphics();
       body
-        .roundRect(-cardW / 2, -cardH / 2, cardW, cardH, 20)
+        .roundRect(-cardW / 2, -cardH / 2, cardW, cardH, 22)
         .fill(0x1e293b)
         .stroke({ color: canAfford ? 0x64748b : 0x334155, width: 2.2 });
       row.addChild(body);
 
-      // 3. Vibrant Large Icon Badge (82 x 82)
+      // 3. Vibrant Large Icon Badge (94 x 94)
       const iconBg = new Graphics();
       iconBg
-        .roundRect(-cardW / 2 + 18, -41, 82, 82, 18)
+        .roundRect(-cardW / 2 + 18, -47, 94, 94, 20)
         .fill(cfg.color)
         .stroke({ color: 0xffffff, width: 2.5 });
       row.addChild(iconBg);
 
       const iconText = new Text({
         text: cfg.icon,
-        style: { fontSize: 38 },
+        style: { fontSize: 46 },
       });
       iconText.anchor.set(0.5);
-      iconText.x = -cardW / 2 + 59;
+      iconText.x = -cardW / 2 + 65;
       iconText.y = 0;
       row.addChild(iconText);
 
-      // 4. Content Column (x = -cardW / 2 + 118)
-      const colX = -cardW / 2 + 118;
+      // 4. Content Column (x = -cardW / 2 + 128)
+      const colX = -cardW / 2 + 128;
 
       // Line 1: Title + Level Badge (y = -cardH / 2 + 20)
       const upgradeName = I18n.t(`garage.name.${cfg.id}`) || cfg.name;
@@ -333,10 +334,10 @@ export class GarageModal extends Container {
         text: upgradeName,
         style: {
           fontFamily: "Be Vietnam Pro, sans-serif",
-          fontSize: 21,
+          fontSize: 27,
           fontWeight: "900",
           fill: 0xffffff,
-          stroke: { color: 0x0f172a, width: 3 },
+          stroke: { color: 0x0f172a, width: 3.5 },
         },
       });
       title.x = colX;
@@ -349,7 +350,7 @@ export class GarageModal extends Container {
           : I18n.t("garage.level", { cur: curLvl, max: cfg.maxLevel }),
         style: {
           fontFamily: "Be Vietnam Pro, sans-serif",
-          fontSize: 15,
+          fontSize: 20,
           fontWeight: "900",
           fill: isMax ? 0x22c55e : 0xfacc15,
           stroke: { color: 0x000000, width: 2.5 },
@@ -361,19 +362,19 @@ export class GarageModal extends Container {
 
       // Line 2: 10 Level Pips (Thick and clear)
       const pipsGfx = new Graphics();
-      const pipW = 18;
-      const pipH = 7;
-      const pipGap = 4;
+      const pipW = 21;
+      const pipH = 9.5;
+      const pipGap = 4.5;
       for (let p = 0; p < cfg.maxLevel; p++) {
         const px = colX + p * (pipW + pipGap);
-        const py = -cardH / 2 + 56;
+        const py = -cardH / 2 + 60;
         pipsGfx
-          .roundRect(px, py, pipW, pipH, 3.5)
+          .roundRect(px, py, pipW, pipH, 4.5)
           .fill(p < curLvl ? 0xfacc15 : 0x334155);
       }
       row.addChild(pipsGfx);
 
-      // Line 3: Stat description text (Large, high-contrast, 16.5px bold)
+      // Line 3: Stat description text (Large, high-contrast, 22.5px bold)
       const curBonus = curLvl * cfg.valuePerLevel;
       const nextBonus = (curLvl + 1) * cfg.valuePerLevel;
       const curValStr = cfg.isMultiplier
@@ -395,21 +396,22 @@ export class GarageModal extends Container {
         text: descText,
         style: {
           fontFamily: "Be Vietnam Pro, sans-serif",
-          fontSize: 16.5,
+          fontSize: 22,
           fontWeight: "700",
-          fill: 0xf1f5f9,
+          fill: 0xf8fafc,
           wordWrap: true,
-          wordWrapWidth: 340,
+          wordWrapWidth: 385,
+          lineHeight: 28,
         },
       });
       desc.x = colX;
-      desc.y = -cardH / 2 + 80;
+      desc.y = -cardH / 2 + 84;
       row.addChild(desc);
 
-      // 5. Action Upgrade Button (140 x 64)
-      const btnW = 140;
-      const btnH = 64;
-      const btnX = cardW / 2 - 88;
+      // 5. Action Upgrade Button (152 x 72)
+      const btnW = 152;
+      const btnH = 72;
+      const btnX = cardW / 2 - 92;
 
       const btn = new Container();
       btn.x = btnX;
@@ -420,25 +422,25 @@ export class GarageModal extends Container {
 
       const btnBg = new Graphics();
       if (isMax) {
-        btnBg.roundRect(-btnW / 2, -btnH / 2, btnW, btnH, 16).fill(0x334155);
+        btnBg.roundRect(-btnW / 2, -btnH / 2, btnW, btnH, 18).fill(0x334155);
       } else if (canAfford) {
         // Shadow base
         const sh = new Graphics();
-        sh.roundRect(-btnW / 2, -btnH / 2 + 5, btnW, btnH, 16).fill(0xc2410c);
+        sh.roundRect(-btnW / 2, -btnH / 2 + 5, btnW, btnH, 18).fill(0xc2410c);
         btn.addChildAt(sh, 0);
 
         btnBg
-          .roundRect(-btnW / 2, -btnH / 2, btnW, btnH, 16)
+          .roundRect(-btnW / 2, -btnH / 2, btnW, btnH, 18)
           .fill(0xf97316)
           .stroke({ color: 0xffffff, width: 2.5 });
         btnBg
-          .roundRect(-btnW / 2 + 4, -btnH / 2 + 2, btnW - 8, btnH * 0.38, 7)
+          .roundRect(-btnW / 2 + 4, -btnH / 2 + 2, btnW - 8, btnH * 0.38, 8)
           .fill({ color: 0xffffff, alpha: 0.35 });
       } else {
         btnBg
-          .roundRect(-btnW / 2, -btnH / 2, btnW, btnH, 16)
+          .roundRect(-btnW / 2, -btnH / 2, btnW, btnH, 18)
           .fill(0x1e293b)
-          .stroke({ color: 0x475569, width: 1.8 });
+          .stroke({ color: 0x475569, width: 2 });
       }
       btnContent.addChild(btnBg);
 
@@ -446,10 +448,10 @@ export class GarageModal extends Container {
         text: isMax ? I18n.t("garage.maxed") : `🔩 ${cost}`,
         style: {
           fontFamily: "Be Vietnam Pro, sans-serif",
-          fontSize: isMax ? 17 : 21,
+          fontSize: isMax ? 22 : 27,
           fontWeight: "900",
           fill: isMax ? 0x94a3b8 : canAfford ? 0xffffff : 0x64748b,
-          stroke: canAfford ? { color: 0xc2410c, width: 2.5 } : undefined,
+          stroke: canAfford ? { color: 0xc2410c, width: 3 } : undefined,
         },
       });
       btnLabel.anchor.set(0.5);
@@ -488,7 +490,7 @@ export class GarageModal extends Container {
     const lastCardBottom = startY + (configs.length - 1) * rowH + cardH / 2;
     const tipBoxY = lastCardBottom + 18;
     const tipBoxW = cardW;
-    const tipBoxH = 50;
+    const tipBoxH = 58;
 
     const tipContainer = new Container();
     tipContainer.x = listW / 2;
@@ -496,16 +498,16 @@ export class GarageModal extends Container {
 
     const tipBg = new Graphics();
     tipBg
-      .roundRect(-tipBoxW / 2, -tipBoxH / 2, tipBoxW, tipBoxH, 14)
+      .roundRect(-tipBoxW / 2, -tipBoxH / 2, tipBoxW, tipBoxH, 16)
       .fill({ color: 0x0f172a, alpha: 0.92 })
-      .stroke({ color: 0x334155, width: 1.8 });
+      .stroke({ color: 0x334155, width: 2 });
     tipContainer.addChild(tipBg);
 
     const tipText = new Text({
       text: I18n.t("garage.tip"),
       style: {
         fontFamily: "Be Vietnam Pro, sans-serif",
-        fontSize: 15.5,
+        fontSize: 19.5,
         fontWeight: "700",
         fill: 0x94a3b8,
       },

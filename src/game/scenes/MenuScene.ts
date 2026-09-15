@@ -170,7 +170,7 @@ export class MenuScene extends Container implements Scene {
       },
     });
     this.playBtn.x = GAME_WIDTH / 2;
-    this.playBtn.y = GAME_HEIGHT - 260;
+    this.playBtn.y = this.currentHeight - 330;
     this.contentLayer.addChild(this.playBtn);
 
     // 6. Hyper-Casual 3D Garage Button (XƯỞNG XE with crisp Vector Wrench Icon)
@@ -196,7 +196,7 @@ export class MenuScene extends Container implements Scene {
       },
     });
     this.garageBtn.x = GAME_WIDTH / 2;
-    this.garageBtn.y = this.currentHeight - 160;
+    this.garageBtn.y = this.currentHeight - 195;
     this.contentLayer.addChild(this.garageBtn);
 
     // Tagline
@@ -213,7 +213,7 @@ export class MenuScene extends Container implements Scene {
     });
     this.infoText.anchor.set(0.5);
     this.infoText.x = GAME_WIDTH / 2;
-    this.infoText.y = this.currentHeight - 64;
+    this.infoText.y = this.currentHeight - 75;
     this.contentLayer.addChild(this.infoText);
 
     // Language change listener
@@ -234,7 +234,7 @@ export class MenuScene extends Container implements Scene {
       .rect(0, 0, GAME_WIDTH, 220)
       .fill({ color: 0x000000, alpha: 0.35 });
     this.vignette
-      .rect(0, h * 0.62, GAME_WIDTH, h * 0.38 + 200)
+      .rect(0, h * 0.58, GAME_WIDTH, h * 0.42 + 200)
       .fill({ color: 0x000000, alpha: 0.68 });
   }
 
@@ -270,9 +270,9 @@ export class MenuScene extends Container implements Scene {
     this.bgSprite.height = height;
     this.redrawVignette(height);
 
-    this.playBtn.y = height - 260;
-    this.garageBtn.y = height - 160;
-    this.infoText.y = height - 64;
+    this.playBtn.y = height - 330;
+    this.garageBtn.y = height - 195;
+    this.infoText.y = height - 75;
     this.titleContainer.y = Math.max(160, height * 0.17);
 
     if (this.activeModal?.resize) {

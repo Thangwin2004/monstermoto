@@ -1,4 +1,27 @@
 import { Container, Graphics } from "pixi.js";
+ 
+export type VectorIconType =
+  | "play"
+  | "gear"
+  | "wrench"
+  | "speaker"
+  | "music"
+  | "vibration"
+  | "lightning"
+  | "home"
+  | "check"
+  | "cross"
+  | "globe"
+  | "flag"
+  | "arrowLeft"
+  | "trash"
+  | "star"
+  | "crosshair"
+  | "road"
+  | "bolt"
+  | "coin"
+  | "clock"
+  | "trophy";
 
 /**
  * VectorIcons: Procedurally renders crisp, scalable, high-resolution vector icons
@@ -51,7 +74,7 @@ export class VectorIcons {
     g.poly(points).fill(color);
 
     // Center hole cutout
-    g.circle(0, 0, holeR).fill(0x0284c7); // or cut out
+    g.circle(0, 0, holeR).cut();
   }
 
   /**
@@ -71,11 +94,11 @@ export class VectorIcons {
     g.roundRect(-s * 0.22, -s * 0.9, s * 0.44, s * 1.5, s * 0.18).fill(color);
     // Head circle
     g.circle(0, -s * 0.6, s * 0.55).fill(color);
-    // Head cutout slot
-    g.rect(-s * 0.22, -s * 1.2, s * 0.44, s * 0.65).fill(0x047857);
+    // Head cutout slot (true transparent cutout)
+    g.rect(-s * 0.22, -s * 1.2, s * 0.44, s * 0.65).cut();
     // Bottom knob
     g.circle(0, s * 0.6, s * 0.35).fill(color);
-    g.circle(0, s * 0.6, s * 0.16).fill(0x047857);
+    g.circle(0, s * 0.6, s * 0.16).cut();
 
     g.restore();
   }
@@ -222,7 +245,7 @@ export class VectorIcons {
     // House base
     g.rect(-s * 0.65, -s * 0.1, s * 1.3, s * 0.95).fill(color);
     // Door cutout
-    g.roundRect(-s * 0.22, s * 0.25, s * 0.44, s * 0.6, 2).fill(0x0284c7);
+    g.roundRect(-s * 0.22, s * 0.25, s * 0.44, s * 0.6, 2).cut();
   }
 
   /**
@@ -268,6 +291,282 @@ export class VectorIcons {
   }
 
   /**
+   * Draw Globe / Language icon (centered at 0, 0)
+   */
+  public static drawGlobe(
+    g: Graphics,
+    size: number = 24,
+    color: number = 0xffffff,
+  ) {
+    const r = size * 0.44;
+    const lineW = Math.max(1.8, size * 0.08);
+    // Outer circle
+    g.circle(0, 0, r).stroke({ color, width: lineW });
+    // Equator line
+    g.moveTo(-r, 0).lineTo(r, 0).stroke({ color, width: lineW });
+    // Prime meridian ellipse
+    g.ellipse(0, 0, r * 0.52, r).stroke({ color, width: lineW });
+    // Vertical axis line
+    g.moveTo(0, -r).lineTo(0, r).stroke({ color, width: lineW });
+  }
+
+  /**
+   * Draw Flag / Give Up icon (centered at 0, 0)
+   */
+  public static drawFlag(
+    g: Graphics,
+    size: number = 24,
+    color: number = 0xffffff,
+  ) {
+    const s = size * 0.5;
+    const poleW = Math.max(2.2, size * 0.1);
+    const poleX = -s * 0.55;
+    // Pole
+    g.roundRect(poleX - poleW / 2, -s * 0.9, poleW, s * 1.8, poleW / 2).fill(
+      color,
+    );
+    // Flag pennant
+    g.poly([
+      poleX + poleW / 2,
+      -s * 0.85,
+      s * 0.75,
+      -s * 0.45,
+      poleX + poleW / 2,
+      -s * 0.05,
+    ]).fill(color);
+  }
+
+  /**
+   * Draw Left Arrow / Back / Return icon (centered at 0, 0)
+   */
+  public static drawArrowLeft(
+    g: Graphics,
+    size: number = 24,
+    color: number = 0xffffff,
+  ) {
+    const s = size * 0.5;
+    const stemH = Math.max(2.6, size * 0.16);
+    // Arrow head pointing left + stem to the right
+    g.poly([
+      -s * 0.8,
+      0,
+      -s * 0.15,
+      -s * 0.65,
+      -s * 0.15,
+      -stemH / 2,
+      s * 0.75,
+      -stemH / 2,
+      s * 0.75,
+      stemH / 2,
+      -s * 0.15,
+      stemH / 2,
+      -s * 0.15,
+      s * 0.65,
+    ]).fill(color);
+  }
+
+  /**
+   * Draw Trash / Delete icon (centered at 0, 0)
+   */
+  public static drawTrash(
+    g: Graphics,
+    size: number = 24,
+    color: number = 0xffffff,
+  ) {
+    const s = size * 0.5;
+    const binW = s * 1.0;
+    const binH = s * 1.05;
+    // Bin container
+    g.roundRect(-binW / 2, -s * 0.2, binW, binH, 2.5).fill(color);
+    // Lid rim
+    g.roundRect(-s * 0.7, -s * 0.48, s * 1.4, s * 0.22, 2).fill(color);
+    // Lid handle
+    g.roundRect(-s * 0.28, -s * 0.78, s * 0.56, s * 0.25, 2).fill(color);
+  }
+
+  /**
+   * Draw 5-pointed Star icon (centered at 0, 0)
+   */
+  public static drawStar(
+    g: Graphics,
+    size: number = 24,
+    color: number = 0xffffff,
+  ) {
+    const r = size * 0.5;
+    const innerR = r * 0.42;
+    const points: number[] = [];
+    for (let i = 0; i < 10; i++) {
+      const a = (i * Math.PI) / 5 - Math.PI / 2;
+      const rad = i % 2 === 0 ? r : innerR;
+      points.push(Math.cos(a) * rad, Math.sin(a) * rad);
+    }
+    g.poly(points).fill(color);
+  }
+
+  /**
+   * Draw Crosshair / Combat Target icon (centered at 0, 0)
+   */
+  public static drawCrosshair(
+    g: Graphics,
+    size: number = 24,
+    color: number = 0xffffff,
+  ) {
+    const r = size * 0.44;
+    const lineW = Math.max(2, size * 0.1);
+    g.circle(0, 0, r).stroke({ color, width: lineW });
+    g.circle(0, 0, r * 0.22).fill(color);
+    g.moveTo(-size * 0.5, 0)
+      .lineTo(-r * 0.45, 0)
+      .stroke({ color, width: lineW });
+    g.moveTo(r * 0.45, 0)
+      .lineTo(size * 0.5, 0)
+      .stroke({ color, width: lineW });
+    g.moveTo(0, -size * 0.5)
+      .lineTo(0, -r * 0.45)
+      .stroke({ color, width: lineW });
+    g.moveTo(0, r * 0.45)
+      .lineTo(0, size * 0.5)
+      .stroke({ color, width: lineW });
+  }
+
+  /**
+   * Draw Road / Distance Highway icon (centered at 0, 0)
+   */
+  public static drawRoad(
+    g: Graphics,
+    size: number = 24,
+    color: number = 0xffffff,
+  ) {
+    const s = size * 0.5;
+    const lineW = Math.max(2, size * 0.12);
+    // Left border
+    g.poly([-s * 0.25, -s * 0.85, -s * 0.8, s * 0.85]).stroke({
+      color,
+      width: lineW,
+      cap: "round",
+    });
+    // Right border
+    g.poly([s * 0.25, -s * 0.85, s * 0.8, s * 0.85]).stroke({
+      color,
+      width: lineW,
+      cap: "round",
+    });
+    // Center dashes
+    g.poly([0, -s * 0.65, 0, -s * 0.22]).stroke({
+      color,
+      width: lineW,
+      cap: "round",
+    });
+    g.poly([0, 0.12 * s, 0, s * 0.65]).stroke({
+      color,
+      width: lineW,
+      cap: "round",
+    });
+  }
+
+  /**
+   * Draw Hexagonal Scrap Bolt icon (centered at 0, 0)
+   */
+  public static drawBolt(
+    g: Graphics,
+    size: number = 24,
+    color: number = 0xffffff,
+  ) {
+    const r = size * 0.5;
+    const points: number[] = [];
+    for (let i = 0; i < 6; i++) {
+      const a = (i * Math.PI) / 3;
+      points.push(Math.cos(a) * r, Math.sin(a) * r);
+    }
+    g.poly(points).fill(color);
+    g.circle(0, 0, r * 0.45).cut();
+  }
+
+  /**
+   * Draw Coin / Scrap Currency icon (centered at 0, 0)
+   */
+  public static drawCoin(
+    g: Graphics,
+    size: number = 24,
+    color: number = 0xffffff,
+    innerColor: number = 0xb45309,
+  ) {
+    const r = size * 0.48;
+    g.circle(0, 0, r).fill(color);
+    g.circle(0, 0, r * 0.72).stroke({
+      color: innerColor,
+      width: Math.max(1.8, size * 0.09),
+    });
+    g.circle(0, 0, r * 0.25).fill(innerColor);
+  }
+
+  /**
+   * Draw Analog Clock / Timer icon (centered at 0, 0)
+   */
+  public static drawClock(
+    g: Graphics,
+    size: number = 24,
+    color: number = 0xffffff,
+  ) {
+    const r = size * 0.46;
+    const lineW = Math.max(2, size * 0.1);
+    g.circle(0, 0, r).stroke({ color, width: lineW });
+    g.circle(0, 0, r * 0.2).fill(color);
+    // Hour hand
+    g.poly([0, 0, 0, -r * 0.55]).stroke({
+      color,
+      width: lineW,
+      cap: "round",
+    });
+    // Minute hand
+    g.poly([0, 0, r * 0.48, -r * 0.1]).stroke({
+      color,
+      width: lineW,
+      cap: "round",
+    });
+  }
+
+  /**
+   * Draw Trophy / Championship Cup icon (centered at 0, 0)
+   */
+  public static drawTrophy(
+    g: Graphics,
+    size: number = 24,
+    color: number = 0xffffff,
+  ) {
+    const s = size * 0.5;
+    // Cup bowl
+    g.poly([
+      -s * 0.65,
+      -s * 0.75,
+      s * 0.65,
+      -s * 0.75,
+      s * 0.5,
+      s * 0.05,
+      0,
+      s * 0.35,
+      -s * 0.5,
+      s * 0.05,
+    ]).fill(color);
+    // Stem
+    g.rect(-s * 0.16, s * 0.3, s * 0.32, s * 0.3).fill(color);
+    // Base
+    g.roundRect(-s * 0.55, s * 0.6, s * 1.1, s * 0.25, 2).fill(color);
+    // Left handle
+    g.arc(-s * 0.5, -s * 0.35, s * 0.26, Math.PI * 0.6, Math.PI * 1.5).stroke({
+      color,
+      width: Math.max(2, size * 0.09),
+      cap: "round",
+    });
+    // Right handle
+    g.arc(s * 0.5, -s * 0.35, s * 0.26, -Math.PI * 0.5, Math.PI * 0.4).stroke({
+      color,
+      width: Math.max(2, size * 0.09),
+      cap: "round",
+    });
+  }
+
+  /**
    * Create a standalone Container containing any vector icon
    */
   public static createIcon(
@@ -281,7 +580,18 @@ export class VectorIcons {
       | "lightning"
       | "home"
       | "check"
-      | "cross",
+      | "cross"
+      | "globe"
+      | "flag"
+      | "arrowLeft"
+      | "trash"
+      | "star"
+      | "crosshair"
+      | "road"
+      | "bolt"
+      | "coin"
+      | "clock"
+      | "trophy",
     size: number = 24,
     color: number = 0xffffff,
   ): Container {
@@ -317,6 +627,39 @@ export class VectorIcons {
         break;
       case "cross":
         this.drawCross(g, size, color);
+        break;
+      case "globe":
+        this.drawGlobe(g, size, color);
+        break;
+      case "flag":
+        this.drawFlag(g, size, color);
+        break;
+      case "arrowLeft":
+        this.drawArrowLeft(g, size, color);
+        break;
+      case "trash":
+        this.drawTrash(g, size, color);
+        break;
+      case "star":
+        this.drawStar(g, size, color);
+        break;
+      case "crosshair":
+        this.drawCrosshair(g, size, color);
+        break;
+      case "road":
+        this.drawRoad(g, size, color);
+        break;
+      case "bolt":
+        this.drawBolt(g, size, color);
+        break;
+      case "coin":
+        this.drawCoin(g, size, color);
+        break;
+      case "clock":
+        this.drawClock(g, size, color);
+        break;
+      case "trophy":
+        this.drawTrophy(g, size, color);
         break;
     }
     cont.addChild(g);

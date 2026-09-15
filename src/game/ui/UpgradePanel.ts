@@ -159,12 +159,20 @@ export class UpgradePanel extends Container {
 
     this.titleText = new Text({
       text: I18n.t("upgrade.title"),
+      resolution: 2,
+      roundPixels: true,
       style: {
         fontFamily: "Be Vietnam Pro, sans-serif",
         fontSize: 28,
         fontWeight: "900",
         fill: 0xffffff,
-        stroke: { color: 0x78350f, width: 4.5 },
+        dropShadow: {
+          color: 0x78350f,
+          blur: 0,
+          distance: 3,
+          angle: Math.PI / 2,
+        },
+        stroke: { color: 0x78350f, width: 2 },
         letterSpacing: 2,
       },
     });
@@ -175,6 +183,8 @@ export class UpgradePanel extends Container {
     // Subtitle (Generously cleared below ribbon, not overlapping!)
     this.subText = new Text({
       text: I18n.t("upgrade.subtitle"),
+      resolution: 2,
+      roundPixels: true,
       style: {
         fontFamily: "Be Vietnam Pro, sans-serif",
         fontSize: 16,
@@ -256,6 +266,8 @@ export class UpgradePanel extends Container {
       const rarityStr = I18n.rarity(upgrade.rarity, theme.label);
       const rarityText = new Text({
         text: rarityStr,
+        resolution: 2,
+        roundPixels: true,
         style: {
           fontFamily: "Be Vietnam Pro, sans-serif",
           fontSize: 14,
@@ -283,6 +295,8 @@ export class UpgradePanel extends Container {
       const actionStr = I18n.action(upgrade.actionType, actionInfo.text);
       const actionText = new Text({
         text: actionStr,
+        resolution: 2,
+        roundPixels: true,
         style: {
           fontFamily: "Be Vietnam Pro, sans-serif",
           fontSize: 14,
@@ -308,6 +322,8 @@ export class UpgradePanel extends Container {
       // 4. Row 2: Upgrade Name (Card Title - large, bold, spacious)
       const nameText = new Text({
         text: I18n.upgradeName(upgrade.id, upgrade.name),
+        resolution: 2,
+        roundPixels: true,
         style: {
           fontFamily: "Be Vietnam Pro, sans-serif",
           fontSize: 23,
@@ -326,6 +342,8 @@ export class UpgradePanel extends Container {
       const targetStr = I18n.upgradeTarget(upgrade.targetLabel);
       const scopeText = new Text({
         text: I18n.t("upgrade.scope", { value: targetStr }),
+        resolution: 2,
+        roundPixels: true,
         style: {
           fontFamily: "Be Vietnam Pro, sans-serif",
           fontSize: 15,
@@ -350,6 +368,8 @@ export class UpgradePanel extends Container {
       // 6. Row 4: Description Text (Comfortable reading with generous line height and margins)
       const descText = new Text({
         text: I18n.upgradeDesc(upgrade.id, upgrade.description),
+        resolution: 2,
+        roundPixels: true,
         style: {
           fontFamily: "Be Vietnam Pro, sans-serif",
           fontSize: 16,

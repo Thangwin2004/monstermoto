@@ -93,16 +93,24 @@ export class HyperButton extends Container {
 
     this.labelText = new Text({
       text: this.options.label,
+      resolution: 2,
+      roundPixels: true,
       style: {
         fontFamily: "Be Vietnam Pro, sans-serif",
         fontSize: this.options.fontSize,
         fontWeight: "900",
         fill: 0xffffff,
-        stroke: {
-          color: this.options.shadowColor,
-          width: Math.max(3, this.options.fontSize! * 0.16),
+        dropShadow: {
+          color: this.options.shadowColor ?? 0x000000,
+          blur: 0,
+          distance: 2.5,
+          angle: Math.PI / 2,
         },
-        letterSpacing: 1.5,
+        stroke: {
+          color: this.options.shadowColor ?? 0x000000,
+          width: 1.5,
+        },
+        letterSpacing: 1.2,
       },
     });
     this.labelText.anchor.set(0, 0.5);
@@ -254,6 +262,8 @@ export class HyperCircleButton extends Container {
     } else if (options.icon) {
       const iconText = new Text({
         text: options.icon,
+        resolution: 2,
+        roundPixels: true,
         style: {
           fontSize: options.fontSize ?? Math.round(r * 0.85),
           align: "center",

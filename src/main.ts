@@ -32,9 +32,10 @@ installInteractionGuard();
     width: GAME_WIDTH,
     height: GAME_HEIGHT,
     backgroundColor: "#111111",
-    resolution: Math.min(window.devicePixelRatio || 1, 2),
+    resolution: Math.min(Math.max(window.devicePixelRatio || 1, 2), 3),
     autoDensity: true,
     antialias: true,
+    roundPixels: true,
   });
 
   const container = document.getElementById("pixi-container")!;

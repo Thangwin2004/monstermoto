@@ -74,7 +74,7 @@ export class VectorIcons {
     g.poly(points).fill(color);
 
     // Center hole cutout
-    g.circle(0, 0, holeR).fill(0x0284c7); // or cut out
+    g.circle(0, 0, holeR).cut();
   }
 
   /**
@@ -94,11 +94,11 @@ export class VectorIcons {
     g.roundRect(-s * 0.22, -s * 0.9, s * 0.44, s * 1.5, s * 0.18).fill(color);
     // Head circle
     g.circle(0, -s * 0.6, s * 0.55).fill(color);
-    // Head cutout slot
-    g.rect(-s * 0.22, -s * 1.2, s * 0.44, s * 0.65).fill(0x047857);
+    // Head cutout slot (true transparent cutout)
+    g.rect(-s * 0.22, -s * 1.2, s * 0.44, s * 0.65).cut();
     // Bottom knob
     g.circle(0, s * 0.6, s * 0.35).fill(color);
-    g.circle(0, s * 0.6, s * 0.16).fill(0x047857);
+    g.circle(0, s * 0.6, s * 0.16).cut();
 
     g.restore();
   }
@@ -245,7 +245,7 @@ export class VectorIcons {
     // House base
     g.rect(-s * 0.65, -s * 0.1, s * 1.3, s * 0.95).fill(color);
     // Door cutout
-    g.roundRect(-s * 0.22, s * 0.25, s * 0.44, s * 0.6, 2).fill(0x0284c7);
+    g.roundRect(-s * 0.22, s * 0.25, s * 0.44, s * 0.6, 2).cut();
   }
 
   /**
@@ -471,7 +471,6 @@ export class VectorIcons {
     g: Graphics,
     size: number = 24,
     color: number = 0xffffff,
-    holeColor: number = 0x059669,
   ) {
     const r = size * 0.5;
     const points: number[] = [];
@@ -480,7 +479,7 @@ export class VectorIcons {
       points.push(Math.cos(a) * r, Math.sin(a) * r);
     }
     g.poly(points).fill(color);
-    g.circle(0, 0, r * 0.45).fill(holeColor);
+    g.circle(0, 0, r * 0.45).cut();
   }
 
   /**

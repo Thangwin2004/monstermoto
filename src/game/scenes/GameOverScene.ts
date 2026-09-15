@@ -168,12 +168,20 @@ export class GameOverScene extends Container implements Scene {
 
     this.titleText = new Text({
       text: isVictory ? I18n.t("gameover.victory") : I18n.t("gameover.defeat"),
+      resolution: 2,
+      roundPixels: true,
       style: {
         fontFamily: "Be Vietnam Pro, sans-serif",
         fontSize: 34,
         fontWeight: "900",
         fill: 0xffffff,
-        stroke: { color: ribbonShadow, width: 4.5 },
+        dropShadow: {
+          color: ribbonShadow,
+          blur: 0,
+          distance: 3,
+          angle: Math.PI / 2,
+        },
+        stroke: { color: ribbonShadow, width: 2 },
         letterSpacing: 2,
       },
     });
@@ -188,8 +196,8 @@ export class GameOverScene extends Container implements Scene {
     this.playAgainBtn = new HyperButton({
       label: I18n.t("gameover.replay"),
       vectorIcon: "play",
-      width: 400,
-      height: 76,
+      width: 420,
+      height: 78,
       fontSize: 26,
       color: 0xf59e0b,
       shadowColor: 0xb45309,
@@ -203,9 +211,9 @@ export class GameOverScene extends Container implements Scene {
     this.garageBtn = new HyperButton({
       label: I18n.t("gameover.upgrade"),
       vectorIcon: "wrench",
-      width: 196,
-      height: 64,
-      fontSize: 18,
+      width: 210,
+      height: 66,
+      fontSize: 20,
       color: 0x10b981,
       shadowColor: 0x047857,
       onClick: () => {
@@ -226,9 +234,9 @@ export class GameOverScene extends Container implements Scene {
     this.menuBtn = new HyperButton({
       label: I18n.t("gameover.home"),
       vectorIcon: "home",
-      width: 196,
-      height: 64,
-      fontSize: 18,
+      width: 210,
+      height: 66,
+      fontSize: 20,
       color: 0x0ea5e9,
       shadowColor: 0x0369a1,
       onClick: () => {
@@ -299,6 +307,8 @@ export class GameOverScene extends Container implements Scene {
 
     const scoreTitleText = new Text({
       text: I18n.t("stats.scoreTitle"),
+      resolution: 2,
+      roundPixels: true,
       style: {
         fontFamily: "Be Vietnam Pro, sans-serif",
         fontSize: 15,
@@ -324,6 +334,8 @@ export class GameOverScene extends Container implements Scene {
 
       const recordText = new Text({
         text: `⭐ ${I18n.t("stats.newRecord")}`,
+        resolution: 2,
+        roundPixels: true,
         style: {
           fontFamily: "Be Vietnam Pro, sans-serif",
           fontSize: 13,
@@ -339,6 +351,8 @@ export class GameOverScene extends Container implements Scene {
     } else {
       const bestText = new Text({
         text: `👑 ${I18n.t("stats.best")}: ${bestScore.toLocaleString()}`,
+        resolution: 2,
+        roundPixels: true,
         style: {
           fontFamily: "Be Vietnam Pro, sans-serif",
           fontSize: 14,
@@ -353,15 +367,23 @@ export class GameOverScene extends Container implements Scene {
       this.modalContainer.addChild(bestText);
     }
 
-    // Giant Hero Score Value
+    // Giant Hero Score Value with Crisp Drop Shadow
     const scoreValText = new Text({
       text: scoreVal.toLocaleString(),
+      resolution: 2,
+      roundPixels: true,
       style: {
         fontFamily: "Be Vietnam Pro, sans-serif",
         fontSize: 42,
         fontWeight: "900",
         fill: 0xfacc15,
-        stroke: { color: 0x78350f, width: 3.5 },
+        dropShadow: {
+          color: 0x78350f,
+          blur: 0,
+          distance: 3,
+          angle: Math.PI / 2,
+        },
+        stroke: { color: 0x78350f, width: 2 },
         letterSpacing: 2,
       },
     });
@@ -455,9 +477,11 @@ export class GameOverScene extends Container implements Scene {
       icon.y = y;
       this.modalContainer.addChild(icon);
 
-      // Stat Label
+      // Stat Label (Razor sharp with resolution: 2)
       const labelText = new Text({
         text: s.label,
+        resolution: 2,
+        roundPixels: true,
         style: {
           fontFamily: "Be Vietnam Pro, sans-serif",
           fontSize: 19,
@@ -471,9 +495,11 @@ export class GameOverScene extends Container implements Scene {
       labelText.y = y;
       this.modalContainer.addChild(labelText);
 
-      // Stat Value
+      // Stat Value (Razor sharp with resolution: 2)
       const valText = new Text({
         text: s.value,
+        resolution: 2,
+        roundPixels: true,
         style: {
           fontFamily: "Be Vietnam Pro, sans-serif",
           fontSize: 22,
@@ -492,36 +518,31 @@ export class GameOverScene extends Container implements Scene {
   private applyLayout(height: number) {
     this.currentHeight = height;
 
-    // Card 580 + gap 38 + playAgain 76 + gap 32 + secondary 64 = 790
+    // Fixed 1.0 scale: Never downscale the container to avoid raster blur / jagged artifacts
+    this.modalContainer.scale.set(1.0);
+    this.playAgainBtn.scale.set(1.0);
+    this.garageBtn.scale.set(1.0);
+    this.menuBtn.scale.set(1.0);
+
+    // Card 580 + gap 36 + playAgain 78 + gap 30 + secondary 66 = 790
     const totalBlockH = 790;
     const topSafe = 80;
-    const availableH = height - topSafe;
-
-    // Smooth scaling on very short screens to prevent overflow
-    const scaleFactor = Math.min(1, Math.max(0.78, (availableH - 20) / totalBlockH));
-
-    this.modalContainer.scale.set(scaleFactor);
-    this.playAgainBtn.scale.set(scaleFactor);
-    this.garageBtn.scale.set(scaleFactor);
-    this.menuBtn.scale.set(scaleFactor);
-
-    const scaledBlockH = totalBlockH * scaleFactor;
-    const startGroupY = Math.max(topSafe + 16, (height - scaledBlockH) / 2);
+    const startGroupY = Math.max(topSafe + 16, Math.round((height - totalBlockH) / 2));
 
     // Card center Y
-    this.modalContainer.y = startGroupY + (this.cardH / 2) * scaleFactor;
+    this.modalContainer.y = startGroupY + Math.round(this.cardH / 2);
 
-    // Button Row 1 (Play Again): 38px gap below card bottom
+    // Button Row 1 (Play Again): 36px gap below card bottom
     this.playAgainBtn.x = GAME_WIDTH / 2;
     this.playAgainBtn.y =
-      this.modalContainer.y + (this.cardH / 2 + 38 + 38) * scaleFactor;
+      this.modalContainer.y + Math.round(this.cardH / 2 + 36 + 39);
 
-    // Button Row 2 (Garage & Home side-by-side): 32px gap below Play Again
-    const secondaryY = this.playAgainBtn.y + (38 + 32 + 32) * scaleFactor;
-    this.garageBtn.x = GAME_WIDTH / 2 - 116 * scaleFactor;
+    // Button Row 2 (Garage & Home side-by-side): 30px gap below Play Again
+    const secondaryY = this.playAgainBtn.y + (39 + 30 + 33);
+    this.garageBtn.x = GAME_WIDTH / 2 - 120;
     this.garageBtn.y = secondaryY;
 
-    this.menuBtn.x = GAME_WIDTH / 2 + 116 * scaleFactor;
+    this.menuBtn.x = GAME_WIDTH / 2 + 120;
     this.menuBtn.y = secondaryY;
   }
 

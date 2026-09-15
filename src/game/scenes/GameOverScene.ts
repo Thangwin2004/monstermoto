@@ -169,7 +169,7 @@ export class GameOverScene extends Container implements Scene {
       },
     });
     this.playAgainBtn.x = GAME_WIDTH / 2;
-    this.playAgainBtn.y = this.currentHeight - 250;
+    this.playAgainBtn.y = this.currentHeight - 290;
     this.contentLayer.addChild(this.playAgainBtn);
 
     this.garageBtn = new HyperButton({
@@ -194,7 +194,7 @@ export class GameOverScene extends Container implements Scene {
       },
     });
     this.garageBtn.x = GAME_WIDTH / 2;
-    this.garageBtn.y = this.currentHeight - 160;
+    this.garageBtn.y = this.currentHeight - 185;
     this.contentLayer.addChild(this.garageBtn);
 
     this.menuBtn = new HyperButton({
@@ -210,7 +210,7 @@ export class GameOverScene extends Container implements Scene {
       },
     });
     this.menuBtn.x = GAME_WIDTH / 2;
-    this.menuBtn.y = this.currentHeight - 76;
+    this.menuBtn.y = this.currentHeight - 85;
     this.contentLayer.addChild(this.menuBtn);
 
     EventBus.on("language:changed", () => {
@@ -352,12 +352,12 @@ export class GameOverScene extends Container implements Scene {
     this.bg.fill({ color: 0x090a0f, alpha: 0.92 });
 
     const topSafe = 80;
-    const bottomButtonsTop = height - 280;
-    this.modalContainer.y = Math.max(380, (topSafe + bottomButtonsTop) / 2);
+    const bottomButtonsTop = height - 335;
+    this.modalContainer.y = Math.max(360, (topSafe + bottomButtonsTop) / 2);
 
-    this.playAgainBtn.y = height - 250;
-    this.garageBtn.y = height - 160;
-    this.menuBtn.y = height - 76;
+    this.playAgainBtn.y = height - 290;
+    this.garageBtn.y = height - 185;
+    this.menuBtn.y = height - 85;
 
     if (this.activeModal?.resize) {
       this.activeModal.resize(_width, height);

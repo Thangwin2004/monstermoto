@@ -43,11 +43,19 @@ export class SettingsModal extends Container {
     );
     backdrop.fill({ color: 0x000000, alpha: 0.88 });
     backdrop.eventMode = "static";
-    backdrop.on("pointerdown", (e) => e.stopPropagation());
+    backdrop.cursor = "pointer";
+    backdrop.on("pointertap", () => {
+      AudioMixer.playSFX("sfx_button");
+      this.destroy();
+      this.onCloseCallback();
+    });
     this.addChild(backdrop);
 
     // 2. Central 3D Modal Window
     this.modalContainer = new Container();
+    this.modalContainer.eventMode = "static";
+    this.modalContainer.on("pointerdown", (e) => e.stopPropagation());
+    this.modalContainer.on("pointertap", (e) => e.stopPropagation());
     this.modalContainer.x = GAME_WIDTH / 2;
     this.modalContainer.y = this.modalHeight / 2;
     this.addChild(this.modalContainer);
@@ -293,18 +301,18 @@ export class SettingsModal extends Container {
     // Language Selector Row (Spaced out matching rowH)
     this.addLanguageSelector(rows.length * rowH, rowCardW, rowCardH);
 
-    // Action Buttons at bottom
-    const btnW = 240;
-    const btnH = 54;
+    // Action Button at bottom (Single centered button, modal closes via top-right ❌ button or backdrop tap)
+    const btnW = 320;
+    const btnH = 56;
     const langBottomY = rows.length * rowH + rowCardH;
     const gapAboveButtons = 24;
     const actionY = langBottomY + gapAboveButtons + btnH / 2;
 
     if (this.isInGame) {
-      // In-Game: BỎ CUỘC (Give Up) + QUAY LẠI (Resume) with crisp vector icons
+      // In-Game: BỎ CUỘC (Give Up) with crisp vector flag icon (Centered)
       const giveUpBtn = this.create3DActionButton(
         I18n.t("settings.giveUp"),
-        -btnW / 2 - 12,
+        0,
         actionY,
         btnW,
         btnH,
@@ -318,29 +326,11 @@ export class SettingsModal extends Container {
         },
       );
       this.contentContainer.addChild(giveUpBtn);
-
-      const resumeBtn = this.create3DActionButton(
-        I18n.t("settings.resume"),
-        btnW / 2 + 12,
-        actionY,
-        btnW,
-        btnH,
-        0x10b981,
-        0x047857,
-        0x047857,
-        "play",
-        () => {
-          AudioMixer.playSFX("sfx_button");
-          this.destroy();
-          this.onCloseCallback();
-        },
-      );
-      this.contentContainer.addChild(resumeBtn);
     } else {
-      // In-Menu: XÓA DỮ LIỆU (Reset) + QUAY LẠI (Back) with crisp vector icons
+      // In-Menu: XÓA DỮ LIỆU (Reset) with crisp vector trash icon (Centered)
       const resetBtn = this.create3DActionButton(
         I18n.t("settings.reset"),
-        -btnW / 2 - 12,
+        0,
         actionY,
         btnW,
         btnH,
@@ -354,24 +344,6 @@ export class SettingsModal extends Container {
         },
       );
       this.contentContainer.addChild(resetBtn);
-
-      const backBtn = this.create3DActionButton(
-        I18n.t("settings.back"),
-        btnW / 2 + 12,
-        actionY,
-        btnW,
-        btnH,
-        0x0284c7,
-        0x0369a1,
-        0x0369a1,
-        "arrowLeft",
-        () => {
-          AudioMixer.playSFX("sfx_button");
-          this.destroy();
-          this.onCloseCallback();
-        },
-      );
-      this.contentContainer.addChild(backBtn);
     }
   }
 

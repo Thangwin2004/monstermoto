@@ -44,8 +44,8 @@ export class SettingsModal extends Container {
     this.modalContainer.y = this.modalHeight / 2;
     this.addChild(this.modalContainer);
 
-    const cardW = 620;
-    const cardH = this.isInGame ? 580 : 1060;
+    const cardW = 636;
+    const cardH = this.isInGame ? 520 : 700;
 
     // Soft Card Shadow
     const cardShadow = new Graphics();
@@ -73,8 +73,8 @@ export class SettingsModal extends Container {
     this.modalContainer.addChild(cardFace);
 
     // 3. Floating 3D Title Ribbon (Cyan / Sky Blue)
-    const ribbonW = 340;
-    const ribbonH = 68;
+    const ribbonW = 350;
+    const ribbonH = 70;
     const ribbonY = -cardH / 2 - 14;
 
     const ribbon = new Graphics();
@@ -100,17 +100,17 @@ export class SettingsModal extends Container {
     const titleRow = new Container();
     titleRow.y = ribbonY + ribbonH / 2 - 2;
 
-    this.gearIcon = VectorIcons.createIcon("gear", 26, 0xffffff);
+    this.gearIcon = VectorIcons.createIcon("gear", 30, 0xffffff);
     titleRow.addChild(this.gearIcon);
 
     this.titleText = new Text({
       text: this.isInGame ? I18n.t("settings.run") : I18n.t("settings.game"),
       style: {
         fontFamily: "Be Vietnam Pro, sans-serif",
-        fontSize: 24,
+        fontSize: 27,
         fontWeight: "900",
         fill: 0xffffff,
-        stroke: { color: 0x0369a1, width: 4 },
+        stroke: { color: 0x0369a1, width: 4.5 },
         letterSpacing: 1.5,
       },
     });
@@ -121,7 +121,7 @@ export class SettingsModal extends Container {
     // 4. Top-Right Circular Close Button (HyperCircleButton ❌ with crisp vector cross)
     const closeCornerBtn = new HyperCircleButton({
       vectorIcon: "cross",
-      radius: 25,
+      radius: 26,
       color: 0xef4444,
       shadowColor: 0x991b1b,
       strokeWidth: 3.5,
@@ -136,7 +136,7 @@ export class SettingsModal extends Container {
 
     // 5. Settings Content Rows Container
     this.contentContainer = new Container();
-    this.contentContainer.y = -cardH / 2 + 76;
+    this.contentContainer.y = -cardH / 2 + 82;
     this.modalContainer.addChild(this.contentContainer);
 
     this.renderSettings();
@@ -150,19 +150,18 @@ export class SettingsModal extends Container {
 
     // Optical centering for gear icon + title text
     const spacing = 12;
-    const totalW = 26 + spacing + this.titleText.width;
+    const totalW = 30 + spacing + this.titleText.width;
     if (this.gearIcon) {
-      this.gearIcon.x = -totalW / 2 + 13;
-      this.titleText.x = -totalW / 2 + 26 + spacing;
+      this.gearIcon.x = -totalW / 2 + 15;
+      this.titleText.x = -totalW / 2 + 30 + spacing;
     }
 
     const settings = SaveManager.getSettings();
 
-    // Clean labels: no (SFX), no (BGM)
+    // Clean labels, NO blue subtitle notes
     const allRows: {
       id: string;
       label: string;
-      subLabel?: string;
       iconType: "speaker" | "music" | "vibration" | "lightning";
       iconColor: number;
       pillColor: number;
@@ -198,9 +197,6 @@ export class SettingsModal extends Container {
       {
         id: "shake",
         label: I18n.t("settings.shake"),
-        subLabel: settings.screenShake
-          ? I18n.t("settings.shakeSubOn")
-          : I18n.t("settings.shakeSubOff"),
         iconType: "vibration",
         iconColor: 0xf97316,
         pillColor: 0xffedd5,
@@ -215,9 +211,6 @@ export class SettingsModal extends Container {
       {
         id: "particles",
         label: I18n.t("settings.particles"),
-        subLabel: !settings.lowParticles
-          ? I18n.t("settings.particlesSubOn")
-          : I18n.t("settings.particlesSubOff"),
         iconType: "lightning",
         iconColor: 0xeab308,
         pillColor: 0xfef9c3,
@@ -235,15 +228,19 @@ export class SettingsModal extends Container {
       (row) => !this.isInGame || row.id !== "particles",
     );
 
-    const rowH = 80;
+    const rowCardW = 560;
+    const rowCardH = 80;
+    const rowGap = 20;
+    const rowH = rowCardH + rowGap;
+
     for (let i = 0; i < rows.length; i++) {
       const r = rows[i];
       const rowY = i * rowH;
 
-      // Pure White Row Card with Light Blue Stroke
+      // Pure White Row Card with Soft Border
       const rowBg = new Graphics();
       rowBg
-        .roundRect(-270, rowY, 540, 68, 18)
+        .roundRect(-rowCardW / 2, rowY, rowCardW, rowCardH, 20)
         .fill(0xffffff)
         .stroke({ color: 0xe2e8f0, width: 2 });
       this.contentContainer.addChild(rowBg);
@@ -251,110 +248,54 @@ export class SettingsModal extends Container {
       // Icon Pill with Vector Icon
       const iconPill = new Graphics();
       iconPill
-        .circle(-232, rowY + 34, 24)
+        .circle(-rowCardW / 2 + 44, rowY + rowCardH / 2, 27)
         .fill(r.enabled ? r.pillColor : 0xf1f5f9);
       this.contentContainer.addChild(iconPill);
 
       const vectorIcon = VectorIcons.createIcon(
         r.iconType,
-        28,
+        30,
         r.enabled ? r.iconColor : 0x94a3b8,
       );
-      vectorIcon.x = -232;
-      vectorIcon.y = rowY + 34;
+      vectorIcon.x = -rowCardW / 2 + 44;
+      vectorIcon.y = rowY + rowCardH / 2;
       this.contentContainer.addChild(vectorIcon);
 
-      // Label & Subtitle Text (Increased sizes)
-      const textGroup = new Container();
-      textGroup.x = -195;
-      textGroup.y = rowY + 11;
-
+      // Main Label Text (Enlarged to 25px, vertically centered, bold & clean)
       const label = new Text({
         text: r.label,
         style: {
           fontFamily: "Be Vietnam Pro, sans-serif",
-          fontSize: 22,
+          fontSize: 25,
           fontWeight: "800",
           fill: 0x1e293b,
         },
       });
-      textGroup.addChild(label);
-
-      if (r.subLabel) {
-        const sub = new Text({
-          text: r.subLabel,
-          style: {
-            fontFamily: "Be Vietnam Pro, sans-serif",
-            fontSize: 16,
-            fontWeight: "700",
-            fill: r.enabled ? 0x0284c7 : 0x64748b,
-          },
-        });
-        sub.y = 26;
-        textGroup.addChild(sub);
-      } else {
-        label.y = 9;
-      }
-
-      this.contentContainer.addChild(textGroup);
+      label.anchor.set(0, 0.5);
+      label.x = -rowCardW / 2 + 86;
+      label.y = rowY + rowCardH / 2;
+      this.contentContainer.addChild(label);
 
       // Cute 3D Toggle Switch (Knob + Track)
       const toggleSwitch = this.create3DToggleSwitch(r.enabled, r.onToggle);
-      toggleSwitch.x = 205;
-      toggleSwitch.y = rowY + 34;
+      toggleSwitch.x = rowCardW / 2 - 64;
+      toggleSwitch.y = rowY + rowCardH / 2;
       this.contentContainer.addChild(toggleSwitch);
     }
 
-    // Language Selector Row
-    this.addLanguageSelector(rows.length * rowH + 6);
+    // Language Selector Row (Spaced out matching rowH)
+    this.addLanguageSelector(rows.length * rowH, rowCardW, rowCardH);
 
     if (!this.isInGame) {
-      // Main-menu-only content: help guide and reset progress
-      const infoY = rows.length * rowH + 98;
-      const infoBg = new Graphics();
-      infoBg
-        .roundRect(-270, infoY, 540, 142, 18)
-        .fill(0xfefce8)
-        .stroke({ color: 0xfacc15, width: 2.5 });
-      this.contentContainer.addChild(infoBg);
+      // Reset progress button (Generously spaced 32px below Language row, NO cramping)
+      const btnW = 260;
+      const btnH = 54;
+      const langBottomY = rows.length * rowH + rowCardH;
+      const gapAboveReset = 32;
+      const resetY = langBottomY + gapAboveReset + btnH / 2;
 
-      const infoTitle = new Text({
-        text: I18n.t("settings.helpTitle"),
-        style: {
-          fontFamily: "Be Vietnam Pro, sans-serif",
-          fontSize: 20,
-          fontWeight: "900",
-          fill: 0xb45309,
-          letterSpacing: 1,
-        },
-      });
-      infoTitle.x = -248;
-      infoTitle.y = infoY + 12;
-      this.contentContainer.addChild(infoTitle);
-
-      const infoBody = new Text({
-        text: I18n.t("settings.helpBody"),
-        style: {
-          fontFamily: "Be Vietnam Pro, sans-serif",
-          fontSize: 17,
-          fontWeight: "600",
-          fill: 0x78350f,
-          lineHeight: 25,
-          wordWrap: true,
-          wordWrapWidth: 500,
-        },
-      });
-      infoBody.x = -248;
-      infoBody.y = infoY + 40;
-      this.contentContainer.addChild(infoBody);
-
-      // Reset progress button (Compact, polished 3D danger button)
-      const resetY = infoY + 172;
       const resetBtn = new Container();
       resetBtn.y = resetY;
-
-      const btnW = 230;
-      const btnH = 46;
 
       const btnContent = new Container();
       resetBtn.addChild(btnContent);
@@ -362,18 +303,18 @@ export class SettingsModal extends Container {
       // 3D Shadow Base
       const resetShadow = new Graphics();
       resetShadow
-        .roundRect(-btnW / 2, -btnH / 2 + 4, btnW, btnH, 14)
+        .roundRect(-btnW / 2, -btnH / 2 + 4, btnW, btnH, 16)
         .fill(0x991b1b);
       resetBtn.addChildAt(resetShadow, 0);
 
       // Ruby Red Button Body
       const resetBg = new Graphics();
       resetBg
-        .roundRect(-btnW / 2, -btnH / 2, btnW, btnH, 14)
+        .roundRect(-btnW / 2, -btnH / 2, btnW, btnH, 16)
         .fill(0xef4444)
-        .stroke({ color: 0xffffff, width: 2.2 });
+        .stroke({ color: 0xffffff, width: 2.5 });
       resetBg
-        .roundRect(-btnW / 2 + 4, -btnH / 2 + 2, btnW - 8, btnH * 0.38, 6)
+        .roundRect(-btnW / 2 + 4, -btnH / 2 + 2, btnW - 8, btnH * 0.38, 8)
         .fill({ color: 0xffffff, alpha: 0.3 });
       btnContent.addChild(resetBg);
 
@@ -381,7 +322,7 @@ export class SettingsModal extends Container {
         text: `🗑️ ${I18n.t("settings.reset")}`,
         style: {
           fontFamily: "Be Vietnam Pro, sans-serif",
-          fontSize: 16,
+          fontSize: 19,
           fontWeight: "900",
           fill: 0xffffff,
           stroke: { color: 0x991b1b, width: 2 },
@@ -412,12 +353,16 @@ export class SettingsModal extends Container {
     }
   }
 
-  private addLanguageSelector(y: number) {
+  private addLanguageSelector(
+    y: number,
+    rowCardW = 560,
+    rowCardH = 80,
+  ) {
     const row = new Container();
     row.y = y;
 
     const bg = new Graphics();
-    bg.roundRect(-270, 0, 540, 68, 18)
+    bg.roundRect(-rowCardW / 2, 0, rowCardW, rowCardH, 20)
       .fill(0xffffff)
       .stroke({ color: 0xe2e8f0, width: 2 });
     row.addChild(bg);
@@ -426,35 +371,36 @@ export class SettingsModal extends Container {
       text: `🌐 ${I18n.t("settings.language")}`,
       style: {
         fontFamily: "Be Vietnam Pro, sans-serif",
-        fontSize: 21,
+        fontSize: 24,
         fontWeight: "800",
         fill: 0x1e293b,
       },
     });
-    label.x = -245;
-    label.y = 20;
+    label.anchor.set(0, 0.5);
+    label.x = -rowCardW / 2 + 25;
+    label.y = rowCardH / 2;
     row.addChild(label);
 
     const makeChoice = (lang: Language, text: string, x: number) => {
       const choice = new Container();
       const active = I18n.language === lang;
 
-      const choiceW = 108;
-      const choiceH = 44;
+      const choiceW = 120;
+      const choiceH = 48;
 
       const choiceBg = new Graphics();
       if (active) {
         // 3D Shadow Base
         const sh = new Graphics();
-        sh.roundRect(-choiceW / 2, -choiceH / 2 + 3, choiceW, choiceH, 22).fill(
+        sh.roundRect(-choiceW / 2, -choiceH / 2 + 3, choiceW, choiceH, 24).fill(
           0x0369a1,
         );
         choice.addChild(sh);
 
         choiceBg
-          .roundRect(-choiceW / 2, -choiceH / 2, choiceW, choiceH, 22)
+          .roundRect(-choiceW / 2, -choiceH / 2, choiceW, choiceH, 24)
           .fill(0x0284c7)
-          .stroke({ color: 0xffffff, width: 2.2 });
+          .stroke({ color: 0xffffff, width: 2.5 });
         choiceBg
           .roundRect(
             -choiceW / 2 + 4,
@@ -466,7 +412,7 @@ export class SettingsModal extends Container {
           .fill({ color: 0xffffff, alpha: 0.28 });
       } else {
         choiceBg
-          .roundRect(-choiceW / 2, -choiceH / 2, choiceW, choiceH, 22)
+          .roundRect(-choiceW / 2, -choiceH / 2, choiceW, choiceH, 24)
           .fill(0xf1f5f9)
           .stroke({ color: 0xcbd5e1, width: 1.8 });
       }
@@ -476,7 +422,7 @@ export class SettingsModal extends Container {
         text,
         style: {
           fontFamily: "Be Vietnam Pro, sans-serif",
-          fontSize: 15,
+          fontSize: 17,
           fontWeight: "900",
           fill: active ? 0xffffff : 0x475569,
           stroke: active ? { color: 0x0369a1, width: 2 } : undefined,
@@ -485,7 +431,7 @@ export class SettingsModal extends Container {
       choiceText.anchor.set(0.5);
       choice.addChild(choiceText);
       choice.x = x;
-      choice.y = 34;
+      choice.y = rowCardH / 2;
       choice.eventMode = "static";
       choice.cursor = "pointer";
       choice.on("pointerdown", () => {
@@ -497,11 +443,8 @@ export class SettingsModal extends Container {
       row.addChild(choice);
     };
 
-    // Bounds [-270, 270]. Margin from right edge is 16px (rightmost at 254).
-    // Button 2 (English) center at 200 (bounds [146, 254]).
-    // Button 1 (Tiếng Việt) center at 82 (bounds [28, 136]).
-    makeChoice("vi", "Tiếng Việt", 82);
-    makeChoice("en", "English", 200);
+    makeChoice("vi", "Tiếng Việt", rowCardW / 2 - 192);
+    makeChoice("en", "English", rowCardW / 2 - 68);
     this.contentContainer.addChild(row);
   }
 
@@ -651,9 +594,9 @@ export class SettingsModal extends Container {
     sw.eventMode = "static";
     sw.cursor = "pointer";
 
-    const width = 84;
-    const height = 44;
-    const radius = 22;
+    const width = 88;
+    const height = 46;
+    const radius = 23;
 
     const track = new Graphics();
     track
@@ -666,10 +609,10 @@ export class SettingsModal extends Container {
     sw.addChild(track);
 
     const knob = new Graphics();
-    const knobX = enabled ? width / 2 - 22 : -width / 2 + 22;
-    knob.circle(knobX, 2, 17).fill(0x94a3b8);
+    const knobX = enabled ? width / 2 - 23 : -width / 2 + 23;
+    knob.circle(knobX, 2, 18).fill(0x94a3b8);
     knob
-      .circle(knobX, 0, 17)
+      .circle(knobX, 0, 18)
       .fill(0xffffff)
       .stroke({ color: enabled ? 0x16a34a : 0x94a3b8, width: 2 });
     sw.addChild(knob);
@@ -678,13 +621,13 @@ export class SettingsModal extends Container {
       text: enabled ? I18n.t("settings.on") : I18n.t("settings.off"),
       style: {
         fontFamily: "Be Vietnam Pro, sans-serif",
-        fontSize: 13,
+        fontSize: 15,
         fontWeight: "900",
         fill: enabled ? 0xffffff : 0x64748b,
       },
     });
     stateText.anchor.set(0.5);
-    stateText.x = enabled ? -12 : 12;
+    stateText.x = enabled ? -13 : 13;
     stateText.y = 0;
     sw.addChild(stateText);
 

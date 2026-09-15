@@ -258,18 +258,18 @@ export class UpgradePanel extends Container {
         text: rarityStr,
         style: {
           fontFamily: "Be Vietnam Pro, sans-serif",
-          fontSize: 13,
+          fontSize: 15,
           fontWeight: "900",
           fill: 0xffffff,
         },
       });
-      const rarityW = Math.max(88, rarityText.width + 24);
-      const badgeH = 28;
+      const rarityW = Math.max(94, rarityText.width + 24);
+      const badgeH = 30;
       const row1Y = -cardH / 2 + 14;
 
       const rarityBadge = new Graphics();
       rarityBadge
-        .roundRect(-cardW / 2 + 16, row1Y, rarityW, badgeH, 14)
+        .roundRect(-cardW / 2 + 16, row1Y, rarityW, badgeH, 15)
         .fill(theme.bg)
         .stroke({ color: 0xffffff, width: 1.5 });
       content.addChild(rarityBadge);
@@ -285,17 +285,17 @@ export class UpgradePanel extends Container {
         text: actionStr,
         style: {
           fontFamily: "Be Vietnam Pro, sans-serif",
-          fontSize: 13,
+          fontSize: 15,
           fontWeight: "900",
           fill: actionInfo.color,
         },
       });
-      const actionW = Math.max(120, actionText.width + 24);
+      const actionW = Math.max(126, actionText.width + 24);
       const actionX = -cardW / 2 + 16 + rarityW + 10;
 
       const actionBadge = new Graphics();
       actionBadge
-        .roundRect(actionX, row1Y, actionW, badgeH, 14)
+        .roundRect(actionX, row1Y, actionW, badgeH, 15)
         .fill(actionInfo.bg)
         .stroke({ color: theme.border, width: 1.5 });
       content.addChild(actionBadge);
@@ -311,7 +311,7 @@ export class UpgradePanel extends Container {
         text: I18n.t("upgrade.scope", { value: targetStr }),
         style: {
           fontFamily: "Be Vietnam Pro, sans-serif",
-          fontSize: 15,
+          fontSize: 17,
           fontWeight: "900",
           fill: theme.textCol,
           wordWrap: true,
@@ -320,7 +320,7 @@ export class UpgradePanel extends Container {
       });
       scopeText.anchor.set(0, 0.5);
       scopeText.x = -cardW / 2 + 18;
-      scopeText.y = -cardH / 2 + 58;
+      scopeText.y = -cardH / 2 + 60;
       content.addChild(scopeText);
 
       // 5. Row 3: Upgrade Name
@@ -328,7 +328,7 @@ export class UpgradePanel extends Container {
         text: I18n.upgradeName(upgrade.id, upgrade.name),
         style: {
           fontFamily: "Be Vietnam Pro, sans-serif",
-          fontSize: 25,
+          fontSize: 27,
           fontWeight: "900",
           fill: 0x0f172a,
           wordWrap: true,
@@ -345,17 +345,17 @@ export class UpgradePanel extends Container {
         text: I18n.upgradeDesc(upgrade.id, upgrade.description),
         style: {
           fontFamily: "Be Vietnam Pro, sans-serif",
-          fontSize: 17,
+          fontSize: 19,
           fontWeight: "600",
           fill: 0x334155,
           wordWrap: true,
           wordWrapWidth: cardW - 36,
-          lineHeight: 24,
+          lineHeight: 26,
         },
       });
       descText.anchor.set(0, 0);
       descText.x = -cardW / 2 + 18;
-      descText.y = -cardH / 2 + 130;
+      descText.y = -cardH / 2 + 128;
       content.addChild(descText);
 
       // 7. Interactive Hover & Touch (The entire card acts as a juicy button)

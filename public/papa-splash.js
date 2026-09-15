@@ -5,31 +5,31 @@
   const startedAt = window.performance.now();
   let dismissalScheduled = false;
 
-  const scheduleDismissal = () => {
+  const doDismiss = () => {
     if (dismissalScheduled) return;
     dismissalScheduled = true;
 
-    const minimumDuration = 1400;
-    const remainingDuration = Math.max(
-      0,
-      minimumDuration - (window.performance.now() - startedAt),
-    );
+    // Minimum 1200ms duration so fast devices see the logo smoothly without sudden flash
+    const minimumDuration = 1200;
+    const elapsed = window.performance.now() - startedAt;
+    const remainingDuration = Math.max(0, minimumDuration - elapsed);
 
     window.setTimeout(() => {
       splash.classList.add("is-ready");
       window.setTimeout(() => {
         splash.classList.add("is-hidden");
-        window.setTimeout(() => splash.remove(), 450);
-      }, 180);
+        window.setTimeout(() => {
+          try {
+            splash.remove();
+          } catch (_) {}
+        }, 450);
+      }, 160);
     }, remainingDuration);
   };
 
-  if (document.readyState === "complete") {
-    scheduleDismissal();
-  } else {
-    window.addEventListener("load", scheduleDismissal, { once: true });
-  }
+  // Expose function for the game engine to call when MenuScene is ready
+  window.dismissPapaSplash = doDismiss;
 
-  // Never leave the player blocked behind the publisher splash.
-  window.setTimeout(scheduleDismissal, 3800);
+  // Fallback timer: in case game initialization hangs or fails, never leave player stuck
+  window.setTimeout(doDismiss, 8000);
 })();

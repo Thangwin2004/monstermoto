@@ -298,20 +298,27 @@ const targetLabelEnglish: Record<string, string> = {
   "🚚 Toàn Đoàn Xe": "🚚 Entire Convoy",
 };
 
-let language: Language = "vi";
+let hasLocalOverride = false;
+let language: Language = "en";
 try {
   const stored = localStorage.getItem(STORAGE_KEY);
-  if (stored === "en" || stored === "vi") language = stored;
+  if (stored === "en" || stored === "vi") {
+    language = stored;
+    hasLocalOverride = true;
+  }
 } catch {
   // Storage can be unavailable in an embedded host.
 }
 
 export const I18n = {
+  get hasLocalOverride(): boolean {
+    return hasLocalOverride;
+  },
   get language(): Language {
     return language;
   },
   t(key: string, values: Record<string, string | number> = {}) {
-    const template = messages[language][key] ?? messages.vi[key] ?? key;
+    const template = messages[language][key] ?? messages.en[key] ?? messages.vi[key] ?? key;
     return template.replace(/\{(\w+)\}/g, (_, name: string) =>
       String(values[name] ?? ""),
     );
@@ -428,6 +435,7 @@ export const I18n = {
   },
   setLanguage(next: Language) {
     language = next;
+    hasLocalOverride = true;
     try {
       localStorage.setItem(STORAGE_KEY, next);
       document.title =

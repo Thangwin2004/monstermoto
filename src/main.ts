@@ -129,7 +129,9 @@ installInteractionGuard();
     onResume: focusPause.resumeFromHost,
     onMute: () => AudioMixer.setHostMuted(true),
     onUnmute: () => AudioMixer.setHostMuted(false),
-    onLocale: (locale) => I18n.setLanguage(locale === "en" ? "en" : "vi"),
+    onLocale: () => {
+      document.documentElement.lang = I18n.language;
+    },
   });
 
   // Register scene factories (create fresh instance each switch)

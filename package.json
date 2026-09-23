@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "start": "pnpm run dev",
+    "start": "npm run dev",
     "prebuild": "node scripts/verify-wink-sdk.mjs",
     "build": "tsc && vite build",
     "postbuild": "node scripts/prune-unused-public-assets.mjs",

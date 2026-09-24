@@ -129,8 +129,8 @@ installInteractionGuard();
     onResume: focusPause.resumeFromHost,
     onMute: () => AudioMixer.setHostMuted(true),
     onUnmute: () => AudioMixer.setHostMuted(false),
-    onLocale: () => {
-      document.documentElement.lang = I18n.language;
+    onLocale: (locale) => {
+      I18n.setLanguage(locale);
     },
   });
 
@@ -141,4 +141,9 @@ installInteractionGuard();
   SceneManager.registerFactory("GameOverScene", () => new GameOverScene());
 
   SceneManager.switchScene("BootScene");
+
+  if (focusPause.isPaused()) {
+    app.ticker.stop();
+    void AudioMixer.pauseForFocus();
+  }
 })();

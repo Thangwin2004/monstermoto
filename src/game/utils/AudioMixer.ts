@@ -7,8 +7,11 @@ export class AudioMixer {
 
   private static currentBgmSource: AudioBufferSourceNode | null = null;
   private static pendingBgmKey: string | null = null;
+  private static wantsBgmKey: string | null = null;
   private static wasContextRunningBeforeFocus = false;
   private static hostMuted = false;
+  private static isPaused = false;
+  private static hasUserInteracted = false;
   private static masterVolume = 1;
 
   // Smart audio rate limiters & dynamic variation state
@@ -20,6 +23,15 @@ export class AudioMixer {
   private static hitCycle = 0;
   private static killComboCount = 0;
   private static lastKillComboTime = 0;
+
+  static canPlayAudio(): boolean {
+    if (this.hostMuted || this.isPaused) return false;
+    const inIframe = window.self !== window.top;
+    if (inIframe && !this.hasUserInteracted && !document.hasFocus()) {
+      return false;
+    }
+    return true;
+  }
 
   static async init() {
     if (this.ctx) return;
@@ -47,6 +59,23 @@ export class AudioMixer {
       this.sfxGain = this.ctx.createGain();
       this.sfxGain.connect(this.masterGain);
       this.sfxGain.gain.value = 0.75;
+
+      // Activation listeners for unlocking audio when frame becomes active
+      const activateAudio = () => {
+        AudioMixer.hasUserInteracted = true;
+        AudioMixer.resume();
+        if (AudioMixer.wantsBgmKey && AudioMixer.canPlayAudio()) {
+          AudioMixer.playBGM(AudioMixer.wantsBgmKey);
+        }
+      };
+      window.addEventListener("pointerdown", activateAudio, { passive: true });
+      window.addEventListener("touchstart", activateAudio, { passive: true });
+      window.addEventListener("keydown", activateAudio, { passive: true });
+      window.addEventListener("focus", () => {
+        if (AudioMixer.wantsBgmKey && AudioMixer.canPlayAudio()) {
+          AudioMixer.playBGM(AudioMixer.wantsBgmKey);
+        }
+      });
 
       this.syncWithSettings();
     } catch (e) {
@@ -112,8 +141,10 @@ export class AudioMixer {
   }
 
   static playBGM(key: string) {
+    this.wantsBgmKey = key;
     this.pendingBgmKey = key;
     if (!this.ctx || !this.buffers.has(key)) return;
+    if (!this.canPlayAudio()) return;
     this.resume();
 
     if (this.currentBgmSource) {
@@ -123,6 +154,7 @@ export class AudioMixer {
       } catch {
         // The previous source may already have stopped or disconnected.
       }
+      this.currentBgmSource = null;
     }
 
     try {
@@ -816,6 +848,17 @@ export class AudioMixer {
     this.hostMuted = muted;
     if (this.masterGain)
       this.masterGain.gain.value = muted ? 0 : this.masterVolume;
+    if (muted) {
+      if (this.currentBgmSource) {
+        try {
+          this.currentBgmSource.stop();
+          this.currentBgmSource.disconnect();
+        } catch {}
+        this.currentBgmSource = null;
+      }
+    } else if (this.wantsBgmKey && this.canPlayAudio()) {
+      this.playBGM(this.wantsBgmKey);
+    }
   }
 
   static resume() {
@@ -825,14 +868,28 @@ export class AudioMixer {
   }
 
   static async pauseForFocus() {
+    this.isPaused = true;
+    if (this.currentBgmSource) {
+      try {
+        this.currentBgmSource.stop();
+        this.currentBgmSource.disconnect();
+      } catch {}
+      this.currentBgmSource = null;
+    }
     if (!this.ctx) return;
     this.wasContextRunningBeforeFocus = this.ctx.state === "running";
     if (this.wasContextRunningBeforeFocus) await this.ctx.suspend();
   }
 
   static async resumeFromFocus() {
-    if (!this.ctx || !this.wasContextRunningBeforeFocus) return;
+    this.isPaused = false;
+    if (this.ctx && this.wasContextRunningBeforeFocus) {
+      this.wasContextRunningBeforeFocus = false;
+      await this.ctx.resume();
+    }
     this.wasContextRunningBeforeFocus = false;
-    await this.ctx.resume();
+    if (this.wantsBgmKey && this.canPlayAudio()) {
+      this.playBGM(this.wantsBgmKey);
+    }
   }
 }

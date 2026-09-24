@@ -433,19 +433,19 @@ export const I18n = {
       )[value] ?? value
     );
   },
-  setLanguage(next: Language) {
-    language = next;
-    hasLocalOverride = true;
+  setLanguage(next: string) {
+    const normalized: Language = String(next || "").toLowerCase().startsWith("vi") ? "vi" : "en";
+    language = normalized;
     try {
-      localStorage.setItem(STORAGE_KEY, next);
+      localStorage.setItem(STORAGE_KEY, normalized);
       document.title =
-        next === "en"
+        normalized === "en"
           ? "Monster Convoy — Roguelite"
           : "Quái Vật Hộ Tống — Roguelite";
-      document.documentElement.lang = next;
+      document.documentElement.lang = normalized;
     } catch {
       // Storage can be unavailable in an embedded host.
     }
-    EventBus.emit("language:changed", next);
+    EventBus.emit("language:changed", normalized);
   },
 };

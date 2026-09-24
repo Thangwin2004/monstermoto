@@ -79,6 +79,7 @@ interface WinkSdk {
   readonly player: WinkPlayer | null;
   readonly locale: string;
   readonly muted: boolean;
+  readonly paused?: boolean;
   readonly status: string;
   can(capability: string): boolean;
   gameplayStart(): void;
@@ -94,6 +95,7 @@ interface WinkSdk {
     listener: () => void,
   ): () => void;
   on(event: "locale", listener: (locale: string) => void): () => void;
+  setLocale?(locale: string): void;
   destroy(): void;
 }
 
@@ -216,7 +218,11 @@ export class WinkGameIntegration {
       locale: sdk?.locale || this.#state.locale || "en",
       player: sdk?.player || null,
       capabilities,
-      lifecycle: { ...this.#state.lifecycle, muted: Boolean(sdk?.muted) },
+      lifecycle: {
+        ...this.#state.lifecycle,
+        paused: Boolean(sdk?.paused),
+        muted: Boolean(sdk?.muted),
+      },
       error: null,
     };
   }
@@ -373,6 +379,25 @@ export class WinkGameIntegration {
     return this.#state.phase === "ready_authenticated";
   }
 
+  setLocale(locale: string): void {
+    const normalized = String(locale || "").toLowerCase().startsWith("vi") ? "vi" : "en";
+    const sdk = this.#sdk;
+    const sdkLoader = globalThis.window?.Wink as { setLocale?: (l: string) => void } | undefined;
+    if (typeof sdk?.setLocale === "function") {
+      sdk.setLocale(normalized);
+    } else if (typeof sdkLoader?.setLocale === "function") {
+      sdkLoader.setLocale(normalized);
+    } else {
+      this.#state.locale = normalized;
+      this.#notify();
+      void this.#ready.then((resolvedSdk) => {
+        if (typeof resolvedSdk?.setLocale === "function") {
+          resolvedSdk.setLocale(normalized);
+        }
+      });
+    }
+  }
+
   observe(listener: (state: WinkIntegrationState) => void): () => void {
     this.#observers.add(listener);
     listener(this.#state);
@@ -391,6 +416,10 @@ export class WinkGameIntegration {
       if (handlers.onMute) stops.push(sdk.on("mute", handlers.onMute));
       if (handlers.onUnmute) stops.push(sdk.on("unmute", handlers.onUnmute));
       if (handlers.onLocale) stops.push(sdk.on("locale", handlers.onLocale));
+
+      if (sdk.paused) handlers.onPause?.();
+      else handlers.onResume?.();
+
       if (sdk.muted) handlers.onMute?.();
       else handlers.onUnmute?.();
       handlers.onLocale?.(sdk.locale);

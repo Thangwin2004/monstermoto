@@ -7,6 +7,7 @@ import { HyperCircleButton, type VectorIconType } from "./HyperButton";
 import { VectorIcons } from "./VectorIcons";
 import { I18n, type Language } from "../utils/I18n";
 import { SceneManager } from "../scenes/SceneManager";
+import { winkGame } from "../../integrations/wink/client";
 
 export class SettingsModal extends Container {
   private modalContainer: Container;
@@ -59,6 +60,10 @@ export class SettingsModal extends Container {
     this.modalContainer.x = GAME_WIDTH / 2;
     this.modalContainer.y = this.modalHeight / 2;
     this.addChild(this.modalContainer);
+
+    const onLangChanged = () => this.renderSettings();
+    EventBus.on("language:changed", onLangChanged);
+    this.on("destroyed", () => EventBus.off("language:changed", onLangChanged));
 
     const cardW = 636;
     const cardH = 650;
@@ -443,8 +448,7 @@ export class SettingsModal extends Container {
       choice.on("pointerdown", () => {
         if (I18n.language === lang) return;
         AudioMixer.playSFX("sfx_button");
-        I18n.setLanguage(lang);
-        this.renderSettings();
+        winkGame.setLocale(lang);
       });
       row.addChild(choice);
     };

@@ -27,7 +27,10 @@ export class AudioMixer {
   static canPlayAudio(): boolean {
     if (this.hostMuted || this.isPaused) return false;
     const inIframe = window.self !== window.top;
-    if (inIframe && !this.hasUserInteracted && !document.hasFocus()) {
+    if (inIframe && !this.hasUserInteracted) {
+      return false;
+    }
+    if (typeof document !== "undefined" && document.visibilityState === "hidden") {
       return false;
     }
     return true;
@@ -72,7 +75,7 @@ export class AudioMixer {
       window.addEventListener("touchstart", activateAudio, { passive: true });
       window.addEventListener("keydown", activateAudio, { passive: true });
       window.addEventListener("focus", () => {
-        if (AudioMixer.wantsBgmKey && AudioMixer.canPlayAudio()) {
+        if (AudioMixer.hasUserInteracted && AudioMixer.wantsBgmKey && AudioMixer.canPlayAudio()) {
           AudioMixer.playBGM(AudioMixer.wantsBgmKey);
         }
       });
